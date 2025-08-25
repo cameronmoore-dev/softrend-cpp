@@ -28,6 +28,16 @@ struct Vec2f
 struct Vec3f
 {
     FLOAT x, y, z;
+
+    Vec3f operator-()
+    {
+        return { -x, -y, -z };
+    }
+
+    const Vec3f operator-(const Vec3f& rhs) const
+    {
+        return { x - rhs.x, y - rhs.y, z - rhs.z };
+    }
 };
 
 struct Vec4f

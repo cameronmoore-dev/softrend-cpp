@@ -41,7 +41,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         auto end = std::chrono::high_resolution_clock::now();
         double duration = std::chrono::duration<double>(end-start).count();
 
-       printf("%.1f\n", 1.f/duration);
+        printf("%.1f\n", 1.f/duration);
     }
 
     return 0;

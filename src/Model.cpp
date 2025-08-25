@@ -1,5 +1,6 @@
 #include "Model.h"
 
+#include <functional>
 #include <filesystem>
 #include <iostream>
 
@@ -100,11 +101,29 @@ void Model::loadModel(const std::string& dir)
 
 void Model::draw(FrameBuffer& frame, FLOAT* depth)
 {
+    if (m_lightDir.y <= -9.f)
+    {
+        bounce = true;
+    }
+    else if (m_lightDir.y >= 9.f)
+    {
+        bounce = false;
+    }
+
+    if (bounce)
+    {
+        m_lightDir.y = Utils::lerp(m_lightDir.y, 10, 0.005f);
+    }
+    else 
+    {
+        m_lightDir.y = Utils::lerp(m_lightDir.y, -10, 0.005f);
+    }
+
     m_angle+=0.1;
     Mat4 rotateZ = Matrix::rotate(Utils::degToRad(m_angle), 2);
+    
     Mat4 rotateY = Matrix::rotate(Utils::degToRad(m_angle), 1);
-    Mat4 rotateX = Matrix::rotate(Utils::degToRad(m_angle / 2), 0);
-
+    Mat4 rotateX = Matrix::rotate(Utils::degToRad(m_angle), 0);
     m_rotate = Matrix::multiply(rotateZ, rotateY);
     m_rotate = Matrix::multiply(m_rotate, rotateX);
 
@@ -113,32 +132,33 @@ void Model::draw(FrameBuffer& frame, FLOAT* depth)
     Mat4 mv = Matrix::multiply(m_view, model);
     Mat4 mvp = Matrix::multiply(m_persp, mv);
 
-    for (UINT i = 0; i < m_positions.size(); i++)
+
+    Vec3f ld{0, 0, -1};
+    for (const Face& face : m_faces)
     {
-        m_positions[i] = m_vtxPositions[i];
-        Vec4f proj = Matrix::multiply(mvp, m_positions[i]);
-        if (proj.w != 0.f)
+        std::vector<FaceIndex> fIdx = face.indices;
+        for (UINT i = 0; i < fIdx.size(); i++)
         {
-            proj.x /= proj.w;
-            proj.y /= proj.w;
-            proj.z /= proj.w;
+            /* m_positions[] (pos) are screen-space positions after the projection multiplication */
+            /* m_vtxPosition[] are always world-space positions as they set when the model loads and got get transformed */
+            Vec3f& pos = m_positions[fIdx[i].positionIndex] = m_vtxPositions[fIdx[i].positionIndex];
+
+            Vec4f proj = Matrix::multiply(mvp, pos);
+            if (proj.w != 0.f)
+            {
+                proj.x /= proj.w;
+                proj.y /= proj.w;
+                proj.z /= proj.w;
+            }
+    
+            pos.x = (proj.x + 1) * 0.5f * frame.width;
+            pos.y = (1 - proj.y) * 0.5f * frame.height;
         }
 
-        m_positions[i].x = (proj.x + 1) * 0.5f * frame.width;
-        m_positions[i].y = (1 - proj.y) * 0.5f * frame.height;
-    }
-
-    for (UINT f = 0; f < m_faces.size(); f++)
-    {
-        std::vector<FaceIndex> fIndex = m_faces[f].indices;
-        std::vector<Vec3f> vtxPositions = {};
-        for (UINT p = 0; p < 3; p++)
-        {
-            vtxPositions.emplace_back(m_positions[fIndex[p].positionIndex]);
-        }
-
-        boundingBox(vtxPositions[0], vtxPositions[1], vtxPositions[2]);
-        rasterise(frame, depth, vtxPositions[0], vtxPositions[1], vtxPositions[2]);
+        Vec3f normals = Utils::getViewSpaceNormals(mv, m_vtxPositions[fIdx[0].positionIndex], m_vtxPositions[fIdx[1].positionIndex], m_vtxPositions[fIdx[2].positionIndex]);
+        FLOAT intensity = std::max(0.f, Utils::dot(Utils::normalise(normals), Utils::normalise(-m_lightDir)));
+        
+        rasterise(frame, depth, intensity, m_positions[fIdx[0].positionIndex], m_positions[fIdx[1].positionIndex], m_positions[fIdx[2].positionIndex]);
     }
 }
 
@@ -167,22 +187,16 @@ Vec3f Model::barycentric(const Vec2i& p, const Vec3f& a, const Vec3f& b, const V
     return { w1, w2, w3 };
 }
 
-void Model::rasterise(FrameBuffer& frame, FLOAT* depth, const Vec3f& a, const Vec3f& b, const Vec3f& c)
+void Model::rasterise(FrameBuffer& frame, FLOAT* depth, FLOAT intensity, const Vec3f& a, const Vec3f& b, const Vec3f& c)
 {
-    Vec3f ab;
-    Vec3f ac;
-
-    ab.x = b.x - a.x;
-    ab.y = b.y - a.y;
-
-    ac.x = c.x - a.x;
-    ac.y = c.y - a.y;
-
-    Vec3f normal = Utils::cross(ac, ab);
-    if (normal.z <= 0)
+    /* Back-face Culling */
+    Vec3f normals = Utils::getNormals(a, b, c);
+    if (-normals.z <= 0.f)
     {
         return;
     }
+
+    boundingBox(a, b, c);
 
     Vec2i p;
     for (p.y = m_bbMin.y; p.y <= m_bbMax.y; p.y++)
@@ -198,20 +212,12 @@ void Model::rasterise(FrameBuffer& frame, FLOAT* depth, const Vec3f& a, const Ve
             if (point.x >= 0 && point.y >= 0 && point.z >= 0)
             {
                 FLOAT z = a.z * point.x + b.z * point.y + c.z * point.z;
-
                 UINT idx = p.x + p.y * frame.width;
-                if (z >= depth[idx])
+                if (z < depth[idx])
                 {
-                    continue;
+                    depth[idx] = z;
+                    frame.pixels[idx] = Utils::applyLighting(0x4499dd, intensity);
                 }
-
-                depth[idx] = z;
-
-                frame.pixels[idx] = Utils::rasteriseColour(
-                    0xff0000,
-                    0x00ff00,
-                    0x0000ff,
-                    point.x, point.y, point.z);
             }
         }
     }

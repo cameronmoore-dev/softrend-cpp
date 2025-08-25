@@ -32,21 +32,26 @@ private:
     Vec3f m_bbMin;
     Vec3f m_bbMax;
 
-    FLOAT m_angle = 0.f;
+    FLOAT m_angle = 15.f;
 
     Mat4 m_persp = Matrix::perspective(Utils::degToRad(45.f), 640.f/480.f, 0.1f, 100.f);
     Mat4 m_ortho = Matrix::orthographic(-3.2, 3.2, -2.4, 2.4, 0.1f, 100.f);
 
-    Mat4 m_view = Matrix::translate({ 0.f, 0.f, -7.f });
+    Mat4 m_view = Matrix::translate({ 0.f, 0.f, -5.f });
 
-    Mat4 m_translate = Matrix::translate({0, 0, 1});
-    Mat4 m_rotate = Matrix::rotate(Utils::degToRad(m_angle), 2);
-    Mat4 m_scale = Matrix::scale({1, 1, 1});
+    Mat4 m_translate = Matrix::identity();
+    Mat4 m_rotate = Matrix::identity();
+    Mat4 m_scale = Matrix::identity();
+
+    Vec3f m_lightDir{ 0, 0, -1.f };
+    bool bounce = false;
 
 private:
     void loadModel(const std::string& dir);
 
     void boundingBox(const Vec3f& a, const Vec3f& b, const Vec3f& c);
     Vec3f barycentric(const Vec2i& p, const Vec3f& a, const Vec3f& b, const Vec3f& c);
-    void rasterise(FrameBuffer& frame, FLOAT* depth, const Vec3f& a, const Vec3f& b, const Vec3f& c);
+    void rasterise(FrameBuffer& frame, FLOAT* depth, FLOAT intensity, const Vec3f& a, const Vec3f& b, const Vec3f& c);
+
+    Vec3f getNormals(const Vec3f& a, const Vec3f& b, const Vec3f& c);
 };

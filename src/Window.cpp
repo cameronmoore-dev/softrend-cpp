@@ -102,7 +102,7 @@ void Window::draw()
     //     nextBuffer.pixels[i] = Utils::pcgHash(rand());
     // }
 
-    //tri.draw(nextBuffer);
+    // tri.draw(nextBuffer);
     cube.draw(nextBuffer, m_depthBuffer);
 
     nextBuffer.pixels[currentBuffer.width/2 + currentBuffer.height/2 * currentBuffer.width] = 0xff00ff;
