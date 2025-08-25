@@ -35,5 +35,7 @@ private:
     FrameBuffer currentBuffer;
     FrameBuffer nextBuffer;
 
+    FLOAT* m_depthBuffer;
+
 private:
 };

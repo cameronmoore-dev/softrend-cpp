@@ -98,7 +98,7 @@ void Model::loadModel(const std::string& dir)
     }
 }
 
-void Model::draw(FrameBuffer& frame)
+void Model::draw(FrameBuffer& frame, FLOAT* depth)
 {
     m_angle+=0.1;
     Mat4 rotateZ = Matrix::rotate(Utils::degToRad(m_angle), 2);
@@ -138,7 +138,7 @@ void Model::draw(FrameBuffer& frame)
         }
 
         boundingBox(vtxPositions[0], vtxPositions[1], vtxPositions[2]);
-        rasterise(frame, vtxPositions[0], vtxPositions[1], vtxPositions[2]);
+        rasterise(frame, depth, vtxPositions[0], vtxPositions[1], vtxPositions[2]);
     }
 }
 
@@ -167,8 +167,23 @@ Vec3f Model::barycentric(const Vec2i& p, const Vec3f& a, const Vec3f& b, const V
     return { w1, w2, w3 };
 }
 
-void Model::rasterise(FrameBuffer& frame, const Vec3f& a, const Vec3f& b, const Vec3f& c)
+void Model::rasterise(FrameBuffer& frame, FLOAT* depth, const Vec3f& a, const Vec3f& b, const Vec3f& c)
 {
+    Vec3f ab;
+    Vec3f ac;
+
+    ab.x = b.x - a.x;
+    ab.y = b.y - a.y;
+
+    ac.x = c.x - a.x;
+    ac.y = c.y - a.y;
+
+    Vec3f normal = Utils::cross(ac, ab);
+    if (normal.z <= 0)
+    {
+        return;
+    }
+
     Vec2i p;
     for (p.y = m_bbMin.y; p.y <= m_bbMax.y; p.y++)
     {
@@ -182,7 +197,17 @@ void Model::rasterise(FrameBuffer& frame, const Vec3f& a, const Vec3f& b, const 
             Vec3f point = barycentric(p, a, b, c);
             if (point.x >= 0 && point.y >= 0 && point.z >= 0)
             {
-                frame.pixels[p.x + p.y * frame.width] = Utils::rasteriseColour(
+                FLOAT z = a.z * point.x + b.z * point.y + c.z * point.z;
+
+                UINT idx = p.x + p.y * frame.width;
+                if (z >= depth[idx])
+                {
+                    continue;
+                }
+
+                depth[idx] = z;
+
+                frame.pixels[idx] = Utils::rasteriseColour(
                     0xff0000,
                     0x00ff00,
                     0x0000ff,

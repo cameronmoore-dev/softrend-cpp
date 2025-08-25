@@ -14,7 +14,7 @@ class Model
 public:
     Model(const std::string& dir);
 
-    void draw(FrameBuffer& frame);
+    void draw(FrameBuffer& frame, FLOAT* depth);
 
     const size_t numVertices() const    { return m_positions.size(); }
     const size_t numTexCoords() const   { return m_texCoords.size(); }
@@ -48,5 +48,5 @@ private:
 
     void boundingBox(const Vec3f& a, const Vec3f& b, const Vec3f& c);
     Vec3f barycentric(const Vec2i& p, const Vec3f& a, const Vec3f& b, const Vec3f& c);
-    void rasterise(FrameBuffer& frame, const Vec3f& a, const Vec3f& b, const Vec3f& c);
+    void rasterise(FrameBuffer& frame, FLOAT* depth, const Vec3f& a, const Vec3f& b, const Vec3f& c);
 };

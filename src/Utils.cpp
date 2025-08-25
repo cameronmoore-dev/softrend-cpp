@@ -45,6 +45,16 @@ UINT Utils::pcgHash(UINT seed)
     return (word >> 22u) ^ word;
 }
 
+Vec3f Utils::cross(const Vec3f& a, const Vec3f& b)
+{
+    Vec3f c;
+    c.x = a.y * b.z - a.z * b.y;
+    c.y = a.z * b.x - a.x * b.z;
+    c.z = a.x * b.y - a.y * b.x;
+
+    return c;
+}
+
 FLOAT Utils::dot(const Vec3i& a, const Vec3i& b)
 {
     return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);

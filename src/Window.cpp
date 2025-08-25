@@ -7,6 +7,7 @@
 #include <winnt.h>
 
 #include <cstring>
+#include <cmath>
 
 Window::~Window()
 {
@@ -21,6 +22,7 @@ Window::~Window()
     }
 
     delete[] nextBuffer.pixels;
+    delete[] m_depthBuffer;
 }
 
 LRESULT Window::handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -47,6 +49,7 @@ LRESULT Window::handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 DeleteObject(bitmapHandle);
                 delete[] nextBuffer.pixels;
+                delete[] m_depthBuffer;
             }
 
             bitmapHandle = CreateDIBSection(nullptr, &frameInfo, DIB_RGB_COLORS, (void**)&currentBuffer.pixels, nullptr, 0);
@@ -59,6 +62,7 @@ LRESULT Window::handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
             nextBuffer.width = LOWORD(lParam);
             nextBuffer.height = HIWORD(lParam);
 
+            m_depthBuffer = new FLOAT[LOWORD(lParam) * HIWORD(lParam)];
 
         } break;
 
@@ -82,6 +86,7 @@ void Window::clear()
 {
     InvalidateRect(m_hWnd, nullptr, FALSE);
     std::fill_n(nextBuffer.pixels, nextBuffer.width*nextBuffer.height, 0x000000);
+    std::fill_n(m_depthBuffer, nextBuffer.width*nextBuffer.height, INFINITY);
 }
 
 void Window::draw()
@@ -98,7 +103,7 @@ void Window::draw()
     // }
 
     //tri.draw(nextBuffer);
-    cube.draw(nextBuffer);
+    cube.draw(nextBuffer, m_depthBuffer);
 
     nextBuffer.pixels[currentBuffer.width/2 + currentBuffer.height/2 * currentBuffer.width] = 0xff00ff;
 
