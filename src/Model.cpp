@@ -200,18 +200,15 @@ void Model::rasterise(FrameBuffer& frame, FLOAT* depth, const Vec3f& a, const Ve
                 FLOAT z = a.z * point.x + b.z * point.y + c.z * point.z;
 
                 UINT idx = p.x + p.y * frame.width;
-                if (z >= depth[idx])
+                if (z < depth[idx])
                 {
-                    continue;
-                }
-
-                depth[idx] = z;
-
-                frame.pixels[idx] = Utils::rasteriseColour(
-                    0xff0000,
-                    0x00ff00,
-                    0x0000ff,
+                    depth[idx] = z;
+                    frame.pixels[idx] = Utils::rasteriseColour(
+                    Utils::pcgHash(rand() % 255),
+                    Utils::pcgHash(rand() % 255),
+                    Utils::pcgHash(rand() % 255),
                     point.x, point.y, point.z);
+                }
             }
         }
     }
