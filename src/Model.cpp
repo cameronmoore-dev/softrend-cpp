@@ -1,12 +1,15 @@
 #include "Model.h"
 
+#include <algorithm>
 #include <functional>
 #include <filesystem>
 #include <iostream>
+#include <cmath>
 
 Model::Model(const std::string& dir)
 {
     loadModel(dir);
+    //image.write("output.tga");
 }
 
 void Model::loadModel(const std::string& dir)
@@ -132,11 +135,17 @@ void Model::draw(FrameBuffer& frame, FLOAT* depth)
     Mat4 mv = Matrix::multiply(m_view, model);
     Mat4 mvp = Matrix::multiply(m_persp, mv);
 
-
-    Vec3f ld{0, 0, -1};
     for (const Face& face : m_faces)
     {
         std::vector<FaceIndex> fIdx = face.indices;
+        Tri triangle;
+
+        Vec3f normals = Utils::getViewSpaceNormals(mv, m_vtxPositions[fIdx[0].positionIndex], m_vtxPositions[fIdx[1].positionIndex], m_vtxPositions[fIdx[2].positionIndex]);
+        FLOAT intensity = std::max(0.f, Utils::dot(Utils::normalise(normals), Utils::normalise(-m_lightDir)));
+
+        FLOAT invWs[3] = {};
+        Vec2f uvOverWs[3] = {};
+
         for (UINT i = 0; i < fIdx.size(); i++)
         {
             /* m_positions[] (pos) are screen-space positions after the projection multiplication */
@@ -144,6 +153,14 @@ void Model::draw(FrameBuffer& frame, FLOAT* depth)
             Vec3f& pos = m_positions[fIdx[i].positionIndex] = m_vtxPositions[fIdx[i].positionIndex];
 
             Vec4f proj = Matrix::multiply(mvp, pos);
+
+            //printf("%F\n", proj.w);
+
+            invWs[i] = 1.0f/proj.w;
+            Vec2f uv = m_texCoords[fIdx[i].texCoordIndex];
+
+            uvOverWs[i] = uv * invWs[i];
+
             if (proj.w != 0.f)
             {
                 proj.x /= proj.w;
@@ -155,10 +172,23 @@ void Model::draw(FrameBuffer& frame, FLOAT* depth)
             pos.y = (1 - proj.y) * 0.5f * frame.height;
         }
 
-        Vec3f normals = Utils::getViewSpaceNormals(mv, m_vtxPositions[fIdx[0].positionIndex], m_vtxPositions[fIdx[1].positionIndex], m_vtxPositions[fIdx[2].positionIndex]);
-        FLOAT intensity = std::max(0.f, Utils::dot(Utils::normalise(normals), Utils::normalise(-m_lightDir)));
-        
-        rasterise(frame, depth, intensity, m_positions[fIdx[0].positionIndex], m_positions[fIdx[1].positionIndex], m_positions[fIdx[2].positionIndex]);
+        triangle.v0.position = m_positions[fIdx[0].positionIndex];
+        triangle.v1.position = m_positions[fIdx[1].positionIndex];
+        triangle.v2.position = m_positions[fIdx[2].positionIndex];
+
+        triangle.v0.texCoords = m_texCoords[fIdx[0].texCoordIndex];
+        triangle.v1.texCoords = m_texCoords[fIdx[1].texCoordIndex];
+        triangle.v2.texCoords = m_texCoords[fIdx[2].texCoordIndex];
+
+        triangle.v0.invW = invWs[0];
+        triangle.v1.invW = invWs[1];
+        triangle.v2.invW = invWs[2];
+
+        triangle.v0.uvOverW = uvOverWs[0];
+        triangle.v1.uvOverW = uvOverWs[1];
+        triangle.v2.uvOverW = uvOverWs[2];
+
+        rasterise(frame, depth, intensity, triangle);
     }
 }
 
@@ -187,8 +217,12 @@ Vec3f Model::barycentric(const Vec2i& p, const Vec3f& a, const Vec3f& b, const V
     return { w1, w2, w3 };
 }
 
-void Model::rasterise(FrameBuffer& frame, FLOAT* depth, FLOAT intensity, const Vec3f& a, const Vec3f& b, const Vec3f& c)
+void Model::rasterise(FrameBuffer& frame, FLOAT* depth, FLOAT intensity, const Tri& triangle)
 {
+    const Vec3f& a = triangle.v0.position;
+    const Vec3f& b = triangle.v1.position;
+    const Vec3f& c = triangle.v2.position;
+
     /* Back-face Culling */
     Vec3f normals = Utils::getNormals(a, b, c);
     if (-normals.z <= 0.f)
@@ -216,9 +250,31 @@ void Model::rasterise(FrameBuffer& frame, FLOAT* depth, FLOAT intensity, const V
                 if (z < depth[idx])
                 {
                     depth[idx] = z;
-                    frame.pixels[idx] = Utils::applyLighting(0x4499dd, intensity);
+                    frame.pixels[idx] = Utils::applyLighting(texel(triangle, point), intensity);
                 }
             }
         }
     }
+}
+
+UINT Model::texel(const Tri& triangle, const Vec3f& weights)
+{
+    /* Perspective-correct interpolation */
+    FLOAT invInterp = weights.x * triangle.v0.invW +
+                      weights.y * triangle.v1.invW +
+                      weights.z * triangle.v2.invW;
+
+    Vec2f uvOverZInterp = triangle.v0.uvOverW * weights.x +
+                          triangle.v1.uvOverW * weights.y +
+                          triangle.v2.uvOverW * weights.z;
+
+    Vec2f finalUV = uvOverZInterp / invInterp;
+
+    INT texX = finalUV.x * (image.size().x - 1);
+    INT texY = finalUV.y * (image.size().y - 1);
+
+    texX = std::clamp(texX, 0, image.size().x - 1);
+    texY = std::clamp(texY, 0, image.size().y - 1);
+
+    return image.pixel(texX + texY * image.size().x);
 }

@@ -8,6 +8,12 @@
 #include "Structs.h"
 #include "Matrix.h"
 #include "Utils.h"
+#include "Image.h"
+
+struct Tri
+{
+    Vertex v0, v1, v2;
+};
 
 class Model
 {
@@ -46,12 +52,16 @@ private:
     Vec3f m_lightDir{ 0, 0, -1.f };
     bool bounce = false;
 
+    Image image = Image("./resources/texture_dirtcube.tga");
+
 private:
     void loadModel(const std::string& dir);
 
     void boundingBox(const Vec3f& a, const Vec3f& b, const Vec3f& c);
     Vec3f barycentric(const Vec2i& p, const Vec3f& a, const Vec3f& b, const Vec3f& c);
-    void rasterise(FrameBuffer& frame, FLOAT* depth, FLOAT intensity, const Vec3f& a, const Vec3f& b, const Vec3f& c);
+    void rasterise(FrameBuffer& frame, FLOAT* depth, FLOAT intensity, const Tri& triangle);
 
     Vec3f getNormals(const Vec3f& a, const Vec3f& b, const Vec3f& c);
+
+    UINT texel(const Tri& triangle, const Vec3f& weights);
 };

@@ -23,6 +23,66 @@ struct Vec3i
 struct Vec2f
 {
     FLOAT x, y;
+
+    Vec2f add(const Vec2f& other) const
+    {
+        return { x + other.x, y + other.y };
+    }
+
+    Vec2f add(const FLOAT& other) const
+    {
+        return { x + other, y + other };
+    }
+
+    Vec2f multiply(const Vec2f& other) const
+    {
+        return { x * other.x, y * other.y };
+    }
+
+    Vec2f multiply(const FLOAT& other) const
+    {
+        return { x * other, y * other };
+    }
+
+    Vec2f divide(const FLOAT& other) const
+    {
+        return { x / other, y / other };
+    }
+
+    Vec2f divide(const Vec2f& other) const
+    {
+        return { x / other.x, y / other.y };
+    }
+
+    Vec2f operator*(const Vec2f& other) const
+    {
+        return multiply(other);
+    }
+
+    Vec2f operator*(const FLOAT& other) const
+    {
+        return multiply(other);
+    }
+
+    Vec2f operator+(const Vec2f& other) const
+    {
+        return add(other);
+    }
+
+    Vec2f operator+(const FLOAT& other) const
+    {
+        return add(other);
+    }
+
+    Vec2f operator/(const FLOAT& other) const
+    {
+        return divide(other);
+    }
+
+    Vec2f operator/(const Vec2f& other) const
+    {
+        return divide(other);
+    }
 };
 
 struct Vec3f
@@ -48,7 +108,12 @@ struct Vec4f
 struct Vertex
 {
     Vec3f position;
+    Vec3f normals;
+    Vec2f texCoords;
     UINT colour;
+
+    FLOAT invW;
+    Vec2f uvOverW;
 };
 
 struct FaceIndex

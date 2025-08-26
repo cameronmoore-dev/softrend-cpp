@@ -30,7 +30,7 @@ private:
                  {0, -120, -1.f, 0x00ff00},
                  {160, 120, -1.f, 0x0000ff}};
 
-    Model cube = Model("./resources/cube.obj");
+    Model cube = Model("./resources/model_cube.obj");
 
     FrameBuffer currentBuffer;
     FrameBuffer nextBuffer;
