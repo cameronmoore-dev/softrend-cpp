@@ -1,54 +1,65 @@
 #pragma once
 
-#include <minwindef.h>
+#include <stdint.h>
 #include <vector>
-
-struct FrameBuffer
-{
-    INT width = 0;
-    INT height = 0;
-    UINT* pixels = 0;
-};
 
 struct Vec2i
 {
-    INT x, y;
+    int32_t x, y;
 };
 
 struct Vec3i
 {
-    INT x, y, z;
+    int32_t x, y, z;
 };
 
 struct Vec2f
 {
-    FLOAT x, y;
+    float x, y;
+
+    const Vec2f operator+(const Vec2f& rhs) const { return { x + rhs.x, y + rhs.y }; }
+    const Vec2f operator-(const Vec2f& rhs) const { return { x - rhs.x, y - rhs.y }; }
+    const Vec2f operator*(const Vec2f& rhs) const { return { x * rhs.x, y * rhs.y }; }
+    const Vec2f operator/(const Vec2f& rhs) const { return { x / rhs.x, y / rhs.y }; }
+
+    const Vec2f operator+(const float& value) const { return { x + value, y + value }; }
+    const Vec2f operator-(const float& value) const { return { x - value, y - value }; }
+    const Vec2f operator*(const float& value) const { return { x * value, y * value }; }
+    const Vec2f operator/(const float& value) const { return { x / value, y / value }; }
 };
 
 struct Vec3f
 {
-    FLOAT x, y, z;
+    float x, y, z;
+
+    const Vec3f operator+(const Vec3f& rhs) const { return { x + rhs.x, y + rhs.y, z + rhs.z }; }
+    const Vec3f operator-(const Vec3f& rhs) const { return { x - rhs.x, y - rhs.y, z - rhs.z }; }
+    const Vec3f operator*(const Vec3f& rhs) const { return { x * rhs.x, y * rhs.y, z * rhs.z }; }
+    const Vec3f operator/(const Vec3f& rhs) const { return { x / rhs.x, y / rhs.y, z / rhs.z }; }
+
+    const Vec3f operator+(const float& value) const { return { x + value, y + value, z + value }; }
+    const Vec3f operator-(const float& value) const { return { x - value, y - value, z - value }; }
+    const Vec3f operator*(const float& value) const { return { x * value, y * value, z * value }; }
+    const Vec3f operator/(const float& value) const { return { x / value, y / value, z / value }; }
 };
 
 struct Vec4f
 {
-    FLOAT x, y, z, w;
+    float x, y, z, w;
 };
 
 struct Vertex
 {
+    Vec3f wldPos;
     Vec3f position;
-    UINT colour;
-};
+    Vec2f texCoords;
+    uint32_t colour;
 
-struct FaceIndex
-{
-    INT positionIndex;
-    INT texCoordIndex;
-    INT normalIndex;
+    float invW;
+    Vec2f uvOverW;
 };
 
 struct Face
 {
-    std::vector<FaceIndex> indices;
+    std::vector<Vertex> vertices;
 };
