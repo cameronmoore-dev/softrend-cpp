@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef UNICODE
 #define UNICODE 1
 #endif

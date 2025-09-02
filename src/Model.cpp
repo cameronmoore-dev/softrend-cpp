@@ -100,3 +100,58 @@ void Model::loadModel(const std::string& dir)
         }
     }
 }
+
+// void Model::draw(FrameBuffer& frame, FLOAT* depth)
+// {
+//     for (const Face& face : m_faces)
+//     {
+//         std::vector<FaceIndex> fIdx = face.indices;
+//         Tri triangle;
+
+//         Vec3f normals = Utils::getViewSpaceNormals(mv, m_vtxPositions[fIdx[0].positionIndex], m_vtxPositions[fIdx[1].positionIndex], m_vtxPositions[fIdx[2].positionIndex]);
+//         FLOAT intensity = std::max(0.f, Utils::dot(Utils::normalise(normals), Utils::normalise(-m_lightDir)));
+
+//         FLOAT invWs[3] = {};
+//         Vec2f uvOverWs[3] = {};
+
+//         for (UINT i = 0; i < fIdx.size(); i++)
+//         {
+//             /* m_positions[] (pos) are screen-space positions after the projection multiplication */
+//             /* m_wldPosition[] are always world-space positions as they set when the model loads and get transformed */
+//             Vec3f& pos = m_positions[fIdx[i].positionIndex] = m_vtxPositions[fIdx[i].positionIndex];
+
+//             Vec4f proj = Matrix::multiply(mvp, pos);
+
+//             invWs[i] = 1.0f/proj.w;
+//             Vec2f uv = m_texCoords[fIdx[i].texCoordIndex];
+
+//             uvOverWs[i] = uv * invWs[i];
+
+//             if (proj.w != 0.f)
+//             {
+//                 proj.x /= proj.w;
+//                 proj.y /= proj.w;
+//                 proj.z /= proj.w;
+//             }
+    
+//             pos.x = (proj.x + 1) * 0.5f * frame.width;
+//             pos.y = (1 - proj.y) * 0.5f * frame.height;
+//         }
+
+//         triangle.v0.position = m_positions[fIdx[0].positionIndex];
+//         triangle.v1.position = m_positions[fIdx[1].positionIndex];
+//         triangle.v2.position = m_positions[fIdx[2].positionIndex];
+
+//         triangle.v0.texCoords = m_texCoords[fIdx[0].texCoordIndex];
+//         triangle.v1.texCoords = m_texCoords[fIdx[1].texCoordIndex];
+//         triangle.v2.texCoords = m_texCoords[fIdx[2].texCoordIndex];
+
+//         triangle.v0.invW = invWs[0];
+//         triangle.v1.invW = invWs[1];
+//         triangle.v2.invW = invWs[2];
+
+//         triangle.v0.uvOverW = uvOverWs[0];
+//         triangle.v1.uvOverW = uvOverWs[1];
+//         triangle.v2.uvOverW = uvOverWs[2];
+//     }
+// }

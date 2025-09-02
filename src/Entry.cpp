@@ -1,3 +1,4 @@
+#include <windows.h>
 #include <iostream>
 
 #include "SceneManagement/SceneManager.h"
@@ -7,10 +8,10 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-    srand(static_cast<unsigned int>(time(0)));
+    srand(static_cast<UINT>(time(0)));
 
-    Window win;
-    if (!win.create("Software Renderer", WS_OVERLAPPEDWINDOW))
+    Window window;
+    if (!window.create(L"Software Renderer", 640, 480))
     {
         std::cerr << "ERROR::WINDOW::failed to create!" << std::endl;
         return 1;
