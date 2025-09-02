@@ -1,41 +1,86 @@
-#pragma once
+#ifndef UNICODE
+#define UNICODE 1
+#endif
 
-#include "WindowBase.h"
+#include <windows.h>
+#include <stdint.h>
+#include <vector>
+#include <queue>
+#include <string>
+
+#include "Renderer.h"
+#include "Events.h"
 #include "Structs.h"
-#include "Utils.h"
-#include "Triangle.h"
-#include "Model.h"
 
-class Window : public WindowBase<Window>
+class Window
 {
+    static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+    {
+        Window* wnd = nullptr;
+        if (uMsg == WM_CREATE)
+        {
+            CREATESTRUCT* create = (CREATESTRUCT*)lParam;
+            wnd = (Window*)create->lpCreateParams;
+            SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)wnd);
+            wnd->m_hwnd = hwnd;
+        }
+        else
+        {
+            wnd = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+        }
+
+        if (wnd)
+        {
+            return wnd->handleMessages(uMsg, wParam, lParam);
+        }
+        else
+        {
+            return DefWindowProc(hwnd, uMsg, wParam, lParam);
+        }
+    }
     
 public:
     ~Window();
+    
+    bool create(LPCWSTR lpWindowName, INT width, INT height);
+    void close();
 
-    LPCSTR className() const { return "WindowClassName"; }
+    void pollMessages();
+    bool pollEvents(Event& event);
+    void clear(uint32_t clearColour);
+    void draw(std::vector<Vertex>& vertices, Image* texture, const Mat4& model, const Mat4& view, const Mat4& projection);
+    void display();
+
+    void setWindowTitle(const std::string& title);
+    const Vec2f windowSize() const { return { (float)m_width, (float)m_height }; }
+
+    bool isOpen() { return m_isOpen; }
+
+private:
+    HWND        m_hwnd;
+    BITMAPINFO  m_frameInfo;
+    HBITMAP     m_bitmapHandle = 0;
+    HDC         m_deviceContext = 0;
+
+    uint32_t*               m_frontBuffer = nullptr;
+    std::vector<uint32_t>   m_backBuffer;
+    std::vector<float>      m_depthBuffer;
+
+    Renderer                m_renderer;
+    std::queue<Event>       m_events;
+
+    uint32_t m_width = 0;
+    uint32_t m_height = 0;
+
+    bool m_isOpen = false;
+
+    // int32_t p = 0;
+
+private:
+    LPCWSTR className() const { return L"WindowClassName"; }
     LRESULT handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam);
-
+    
     void setup();
-    void clear();
-    void draw();
 
-private:
-    BITMAPINFO frameInfo;
-    HBITMAP bitmapHandle = 0;
-    HDC deviceContext = 0;
-
-    INT p = 0;
-
-    Triangle tri{{-160, 120, -1.f, 0xff0000},
-                 {0, -120, -1.f, 0x00ff00},
-                 {160, 120, -1.f, 0x0000ff}};
-
-    Model cube = Model("./resources/model_cube.obj");
-
-    FrameBuffer currentBuffer;
-    FrameBuffer nextBuffer;
-
-    FLOAT* m_depthBuffer;
-
-private:
+    void onWindowResize(LPARAM lParam);
 };

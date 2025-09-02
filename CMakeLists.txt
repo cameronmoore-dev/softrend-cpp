@@ -8,13 +8,14 @@ set(${CMAKE_CXX_STANDARD_REQUIRED} TRUE)
 add_executable(software_renderer EXCLUDE_FROM_ALL
     "src/Entry.cpp"
     "src/Window.cpp"
-    "src/Triangle.cpp"
     "src/Utils.cpp"
     "src/Matrix.cpp"
     "src/Model.cpp"    
     "src/Image.cpp"
-    "src/WindowBase.h"
-    "src/Structs.h"
+    "src/Renderer.cpp"
+    "src/SceneManagement/Scenes/Scene_Cube.cpp"
+    "src/SceneManagement/Scenes/Scene_Triangle.cpp"
+    "src/SceneManagement/Scenes/Scene_Suzanne.cpp"
 )
 
 # Copy the resources folder into the generated executable's folder

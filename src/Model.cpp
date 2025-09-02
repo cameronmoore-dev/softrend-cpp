@@ -1,10 +1,9 @@
 #include "Model.h"
 
-#include <algorithm>
-#include <functional>
 #include <filesystem>
 #include <iostream>
-#include <cmath>
+#include <fstream>
+#include <sstream>
 
 Model::Model(const std::string& dir)
 {
@@ -22,6 +21,10 @@ void Model::loadModel(const std::string& dir)
         std::cerr << "ERROR::MODEL::failed to open file!" << std::endl;
         return;
     }
+    
+    std::vector<Vec3f> positions;
+    std::vector<Vec2f> texCoords;
+    std::vector<Vec3f> normals;
 
     std::string line;
     while (!file.eof())
@@ -32,13 +35,14 @@ void Model::loadModel(const std::string& dir)
 
         s_stream >> prefix;
 
+        Vertex vtx;
+
         /* Vertex */
         if (prefix == "v")
         {
             Vec3f v;
             s_stream >> v.x >> v.y >> v.z;
-            m_positions.emplace_back(v);
-            m_vtxPositions.emplace_back(v);
+            positions.emplace_back(v);
         }
 
         /* Texture Coord */
@@ -46,7 +50,7 @@ void Model::loadModel(const std::string& dir)
         {
             Vec2f vt;
             s_stream >> vt.x >> vt.y;
-            m_texCoords.emplace_back(vt);
+            texCoords.emplace_back(vt);
         }
 
         /* Normals */
@@ -54,20 +58,18 @@ void Model::loadModel(const std::string& dir)
         {
             Vec3f vn;
             s_stream >> vn.x >> vn.y >> vn.z;
-            m_normals.emplace_back(vn);
+            normals.emplace_back(vn);
         }
 
         /* Faces */
         else if (prefix == "f")
         {
-            Face face;
             std::string vtxStr;
             while (s_stream >> vtxStr)
             {
                 std::istringstream vs_stream(vtxStr);
 
                 std::string v, t, n;
-                FaceIndex fidx = { -1, -1, -1};
 
                 size_t v_pos = vtxStr.find("/");
                 size_t t_pos = vtxStr.find("/", v_pos + 1);
@@ -90,191 +92,11 @@ void Model::loadModel(const std::string& dir)
                     v = vtxStr;
                 }
 
-                if (!v.empty()) fidx.positionIndex = std::stoi(v) - 1;
-                if (!t.empty()) fidx.texCoordIndex = std::stoi(t) - 1;
-                if (!n.empty()) fidx.normalIndex = std::stoi(n) - 1;
+                vtx.position = positions[std::stoi(v) - 1];
+                vtx.texCoords = texCoords[std::stoi(t) - 1];
 
-                face.indices.emplace_back(fidx);
-            }
-
-            m_faces.emplace_back(face);
-        }
-    }
-}
-
-void Model::draw(FrameBuffer& frame, FLOAT* depth)
-{
-    if (m_lightDir.y <= -9.f)
-    {
-        bounce = true;
-    }
-    else if (m_lightDir.y >= 9.f)
-    {
-        bounce = false;
-    }
-
-    if (bounce)
-    {
-        m_lightDir.y = Utils::lerp(m_lightDir.y, 10, 0.005f);
-    }
-    else 
-    {
-        m_lightDir.y = Utils::lerp(m_lightDir.y, -10, 0.005f);
-    }
-
-    m_angle+=0.1;
-    Mat4 rotateZ = Matrix::rotate(Utils::degToRad(m_angle), 2);
-    
-    Mat4 rotateY = Matrix::rotate(Utils::degToRad(m_angle), 1);
-    Mat4 rotateX = Matrix::rotate(Utils::degToRad(m_angle), 0);
-    m_rotate = Matrix::multiply(rotateZ, rotateY);
-    m_rotate = Matrix::multiply(m_rotate, rotateX);
-
-    Mat4 model = Matrix::multiply(m_translate, m_rotate);
-    model = Matrix::multiply(model, m_scale);
-    Mat4 mv = Matrix::multiply(m_view, model);
-    Mat4 mvp = Matrix::multiply(m_persp, mv);
-
-    for (const Face& face : m_faces)
-    {
-        std::vector<FaceIndex> fIdx = face.indices;
-        Tri triangle;
-
-        Vec3f normals = Utils::getViewSpaceNormals(mv, m_vtxPositions[fIdx[0].positionIndex], m_vtxPositions[fIdx[1].positionIndex], m_vtxPositions[fIdx[2].positionIndex]);
-        FLOAT intensity = std::max(0.f, Utils::dot(Utils::normalise(normals), Utils::normalise(-m_lightDir)));
-
-        FLOAT invWs[3] = {};
-        Vec2f uvOverWs[3] = {};
-
-        for (UINT i = 0; i < fIdx.size(); i++)
-        {
-            /* m_positions[] (pos) are screen-space positions after the projection multiplication */
-            /* m_vtxPosition[] are always world-space positions as they set when the model loads and got get transformed */
-            Vec3f& pos = m_positions[fIdx[i].positionIndex] = m_vtxPositions[fIdx[i].positionIndex];
-
-            Vec4f proj = Matrix::multiply(mvp, pos);
-
-            //printf("%F\n", proj.w);
-
-            invWs[i] = 1.0f/proj.w;
-            Vec2f uv = m_texCoords[fIdx[i].texCoordIndex];
-
-            uvOverWs[i] = uv * invWs[i];
-
-            if (proj.w != 0.f)
-            {
-                proj.x /= proj.w;
-                proj.y /= proj.w;
-                proj.z /= proj.w;
-            }
-    
-            pos.x = (proj.x + 1) * 0.5f * frame.width;
-            pos.y = (1 - proj.y) * 0.5f * frame.height;
-        }
-
-        triangle.v0.position = m_positions[fIdx[0].positionIndex];
-        triangle.v1.position = m_positions[fIdx[1].positionIndex];
-        triangle.v2.position = m_positions[fIdx[2].positionIndex];
-
-        triangle.v0.texCoords = m_texCoords[fIdx[0].texCoordIndex];
-        triangle.v1.texCoords = m_texCoords[fIdx[1].texCoordIndex];
-        triangle.v2.texCoords = m_texCoords[fIdx[2].texCoordIndex];
-
-        triangle.v0.invW = invWs[0];
-        triangle.v1.invW = invWs[1];
-        triangle.v2.invW = invWs[2];
-
-        triangle.v0.uvOverW = uvOverWs[0];
-        triangle.v1.uvOverW = uvOverWs[1];
-        triangle.v2.uvOverW = uvOverWs[2];
-
-        rasterise(frame, depth, intensity, triangle);
-    }
-}
-
-void Model::boundingBox(const Vec3f& a, const Vec3f& b, const Vec3f& c)
-{
-    FLOAT leftMost = std::min(a.x, std::min(b.x, c.x));
-    FLOAT bottomMost = std::min(a.y, std::min(b.y, c.y));
-    FLOAT rightMost = std::max(a.x, std::max(b.x, c.x));
-    FLOAT topMost = std::max(a.y, std::max(b.y, c.y));
-
-    m_bbMin = { leftMost, bottomMost, 0 };
-    m_bbMax = { rightMost, topMost, 0 };
-}
-
-Vec3f Model::barycentric(const Vec2i& p, const Vec3f& a, const Vec3f& b, const Vec3f& c)
-{
-    Vec3f _p;
-    _p.x = p.x;
-    _p.y = p.y;
-
-    FLOAT denom = ((b.y-c.y)*(a.x-c.x)+(c.x-b.x)*(a.y-c.y));
-    FLOAT w1 = ((b.y-c.y)*(p.x-c.x)+(c.x-b.x)*(_p.y-c.y)) / denom;
-    FLOAT w2 = ((c.y-a.y)*(_p.x-c.x)+(a.x-c.x)*(p.y-c.y)) / denom;
-    FLOAT w3 = 1.0f - w1 - w2;
-
-    return { w1, w2, w3 };
-}
-
-void Model::rasterise(FrameBuffer& frame, FLOAT* depth, FLOAT intensity, const Tri& triangle)
-{
-    const Vec3f& a = triangle.v0.position;
-    const Vec3f& b = triangle.v1.position;
-    const Vec3f& c = triangle.v2.position;
-
-    /* Back-face Culling */
-    Vec3f normals = Utils::getNormals(a, b, c);
-    if (-normals.z <= 0.f)
-    {
-        return;
-    }
-
-    boundingBox(a, b, c);
-
-    Vec2i p;
-    for (p.y = m_bbMin.y; p.y <= m_bbMax.y; p.y++)
-    {
-        for (p.x = m_bbMin.x; p.x <= m_bbMax.x; p.x++)
-        {
-            if (p.x < 0 || p.y < 0 || p.x >= frame.width || p.y >= frame.height)
-            {
-                continue;
-            }
-
-            Vec3f point = barycentric(p, a, b, c);
-            if (point.x >= 0 && point.y >= 0 && point.z >= 0)
-            {
-                FLOAT z = a.z * point.x + b.z * point.y + c.z * point.z;
-                UINT idx = p.x + p.y * frame.width;
-                if (z < depth[idx])
-                {
-                    depth[idx] = z;
-                    frame.pixels[idx] = Utils::applyLighting(texel(triangle, point), intensity);
-                }
+                vertices.emplace_back(vtx);
             }
         }
     }
-}
-
-UINT Model::texel(const Tri& triangle, const Vec3f& weights)
-{
-    /* Perspective-correct interpolation */
-    FLOAT invInterp = weights.x * triangle.v0.invW +
-                      weights.y * triangle.v1.invW +
-                      weights.z * triangle.v2.invW;
-
-    Vec2f uvOverZInterp = triangle.v0.uvOverW * weights.x +
-                          triangle.v1.uvOverW * weights.y +
-                          triangle.v2.uvOverW * weights.z;
-
-    Vec2f finalUV = uvOverZInterp / invInterp;
-
-    INT texX = finalUV.x * (image.size().x - 1);
-    INT texY = finalUV.y * (image.size().y - 1);
-
-    texX = std::clamp(texX, 0, image.size().x - 1);
-    texY = std::clamp(texY, 0, image.size().y - 1);
-
-    return image.pixel(texX + texY * image.size().x);
 }

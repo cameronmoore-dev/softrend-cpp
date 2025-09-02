@@ -6,17 +6,17 @@
 
 Mat4 Matrix::multiply(const Mat4& matA, const Mat4& matB)
 {
-    UINT ar = matA.size();
-    UINT ac = matA[0].size();
+    uint32_t ar = matA.size();
+    uint32_t ac = matA[0].size();
 
-    UINT bc = matB[0].size();
+    uint32_t bc = matB[0].size();
 
     Mat4 result= {};
-    for (UINT row = 0; row < ar; row++)
+    for (uint32_t row = 0; row < ar; row++)
     {
-        for (UINT col = 0; col < bc; col++)
+        for (uint32_t col = 0; col < bc; col++)
         {
-            for (UINT e = 0; e < ac; e++)
+            for (uint32_t e = 0; e < ac; e++)
             {
                 result[row][col] += matA[row][e] * matB[e][col];
             }
@@ -38,29 +38,41 @@ Vec4f Matrix::multiply(const Mat4& mat, const Vec3f& _vec)
     return result;
 }
 
-Mat4 Matrix::perspective(FLOAT fov, FLOAT aspect, FLOAT zNear, FLOAT zFar)
+Vec4f Matrix::multiply(const Mat4& mat, const Vec4f& vec)
+{
+    Vec4f result = {};
+    result.x = vec.x * mat[0][0] + vec.y * mat[0][1] + vec.z * mat[0][2] + mat[0][3];
+    result.y = vec.x * mat[1][0] + vec.y * mat[1][1] + vec.z * mat[1][2] + mat[1][3];
+    result.z = vec.x * mat[2][0] + vec.y * mat[2][1] + vec.z * mat[2][2] + mat[2][3];
+    result.w = vec.x * mat[3][0] + vec.y * mat[3][1] + vec.z * mat[3][2] + mat[3][3];
+
+    return result;
+}
+
+Mat4 Matrix::perspective(float fov, float aspect, float zNear, float zFar)
 {
     Mat4 result = {};
 
-    FLOAT f = 1.f/std::tan(fov/2.f);
-    result[0][0] = f/aspect;
+    float f = 1.f / std::tan(fov * 0.5f);
+    result[0][0] = f / aspect;
     result[1][1] = f;
-    result[2][2] = (zFar + zNear) / (zNear - zFar);
-    result[2][3] = (2*zFar*zNear)/(zNear-zFar);
+    result[2][2] = -(zFar + zNear) / (zFar - zNear);
+    result[2][3] = -(2.f * zFar * zNear) / (zFar - zNear);
     result[3][2] = -1.f;
 
     return result;
 }
 
-Mat4 Matrix::orthographic(INT left, INT right, INT bottom, INT top, FLOAT zNear, FLOAT zFar)
+Mat4 Matrix::orthographic(int32_t left, int32_t right, int32_t bottom, int32_t top, float zNear, float zFar)
 {
-    Mat4 result = identity();
+    Mat4 result = {};
     result[0][0] = 2.f / (right - left);
     result[0][3] = -(right + left) / (right - left);
-    result[1][1] = 2.f / (top - bottom);
+    result[1][1] = -2.f / (top - bottom);
     result[1][3] = -(top + bottom) / (top - bottom);
     result[2][2] = -2.f / (zFar - zNear);
     result[2][3] = -(zFar + zNear) / (zFar - zNear);
+    result[3][3] = 1.f;
 
     return result;
 }
@@ -75,10 +87,12 @@ Mat4 Matrix::translate(const Vec3f& vec)
     return result;
 }
 
-Mat4 Matrix::rotate(FLOAT angle, UINT axis)
+Mat4 Matrix::rotate(float angle, uint32_t axis)
 {
     Mat4 result = identity();
     
+    angle = Utils::degToRad(angle);
+
     //x
     if(axis == 0)
     {
