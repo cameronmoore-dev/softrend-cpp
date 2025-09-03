@@ -41,6 +41,14 @@ struct Vec3f
     const Vec3f operator-(const float& value) const { return { x - value, y - value, z - value }; }
     const Vec3f operator*(const float& value) const { return { x * value, y * value, z * value }; }
     const Vec3f operator/(const float& value) const { return { x / value, y / value, z / value }; }
+
+    const Vec3f operator+=(const Vec3f& rhs) { return { x += rhs.x, y += rhs.y, z += rhs.z }; }
+    const Vec3f operator-=(const Vec3f& rhs) { return { x -= rhs.x, y -= rhs.y, z -= rhs.z }; }
+
+    const Vec3f operator-() const
+    {
+        return { -x, -y, -z };
+    }
 };
 
 struct Vec4f

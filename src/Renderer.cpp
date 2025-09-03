@@ -9,8 +9,10 @@ Renderer::RasterVertex Renderer::calculateScreenSpace(const Vertex& vertex, cons
     Vec4f m = Matrix::multiply(model, vertex.position);
     Vec4f mv = Matrix::multiply(view, m);
     Vec4f clipSpace = Matrix::multiply(projection, mv);
+
+    //printf("%f\n", clipSpace.w);
     
-    if (clipSpace.w != 0)
+    if (clipSpace.w > 0 && clipSpace.z > 0.1f)
     {
         clipSpace.x /= clipSpace.w;
         clipSpace.y /= clipSpace.w;
@@ -19,7 +21,7 @@ Renderer::RasterVertex Renderer::calculateScreenSpace(const Vertex& vertex, cons
 
     Vec3f screenPos;
     screenPos.x = (clipSpace.x + 1) * 0.5f * width;
-    screenPos.y = (1 + clipSpace.y) * 0.5f * height;
+    screenPos.y = (clipSpace.y + 1) * 0.5f * height;
     screenPos.z = clipSpace.z;
 
     rv.screenPos = screenPos;
@@ -96,7 +98,6 @@ Vec3f Renderer::barycentric(const Vec2i& p, const Vec3f& a, const Vec3f& b, cons
 
 uint32_t Renderer::texel(const RasterVertex& v0, const RasterVertex& v1, const RasterVertex& v2, const Image& image, const Vec3f& weights)
 {
-
     /* Perspective-correct interpolation */
 
     float invInterp = v0.inverseZ * weights.x +

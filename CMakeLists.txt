@@ -13,6 +13,7 @@ add_executable(software_renderer EXCLUDE_FROM_ALL
     "src/Model.cpp"    
     "src/Image.cpp"
     "src/Renderer.cpp"
+    "src/Camera.cpp"
     "src/SceneManagement/Scenes/Scene_Cube.cpp"
     "src/SceneManagement/Scenes/Scene_Triangle.cpp"
     "src/SceneManagement/Scenes/Scene_Suzanne.cpp"

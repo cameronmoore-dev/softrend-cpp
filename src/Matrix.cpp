@@ -30,22 +30,20 @@ Vec4f Matrix::multiply(const Mat4& mat, const Vec3f& _vec)
     Vec4f vec = Utils::toVec4(_vec);
 
     Vec4f result = {};
-    result.x = vec.x * mat[0][0] + vec.y * mat[0][1] + vec.z * mat[0][2] + mat[0][3];
-    result.y = vec.x * mat[1][0] + vec.y * mat[1][1] + vec.z * mat[1][2] + mat[1][3];
-    result.z = vec.x * mat[2][0] + vec.y * mat[2][1] + vec.z * mat[2][2] + mat[2][3];
-    result.w = vec.x * mat[3][0] + vec.y * mat[3][1] + vec.z * mat[3][2] + mat[3][3];
-
+    result.x = mat[0][0] * vec.x + mat[0][1] * vec.y + mat[0][2] * vec.z + mat[0][3] * vec.w;
+    result.y = mat[1][0] * vec.x + mat[1][1] * vec.y + mat[1][2] * vec.z + mat[1][3] * vec.w;
+    result.z = mat[2][0] * vec.x + mat[2][1] * vec.y + mat[2][2] * vec.z + mat[2][3] * vec.w;
+    result.w = mat[3][0] * vec.x + mat[3][1] * vec.y + mat[3][2] * vec.z + mat[3][3] * vec.w;
     return result;
 }
 
 Vec4f Matrix::multiply(const Mat4& mat, const Vec4f& vec)
 {
     Vec4f result = {};
-    result.x = vec.x * mat[0][0] + vec.y * mat[0][1] + vec.z * mat[0][2] + mat[0][3];
-    result.y = vec.x * mat[1][0] + vec.y * mat[1][1] + vec.z * mat[1][2] + mat[1][3];
-    result.z = vec.x * mat[2][0] + vec.y * mat[2][1] + vec.z * mat[2][2] + mat[2][3];
-    result.w = vec.x * mat[3][0] + vec.y * mat[3][1] + vec.z * mat[3][2] + mat[3][3];
-
+    result.x = mat[0][0] * vec.x + mat[0][1] * vec.y + mat[0][2] * vec.z + mat[0][3] * vec.w;
+    result.y = mat[1][0] * vec.x + mat[1][1] * vec.y + mat[1][2] * vec.z + mat[1][3] * vec.w;
+    result.z = mat[2][0] * vec.x + mat[2][1] * vec.y + mat[2][2] * vec.z + mat[2][3] * vec.w;
+    result.w = mat[3][0] * vec.x + mat[3][1] * vec.y + mat[3][2] * vec.z + mat[3][3] * vec.w;
     return result;
 }
 
@@ -72,6 +70,33 @@ Mat4 Matrix::orthographic(int32_t left, int32_t right, int32_t bottom, int32_t t
     result[1][3] = -(top + bottom) / (top - bottom);
     result[2][2] = -2.f / (zFar - zNear);
     result[2][3] = -(zFar + zNear) / (zFar - zNear);
+    result[3][3] = 1.f;
+
+    return result;
+}
+
+Mat4 Matrix::lookAt(const Vec3f& pos, const Vec3f& forward, const Vec3f& up)
+{
+    const Vec3f f = Utils::normalise(pos - forward);        /* Local Forward */
+    const Vec3f s = Utils::normalise(Utils::cross(f, up));  /* Local Side */
+    const Vec3f u = Utils::cross(s, f);                     /* Local Up */
+
+    Mat4 result = {};
+    result[0][0] = s.x;
+    result[0][1] = s.y;
+    result[0][2] = s.z;
+    result[0][3] = -Utils::dot(s, pos);
+
+    result[1][0] = u.x;
+    result[1][1] = u.y;
+    result[1][2] = u.z;
+    result[1][3] = -Utils::dot(u, pos);
+
+    result[2][0] = -f.x;
+    result[2][1] = -f.y;
+    result[2][2] = -f.z;
+    result[2][3] = Utils::dot(f, pos);
+
     result[3][3] = 1.f;
 
     return result;

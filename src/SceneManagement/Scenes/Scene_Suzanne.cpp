@@ -9,10 +9,7 @@ Scene_Suzanne::Scene_Suzanne(Window& window) :
 
 void Scene_Suzanne::start()
 {
-    for (int i = 0; i < m_suzanne.vertices.size(); i++)
-    {
-        m_suzanne.vertices[i].colour = Utils::pcgHash(rand());
-    }
+    m_camera.updateRotation(0, 0);
 
     while (m_window.isOpen())
     {
@@ -26,7 +23,7 @@ void Scene_Suzanne::start()
         auto end = std::chrono::high_resolution_clock::now();
         double duration = std::chrono::duration<double>(end-start).count();
 
-        printf("FPS: %.2f\n", 1.f/duration);
+        //printf("FPS: %.0f\n", 1.f/duration);
     }
 }
 
@@ -43,6 +40,70 @@ void Scene_Suzanne::processInput()
                 {
                     m_window.close();
                 }
+
+                /* A */
+                if (e.keyCode == 0x41)
+                {
+                    m_camera.position += Utils::normalise(Utils::cross(m_camera.forward, m_camera.up));
+                }
+
+                /* D */
+                if (e.keyCode == 0x44)
+                {
+                    m_camera.position -= Utils::normalise(Utils::cross(m_camera.forward, m_camera.up));
+                }
+                /* S */
+                if (e.keyCode == 0x53)
+                {
+                    m_camera.position += m_camera.forward;
+                }
+                /* W */
+                if (e.keyCode == 0x57)
+                {
+                    m_camera.position -= m_camera.forward;
+                }
+
+                if (e.keyCode == 0x45)
+                {
+                    m_camera.updateRotation(10, 0);
+                }
+
+                if (e.keyCode == 0x51)
+                {
+                    m_camera.updateRotation(-10, 0);
+                }
+
+                if (e.keyCode == 0x5A)
+                {
+                    m_camera.updateRotation(0, 10);
+                }
+
+                if (e.keyCode == 0x43)
+                {
+                    m_camera.updateRotation(0, -10);
+                }
+            } break;
+
+            case Event::MouseMove:
+            {
+                // float x = e.x;
+                // float y = e.y;
+
+                // if (firstMouse)
+                // {
+                //     lastMousePosX = x;
+                //     lastMousePosY = y;
+                //     firstMouse = false;
+                //     return;
+                // }
+                
+                // float ox = x - lastMousePosX;
+                // float oy = lastMousePosY - y;
+
+                // lastMousePosX = x;
+                // lastMousePosY = y;
+
+                // m_camera.updateRotation(ox, oy);
             } break;
         }
     }
@@ -50,12 +111,13 @@ void Scene_Suzanne::processInput()
 
 void Scene_Suzanne::update()
 {
-    m_angle+=0.2f;
+    // m_angle+=0.2f;
     
-    m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
-    m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
+    // m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
+    // m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
 
     m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
+    m_view = Matrix::lookAt(m_camera.position, m_camera.position + m_camera.forward, m_camera.up);
 }
 
 void Scene_Suzanne::render()
