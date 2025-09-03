@@ -21,7 +21,7 @@ void Scene_Cube::start()
         auto end = std::chrono::high_resolution_clock::now();
         double duration = std::chrono::duration<double>(end-start).count();
 
-        printf("FPS: %f\n", 1/duration);
+        printf("FPS: %.2f\n", 1.f/duration);
     }
 }
 
@@ -45,11 +45,11 @@ void Scene_Cube::processInput()
 
 void Scene_Cube::update()
 {
-    angle+=0.1f;
+    angle+=0.2f;
     Mat4 translate = Matrix::identity();
     Mat4 scale = Matrix::identity();
-    Mat4 rotation = Matrix::multiply(Matrix::rotate(Utils::degToRad(angle), 0), Matrix::rotate(Utils::degToRad(angle), 1));
-    rotation = Matrix::multiply(rotation, Matrix::rotate(Utils::degToRad(angle), 2));
+    Mat4 rotation = Matrix::multiply(Matrix::rotate(angle, 0), Matrix::rotate(angle, 1));
+    //Mat4 rotation = Matrix::rotate(angle, 1);
 
     m_model = Matrix::multiply(Matrix::multiply(translate, rotation), scale);
 }
@@ -58,7 +58,7 @@ void Scene_Cube::render()
 {
     m_window.clear(0x000000);
 
-    m_window.draw(m_cube.vertices, m_texture, m_model, m_view, m_projection);
+    m_window.draw(m_cube.vertices, &m_texture, m_model, m_view, m_projection);
 
     m_window.display();
 }

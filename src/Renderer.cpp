@@ -2,29 +2,77 @@
 
 #include <algorithm>
 
-void Renderer::calculateClipSpace(const Vec3f& vertexPos, const Mat4& model, const Mat4& view, const Mat4& projection)
+Renderer::RasterVertex Renderer::calculateScreenSpace(const Vertex& vertex, const Mat4& model, const Mat4& view, const Mat4& projection, const uint32_t width, const uint32_t height)
 {
-    Mat4 mv = Matrix::multiply(view, model);
-    Mat4 mvp = Matrix::multiply(projection, mv);
-    clipSpace = Matrix::multiply(mvp, vertexPos);
+    RasterVertex rv;
 
-    oneOverZ = 1/clipSpace.w;
-}
+    Vec4f m = Matrix::multiply(model, vertex.position);
+    Vec4f mv = Matrix::multiply(view, m);
+    Vec4f clipSpace = Matrix::multiply(projection, mv);
 
-void Renderer::perspectiveDivision()
-{
-    if(clipSpace.w != 0)
+    //printf("%f\n", clipSpace.w);
+    
+    if (clipSpace.w > 0 && clipSpace.z > 0.1f)
     {
         clipSpace.x /= clipSpace.w;
         clipSpace.y /= clipSpace.w;
         clipSpace.z /= clipSpace.w;
     }
+
+    Vec3f screenPos;
+    screenPos.x = (clipSpace.x + 1) * 0.5f * width;
+    screenPos.y = (clipSpace.y + 1) * 0.5f * height;
+    screenPos.z = clipSpace.z;
+
+    rv.screenPos = screenPos;
+    rv.inverseZ = 1.f / clipSpace.w;
+    rv.uvOverZ = vertex.texCoords * rv.inverseZ;
+    rv.colour = vertex.colour;
+    return rv;
 }
 
-void Renderer::calculateScreenSpace(Vec3f& vertexPos, const Vec2i& windowSize)
+void Renderer::rasterise(std::vector<uint32_t>& backBuffer, std::vector<float>& depthBuffer, float intensity, const RasterVertex& v0, const RasterVertex& v1, const RasterVertex& v2, uint32_t width, uint32_t height, Image* image)
 {
-    vertexPos.x = (clipSpace.x + 1) * 0.5f * windowSize.x;
-    vertexPos.y = (1 - clipSpace.y) * 0.5f * windowSize.y;
+    /* Back-face Culling */
+    float winding = edgeFunction(v0.screenPos, v1.screenPos, v2.screenPos);
+    if (winding <= 0)
+    {
+        return;
+    }
+
+    boundingBox(v0.screenPos, v1.screenPos, v2.screenPos);
+
+    Vec2i p;
+    for (p.y = m_bbMin.y; p.y <= m_bbMax.y; p.y++)
+    {
+        for (p.x = m_bbMin.x; p.x <= m_bbMax.x; p.x++)
+        {
+            if (p.x < 0 || p.y < 0 || p.x >= width || p.y >= height)
+            {
+                continue;
+            }
+
+            Vec3f point = barycentric(p, v0.screenPos, v1.screenPos, v2.screenPos);
+            if (point.x >= 0 && point.y >= 0 && point.z >= 0)
+            {
+                float z = v0.screenPos.z * point.x + v1.screenPos.z * point.y + v2.screenPos.z * point.z;
+                uint32_t idx = p.x + p.y * width;
+                if (z < depthBuffer[idx])
+                {
+                    depthBuffer[idx] = z;
+
+                    if (image)
+                    {
+                        backBuffer[idx] = texel(v0, v1, v2, *image, point);
+                    }
+                    else
+                    {
+                        backBuffer[idx] = Utils::rasteriseColour(v0.colour, v1.colour, v2.colour, point.x, point.y, point.z);
+                    }
+                }
+            }
+        }
+    }
 }
 
 void Renderer::boundingBox(const Vec3f& a, const Vec3f& b, const Vec3f& c)
@@ -48,56 +96,17 @@ Vec3f Renderer::barycentric(const Vec2i& p, const Vec3f& a, const Vec3f& b, cons
     return { w1, w2, w3 };
 }
 
-void Renderer::rasterise(std::vector<uint32_t>& backBuffer, std::vector<float>& depthBuffer, float intensity, const Vertex& v0, const Vertex& v1, const Vertex& v2, uint32_t width, uint32_t height, const Image& image)
+uint32_t Renderer::texel(const RasterVertex& v0, const RasterVertex& v1, const RasterVertex& v2, const Image& image, const Vec3f& weights)
 {
-    /* Back-face Culling */
-    Vec3f normals = Utils::getNormals(v0.position, v1.position, v2.position);
-    if (-normals.z <= 0.f)
-    {
-        return;
-    }
-
-    boundingBox(v0.position, v1.position, v2.position);
-
-    Vec2i p;
-    for (p.y = m_bbMin.y; p.y <= m_bbMax.y; p.y++)
-    {
-        for (p.x = m_bbMin.x; p.x <= m_bbMax.x; p.x++)
-        {
-            if (p.x < 0 || p.y < 0 || p.x >= width || p.y >= height)
-            {
-                continue;
-            }
-
-            Vec3f point = barycentric(p, v0.position, v1.position, v2.position);
-            if (point.x >= 0 && point.y >= 0 && point.z >= 0)
-            {
-                float z = v0.position.z * point.x + v1.position.z * point.y + v2.position.z * point.z;
-                uint32_t idx = p.x + p.y * width;
-                if (z < depthBuffer[idx])
-                {
-                    depthBuffer[idx] = z;
-                    backBuffer[idx] = texel(v0, v1, v2, image, point);
-                }
-            }
-        }
-    }
-}
-
-UINT Renderer::texel(const Vertex& v0, const Vertex& v1, const Vertex& v2, const Image& image, const Vec3f& weights)
-{
-    Vec2f v0OverZ = v0.texCoords * oneOverZ;
-    Vec2f v1OverZ = v1.texCoords * oneOverZ;
-    Vec2f v2OverZ = v2.texCoords * oneOverZ;
-
     /* Perspective-correct interpolation */
-    float invInterp = weights.x * oneOverZ +
-                      weights.y * oneOverZ +
-                      weights.z * oneOverZ;
 
-    Vec2f uvOverZInterp = v0OverZ * weights.x +
-    v1OverZ * weights.y +
-    v2OverZ * weights.z;
+    float invInterp = v0.inverseZ * weights.x +
+                      v1.inverseZ * weights.y +
+                      v2.inverseZ * weights.z;
+
+    Vec2f uvOverZInterp = v0.uvOverZ * weights.x +
+                          v1.uvOverZ * weights.y +
+                          v2.uvOverZ * weights.z;
 
     Vec2f finalUV = uvOverZInterp / invInterp;
 
@@ -108,4 +117,9 @@ UINT Renderer::texel(const Vertex& v0, const Vertex& v1, const Vertex& v2, const
     texY = std::clamp(texY, 0, image.size().y - 1);
 
     return image.pixel(texX + texY * image.size().x);
+}
+
+float Renderer::edgeFunction(const Vec3f& a, const Vec3f& b, const Vec3f& c)
+{
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }

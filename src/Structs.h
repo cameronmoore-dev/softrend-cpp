@@ -41,6 +41,14 @@ struct Vec3f
     const Vec3f operator-(const float& value) const { return { x - value, y - value, z - value }; }
     const Vec3f operator*(const float& value) const { return { x * value, y * value, z * value }; }
     const Vec3f operator/(const float& value) const { return { x / value, y / value, z / value }; }
+
+    const Vec3f operator+=(const Vec3f& rhs) { return { x += rhs.x, y += rhs.y, z += rhs.z }; }
+    const Vec3f operator-=(const Vec3f& rhs) { return { x -= rhs.x, y -= rhs.y, z -= rhs.z }; }
+
+    const Vec3f operator-() const
+    {
+        return { -x, -y, -z };
+    }
 };
 
 struct Vec4f
@@ -50,16 +58,8 @@ struct Vec4f
 
 struct Vertex
 {
-    Vec3f wldPos;
     Vec3f position;
+    Vec3f normals;
     Vec2f texCoords;
     uint32_t colour;
-
-    float invW;
-    Vec2f uvOverW;
-};
-
-struct Face
-{
-    std::vector<Vertex> vertices;
 };

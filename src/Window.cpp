@@ -181,23 +181,17 @@ void Window::clear(uint32_t clearColour)
     std::fill(m_depthBuffer.begin(), m_depthBuffer.end(), INFINITY);
 }
 
-void Window::draw(std::vector<Vertex>& vertices, Image& texture, const Mat4& model, const Mat4& view, const Mat4& projection)
+void Window::draw(std::vector<Vertex>& vertices, Image* texture, const Mat4& model, const Mat4& view, const Mat4& projection)
 {
+    std::vector<Renderer::RasterVertex> rvs;
     for (Vertex& v : vertices)
     {
-        v.position = v.wldPos;
-        m_renderer.calculateClipSpace(v.position, model, view, projection);
-
-        // v.invW = 1/clip.w;
-        // v.uvOverW = v.texCoords * v.invW;
-
-        m_renderer.perspectiveDivision();
-        m_renderer.calculateScreenSpace(v.position, Vec2i{(int32_t)m_width, (int32_t)m_height});
+        rvs.emplace_back(m_renderer.calculateScreenSpace(v, model, view, projection, m_width, m_height));
     }
 
-    for (uint32_t i = 0; i < vertices.size(); i+=3)
+    for (uint32_t i = 0; i < rvs.size(); i+=3)
     {
-        m_renderer.rasterise(m_backBuffer, m_depthBuffer, 1.f, vertices[i], vertices[i+1], vertices[i+2], m_width, m_height, texture);
+        m_renderer.rasterise(m_backBuffer, m_depthBuffer, 1.f, rvs[i], rvs[i+1], rvs[i+2], m_width, m_height, texture);
     }
 }
 
@@ -213,8 +207,6 @@ void Window::display()
     // {
     //     nextBuffer.pixels[i] = Utils::pcgHash(rand());
     // }
-
-    // tri.draw(nextBuffer);
 
     m_backBuffer[m_width / 2 + m_height / 2 * m_width] = 0xff00ff;
 

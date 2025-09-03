@@ -13,8 +13,6 @@
 #include "Renderer.h"
 #include "Events.h"
 #include "Structs.h"
-#include "Image.h"
-#include "Matrix.h"
 
 class Window
 {
@@ -52,7 +50,7 @@ public:
     void pollMessages();
     bool pollEvents(Event& event);
     void clear(uint32_t clearColour);
-    void draw(std::vector<Vertex>& vertices, Image& texture, const Mat4& model, const Mat4& view, const Mat4& projection);
+    void draw(std::vector<Vertex>& vertices, Image* texture, const Mat4& model, const Mat4& view, const Mat4& projection);
     void display();
 
     void setWindowTitle(const std::string& title);
@@ -79,10 +77,6 @@ private:
     bool m_isOpen = false;
 
     // int32_t p = 0;
-
-    // Triangle tri{{-160, 120, -1.f, 0xff0000},
-    //              {0, -120, -1.f, 0x00ff00},
-    //              {160, 120, -1.f, 0x0000ff}};
 
 private:
     LPCWSTR className() const { return L"WindowClassName"; }

@@ -21,8 +21,7 @@ void Model::loadModel(const std::string& dir)
         std::cerr << "ERROR::MODEL::failed to open file!" << std::endl;
         return;
     }
-
-    std::vector<Vec3f> wldPositions;
+    
     std::vector<Vec3f> positions;
     std::vector<Vec2f> texCoords;
     std::vector<Vec3f> normals;
@@ -44,7 +43,6 @@ void Model::loadModel(const std::string& dir)
             Vec3f v;
             s_stream >> v.x >> v.y >> v.z;
             positions.emplace_back(v);
-            wldPositions.emplace_back(v);
         }
 
         /* Texture Coord */
@@ -66,7 +64,6 @@ void Model::loadModel(const std::string& dir)
         /* Faces */
         else if (prefix == "f")
         {
-            Face face;
             std::string vtxStr;
             while (s_stream >> vtxStr)
             {
@@ -95,7 +92,6 @@ void Model::loadModel(const std::string& dir)
                     v = vtxStr;
                 }
 
-                vtx.wldPos = wldPositions[std::stoi(v) - 1];
                 vtx.position = positions[std::stoi(v) - 1];
                 vtx.texCoords = texCoords[std::stoi(t) - 1];
 
