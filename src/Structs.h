@@ -28,6 +28,11 @@ struct Vec2f
     const Vec2f operator/(const float& value) const { return { x / value, y / value }; }
 };
 
+struct Vec4f
+{
+    float x, y, z, w;
+};
+
 struct Vec3f
 {
     float x, y, z;
@@ -44,6 +49,8 @@ struct Vec3f
 
     const Vec3f operator+=(const Vec3f& rhs) { return { x += rhs.x, y += rhs.y, z += rhs.z }; }
     const Vec3f operator-=(const Vec3f& rhs) { return { x -= rhs.x, y -= rhs.y, z -= rhs.z }; }
+    
+    const Vec3f operator/=(const float& rhs) { return { x /= rhs, y /= rhs, z /= rhs }; }
 
     const Vec3f operator-() const
     {
@@ -51,10 +58,7 @@ struct Vec3f
     }
 };
 
-struct Vec4f
-{
-    float x, y, z, w;
-};
+
 
 struct Vertex
 {

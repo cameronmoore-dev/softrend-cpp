@@ -19,7 +19,12 @@ struct Event
     {
         int keyCode;
         int mouseButton;
-        int x, y;
+        struct
+        {
+            int x;
+            int y;
+        } mousePos;
+        
         int scrollDelta;
     };
 };

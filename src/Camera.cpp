@@ -8,7 +8,7 @@ Camera::Camera()
 {
 }
 
-void Camera::updateRotation(float xOffset, float yOffset)
+void Camera::updateRotation(int xOffset, int yOffset)
 {
     m_yaw += xOffset * m_sensitivity;
     m_pitch += yOffset * m_sensitivity;
@@ -24,6 +24,39 @@ void Camera::updateRotation(float xOffset, float yOffset)
     dir.z = std::sin(rad_yaw) * std::cos(rad_pitch);
 
     forward = Utils::normalise(dir);
+}
 
-    printf("forward: %f, %f, %f\n", forward.x, forward.y, forward.z);
+void Camera::updateMovement()
+{
+    Vec3f worldUp{ 0, 1, 0 };
+
+    if (isMovingForward)
+    {
+        position -= forward * m_sensitivity;
+    }
+
+    else if (isMovingBackward)
+    {
+        position += forward * m_sensitivity;
+    }
+
+    if (isMovingLeft)
+    {
+        position += Utils::normalise(Utils::cross(forward, worldUp)) * m_sensitivity;
+    }
+
+    else if (isMovingRight)
+    {
+        position -= Utils::normalise(Utils::cross(forward, worldUp)) * m_sensitivity;
+    }
+
+    if (isMovingUp)
+    {
+        position += worldUp * m_sensitivity;
+    }
+
+    else if (isMovingDown)
+    {
+        position -= worldUp * m_sensitivity;
+    }
 }

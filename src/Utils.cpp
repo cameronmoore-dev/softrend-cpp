@@ -83,6 +83,11 @@ const Vec3f Utils::normalise(const Vec3f& vec)
         return { vec.x / mag, vec.y / mag, vec.z / mag };
 }
 
+const float Utils::length(const Vec3f& normal)
+{
+    return sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+}
+
 const Vec3f Utils::cross(const Vec3f& a, const Vec3f& b)
 {
     Vec3f c;

@@ -63,6 +63,7 @@ private:
     BITMAPINFO  m_frameInfo;
     HBITMAP     m_bitmapHandle = 0;
     HDC         m_deviceContext = 0;
+    RECT        m_rect;
 
     uint32_t*               m_frontBuffer = nullptr;
     std::vector<uint32_t>   m_backBuffer;
@@ -71,18 +72,19 @@ private:
     Renderer                m_renderer;
     std::queue<Event>       m_events;
 
+    int xorigin = 0;
+    int yorigin = 0;
     uint32_t m_width = 0;
     uint32_t m_height = 0;
 
     bool m_isOpen = false;
-
-    // int32_t p = 0;
 
 private:
     LPCWSTR className() const { return L"WindowClassName"; }
     LRESULT handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam);
     
     void setup();
+    void registerInputDevices();
 
     void onWindowResize(LPARAM lParam);
 };

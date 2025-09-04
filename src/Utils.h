@@ -16,6 +16,7 @@ public:
     static const Vec3f getViewSpaceNormals(const Mat4& mv, const Vec3f& a, const Vec3f& b, const Vec3f& c);
     static const Vec3f getNormals(const Vec3f& a, const Vec3f& b, const Vec3f& c);
     static const Vec3f normalise(const Vec3f& vec);
+    static const float length(const Vec3f& normal);
     static const Vec3f cross(const Vec3f& a, const Vec3f& b);
     static const float dot(const Vec3f& a, const Vec3f& b);
 

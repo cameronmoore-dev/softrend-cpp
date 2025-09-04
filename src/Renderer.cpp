@@ -1,34 +1,63 @@
 #include "Renderer.h"
 
 #include <algorithm>
+#include <iostream>
 
-Renderer::RasterVertex Renderer::calculateScreenSpace(const Vertex& vertex, const Mat4& model, const Mat4& view, const Mat4& projection, const uint32_t width, const uint32_t height)
+Renderer::Triangle Renderer::modelSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2, const Mat4& model)
 {
-    RasterVertex rv;
+    Renderer::Triangle triangle{ v0, v1, v2 };
 
-    Vec4f m = Matrix::multiply(model, vertex.position);
-    Vec4f mv = Matrix::multiply(view, m);
-    Vec4f clipSpace = Matrix::multiply(projection, mv);
+    triangle.v0.position = Utils::toVec3(Matrix::multiply(model, v0.position));
+    triangle.v1.position = Utils::toVec3(Matrix::multiply(model, v1.position));
+    triangle.v2.position = Utils::toVec3(Matrix::multiply(model, v2.position));
 
-    //printf("%f\n", clipSpace.w);
-    
-    if (clipSpace.w > 0 && clipSpace.z > 0.1f)
+    return triangle;
+}
+
+std::vector<Renderer::Triangle> Renderer::viewSpace(const Renderer::Triangle& tri, const Mat4& view)
+{
+    Renderer::Triangle transformed = tri;
+    transformed.v0.position = Utils::toVec3(Matrix::multiply(view, tri.v0.position));
+    transformed.v1.position = Utils::toVec3(Matrix::multiply(view, tri.v1.position));
+    transformed.v2.position = Utils::toVec3(Matrix::multiply(view, tri.v2.position));
+
+    std::vector<Renderer::Triangle> clippedTris;
+    std::vector<Vertex> clipped;
+    int triCount = nearPlaneClip(clipped, transformed.v0, transformed.v1, transformed.v2, 0.5f);
+
+    for (uint8_t i = 0; i < triCount; i++)
     {
-        clipSpace.x /= clipSpace.w;
-        clipSpace.y /= clipSpace.w;
-        clipSpace.z /= clipSpace.w;
+        clippedTris.emplace_back(Renderer::Triangle{
+            clipped[i * 3 + 0],
+            clipped[i * 3 + 1],
+            clipped[i * 3 + 2]
+        });
     }
+
+    return clippedTris;
+}
+
+bool Renderer::calculateScreenSpace(Renderer::RasterVertex& rv, const Vertex& vertex, const Mat4& projection, const uint32_t width, const uint32_t height)
+{
+    Vec4f clipSpace = Matrix::multiply(projection, vertex.position);
+
+    //printf("%f, %f, %f, %f\n", clipSpace.x, clipSpace.y, clipSpace.z, clipSpace.w);
+    clipSpace.x /= clipSpace.w;
+    clipSpace.y /= clipSpace.w;
+    clipSpace.z /= clipSpace.w;
 
     Vec3f screenPos;
     screenPos.x = (clipSpace.x + 1) * 0.5f * width;
     screenPos.y = (clipSpace.y + 1) * 0.5f * height;
     screenPos.z = clipSpace.z;
 
+    //printf("%f, %f, %f\n", screenPos.x, screenPos.y, screenPos.z);
+
     rv.screenPos = screenPos;
     rv.inverseZ = 1.f / clipSpace.w;
     rv.uvOverZ = vertex.texCoords * rv.inverseZ;
     rv.colour = vertex.colour;
-    return rv;
+    return true;
 }
 
 void Renderer::rasterise(std::vector<uint32_t>& backBuffer, std::vector<float>& depthBuffer, float intensity, const RasterVertex& v0, const RasterVertex& v1, const RasterVertex& v2, uint32_t width, uint32_t height, Image* image)
@@ -122,4 +151,149 @@ uint32_t Renderer::texel(const RasterVertex& v0, const RasterVertex& v1, const R
 float Renderer::edgeFunction(const Vec3f& a, const Vec3f& b, const Vec3f& c)
 {
     return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+}
+
+Vertex Renderer::interpolate(const Vertex& a, const Vertex& b, float t)
+{
+    Vertex out;
+    out.position = a.position + (b.position - a.position) * t;
+    out.texCoords = a.texCoords + (b.texCoords - a.texCoords) * t;
+
+    return out;
+}
+
+int Renderer::nearPlaneClip(std::vector<Vertex>& out, const Vertex& a, const Vertex& b, const Vertex& c, float zNear)
+{
+    const Vertex in[3] = { a, b, c };
+    bool inside[3] = { a.position.z <= -zNear, b.position.z <= -zNear, c.position.z <= -zNear };
+
+    int inCount = inside[0] + inside[1] + inside[2];
+
+    if(inCount == 0) return 0;
+
+    if (inCount == 3)
+    {
+        out.emplace_back(a);
+        out.emplace_back(b);
+        out.emplace_back(c);
+        return 1;
+    }
+
+    Vertex inV[2];
+    Vertex outV;
+    if (inCount == 1)
+    {
+        int inIdx = inside[0] ? 0 : inside[1] ? 1 : 2;
+        int outIdx1 = (inIdx + 1) % 3;
+        int outIdx2 = (inIdx + 2) % 3;
+
+        const Vertex& A = in[inIdx];
+        const Vertex& B = in[outIdx1];
+        const Vertex& C = in[outIdx2];
+
+        float tAB = (-zNear - A.position.z) / (B.position.z - A.position.z);
+        float tAC = (-zNear - A.position.z) / (C.position.z - A.position.z);
+
+        Vertex clipped1 = interpolate(A, B, tAB);
+        Vertex clipped2 = interpolate(A, C, tAC);
+
+        out.emplace_back(A);
+        out.emplace_back(clipped1);
+        out.emplace_back(clipped2);
+        return 1;
+    }
+
+    if (inCount == 2)
+    {
+        int outIdx = !inside[0] ? 0 : (!inside[1] ? 1 : 2);
+        int inIdx1 = (outIdx + 1) % 3;
+        int inIdx2 = (outIdx + 2) % 3;
+
+        const Vertex& A = in[inIdx1];
+        const Vertex& B = in[inIdx2];
+        const Vertex& C = in[outIdx];
+
+        float tAC = (-zNear - A.position.z) / (C.position.z - A.position.z);
+        float tBC = (-zNear - B.position.z) / (C.position.z - B.position.z);
+
+        Vertex clippedA = interpolate(A, C, tAC);
+        Vertex clippedB = interpolate(B, C, tBC);
+
+        out.emplace_back(A);
+        out.emplace_back(B);
+        out.emplace_back(clippedA);
+
+        out.emplace_back(B);
+        out.emplace_back(clippedB);
+        out.emplace_back(clippedA);
+        return 2;
+    }
+
+    return 0;
+}
+
+std::array<Renderer::Plane, 6> Renderer::extractFrustrumPlanes(const Mat4& vp)
+{
+    std::array<Plane, 6> planes;
+
+    /* Left */
+    planes[0].normal.x = vp[0][3] + vp[0][0];
+    planes[0].normal.y = vp[1][3] + vp[1][0];
+    planes[0].normal.z = vp[2][3] + vp[2][0];
+    planes[0].distance = vp[3][3] + vp[3][0];
+
+    // Right
+    planes[1].normal.x = vp[0][3] - vp[0][0];
+    planes[1].normal.y = vp[1][3] - vp[1][0];
+    planes[1].normal.z = vp[2][3] - vp[2][0];
+    planes[1].distance = vp[3][3] - vp[3][0];
+
+    // Bottom
+    planes[2].normal.x = vp[0][3] + vp[0][1];
+    planes[2].normal.y = vp[1][3] + vp[1][1];
+    planes[2].normal.z = vp[2][3] + vp[2][1];
+    planes[2].distance = vp[3][3] + vp[3][1];
+
+    // Top
+    planes[3].normal.x = vp[0][3] - vp[0][1];
+    planes[3].normal.y = vp[1][3] - vp[1][1];
+    planes[3].normal.z = vp[2][3] - vp[2][1];
+    planes[3].distance = vp[3][3] - vp[3][1];
+
+    // Near
+    planes[4].normal.x = vp[0][3] + vp[0][2];
+    planes[4].normal.y = vp[1][3] + vp[1][2];
+    planes[4].normal.z = vp[2][3] + vp[2][2];
+    planes[4].distance = vp[3][3] + vp[3][2];
+
+    // Far
+    planes[5].normal.x = vp[0][3] - vp[0][2];
+    planes[5].normal.y = vp[1][3] - vp[1][2];
+    planes[5].normal.z = vp[2][3] - vp[2][2];
+    planes[5].distance = vp[3][3] - vp[3][2];
+
+    for (Plane& p : planes)
+    {
+        float length = Utils::length(p.normal);
+        //printf("%f\n", length);
+        p.normal /= length;
+        p.distance /= length;
+
+        //printf("%f\n", p.distance);
+    }
+
+    return planes;
+}
+
+bool Renderer::isSphereInsideFrustrum(const Vec3f& centre, float radius, const std::array<Plane, 6>& planes)
+{
+    for (const Plane& p : planes)
+    {
+        if (p.distanceToPoint(centre) < -radius)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
