@@ -9,10 +9,8 @@
 #include <vector>
 #include <queue>
 #include <string>
-
 #include <chrono>
 
-#include "Renderer.h"
 #include "Events.h"
 #include "Structs.h"
 
@@ -28,6 +26,8 @@ namespace
 
 class Window
 {
+    friend class Renderer;
+
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         Window* wnd = nullptr;
@@ -62,7 +62,6 @@ public:
     void pollMessages();
     bool pollEvents(Event& event);
     void clear(uint32_t clearColour);
-    void draw(std::vector<Vertex>& vertices, Image* texture, const Mat4& model, const Mat4& view, const Mat4& projection);
     void display();
 
     void setWindowTitle(const std::string& title);
@@ -80,8 +79,7 @@ private:
     uint32_t*               m_frontBuffer = nullptr;
     std::vector<uint32_t>   m_backBuffer;
     std::vector<float>      m_depthBuffer;
-
-    Renderer                m_renderer;
+    
     std::queue<Event>       m_events;
 
     int xorigin = 0;

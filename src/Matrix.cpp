@@ -61,7 +61,7 @@ Mat4 Matrix::perspective(float fov, float aspect, float zNear, float zFar)
     return result;
 }
 
-Mat4 Matrix::orthographic(int32_t left, int32_t right, int32_t bottom, int32_t top, float zNear, float zFar)
+Mat4 Matrix::orthographic(int32_t left, int32_t top, int32_t right, int32_t bottom, float zNear, float zFar)
 {
     Mat4 result = {};
     result[0][0] = 2.f / (right - left);

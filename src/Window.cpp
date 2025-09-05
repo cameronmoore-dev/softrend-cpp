@@ -220,48 +220,6 @@ void Window::clear(uint32_t clearColour)
     std::fill(m_depthBuffer.begin(), m_depthBuffer.end(), INFINITY);
 }
 
-void Window::draw(std::vector<Vertex>& vertices, Image* texture, const Mat4& model, const Mat4& view, const Mat4& projection)
-{
-    SetCursorPos(m_rect.right * 0.5f, m_rect.bottom * 0.5f);
-
-    Vec3f centre{ 0, 0, 0 };
-    float radius = 2.5f;
-
-    Vec3f viewCentre = Utils::toVec3(Matrix::multiply(view, centre));
-
-    std::array<Renderer::Plane, 6> planes = m_renderer.extractFrustrumPlanes(Matrix::multiply(projection, view));
-
-    if (!m_renderer.isSphereInsideFrustrum(viewCentre, radius, planes))
-    {
-        return;
-    }
-
-    std::vector<Renderer::RasterVertex> rvs;
-    for (uint32_t i = 0; i < vertices.size(); i+=3)
-    {
-        Renderer::Triangle t = m_renderer.modelSpace(vertices[i], vertices[i+1], vertices[i+2], model);
-        std::vector<Renderer::Triangle> clippedTris = m_renderer.viewSpace(t, view);
-        for (Renderer::Triangle& tr : clippedTris)
-        {
-            Renderer::RasterVertex rv0, rv1, rv2;
-            if (
-                m_renderer.calculateScreenSpace(rv0, tr.v0, projection, m_width, m_height) &&
-                m_renderer.calculateScreenSpace(rv1, tr.v1, projection, m_width, m_height) &&
-                m_renderer.calculateScreenSpace(rv2, tr.v2, projection, m_width, m_height))
-            {
-                rvs.emplace_back(rv0);
-                rvs.emplace_back(rv1);
-                rvs.emplace_back(rv2);
-            }
-        }
-    }
-
-    for (uint32_t i = 0; i < rvs.size(); i+=3)
-    {
-        m_renderer.rasterise(m_backBuffer, m_depthBuffer, 1.f, rvs[i], rvs[i+1], rvs[i+2], m_width, m_height, texture);
-    }
-}
-
 void Window::display()
 {
     PAINTSTRUCT paint;

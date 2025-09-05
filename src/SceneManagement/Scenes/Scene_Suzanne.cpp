@@ -17,7 +17,7 @@ void Scene_Suzanne::start()
         double current = getTimeSeconds();
         m_dt = current-previous;
         previous = current;
-        
+
         processInput();
         update();
         render();
@@ -133,14 +133,14 @@ void Scene_Suzanne::update()
     m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
 
     m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
-    m_view = Matrix::lookAt(m_camera.position, m_camera.position + m_camera.forward, m_camera.up);
+    m_camera.updateView();
 }
 
 void Scene_Suzanne::render()
 {
     m_window.clear(0x111111);
 
-    m_window.draw(m_suzanne.vertices, &m_texture, m_model, m_view, m_projection);
+    m_renderer.draw(m_suzanne.vertices, &m_texture, m_camera, m_model);
 
     m_window.display();
 }
