@@ -10,9 +10,21 @@
 #include <queue>
 #include <string>
 
+#include <chrono>
+
 #include "Renderer.h"
 #include "Events.h"
 #include "Structs.h"
+
+namespace
+{
+    double getTimeSeconds()
+    {
+        auto now = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> time = now.time_since_epoch();
+        return time.count();
+    }
+}
 
 class Window
 {

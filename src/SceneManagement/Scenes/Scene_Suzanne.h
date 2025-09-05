@@ -35,4 +35,6 @@ private:
     Mat4 m_scale = Matrix::identity();
 
     float m_angle = 0.f;
+
+    double m_dt = 0.f;
 };

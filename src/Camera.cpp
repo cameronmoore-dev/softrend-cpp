@@ -8,10 +8,10 @@ Camera::Camera()
 {
 }
 
-void Camera::updateRotation(int xOffset, int yOffset)
+void Camera::updateRotation(int xOffset, int yOffset, double dt)
 {
-    m_yaw += xOffset * m_sensitivity;
-    m_pitch += yOffset * m_sensitivity;
+    m_yaw += xOffset * m_sensitivity * dt;
+    m_pitch += yOffset * m_sensitivity * dt;
 
     m_pitch = std::clamp(m_pitch, -89.f, 89.f);
 
@@ -26,37 +26,37 @@ void Camera::updateRotation(int xOffset, int yOffset)
     forward = Utils::normalise(dir);
 }
 
-void Camera::updateMovement()
+void Camera::updateMovement(double dt)
 {
     Vec3f worldUp{ 0, 1, 0 };
 
     if (isMovingForward)
     {
-        position -= forward * m_sensitivity;
+        position -= forward * m_cameraSpeed * dt;
     }
 
     else if (isMovingBackward)
     {
-        position += forward * m_sensitivity;
+        position += forward * m_cameraSpeed * dt;
     }
 
     if (isMovingLeft)
     {
-        position += Utils::normalise(Utils::cross(forward, worldUp)) * m_sensitivity;
+        position += Utils::normalise(Utils::cross(forward, worldUp)) * m_cameraSpeed * dt;
     }
 
     else if (isMovingRight)
     {
-        position -= Utils::normalise(Utils::cross(forward, worldUp)) * m_sensitivity;
+        position -= Utils::normalise(Utils::cross(forward, worldUp)) * m_cameraSpeed * dt;
     }
 
     if (isMovingUp)
     {
-        position += worldUp * m_sensitivity;
+        position += worldUp * m_cameraSpeed * dt;
     }
 
     else if (isMovingDown)
     {
-        position -= worldUp * m_sensitivity;
+        position -= worldUp * m_cameraSpeed * dt;
     }
 }

@@ -41,7 +41,6 @@ bool Renderer::calculateScreenSpace(Renderer::RasterVertex& rv, const Vertex& ve
 {
     Vec4f clipSpace = Matrix::multiply(projection, vertex.position);
 
-    //printf("%f, %f, %f, %f\n", clipSpace.x, clipSpace.y, clipSpace.z, clipSpace.w);
     clipSpace.x /= clipSpace.w;
     clipSpace.y /= clipSpace.w;
     clipSpace.z /= clipSpace.w;
@@ -50,8 +49,6 @@ bool Renderer::calculateScreenSpace(Renderer::RasterVertex& rv, const Vertex& ve
     screenPos.x = (clipSpace.x + 1) * 0.5f * width;
     screenPos.y = (clipSpace.y + 1) * 0.5f * height;
     screenPos.z = clipSpace.z;
-
-    //printf("%f, %f, %f\n", screenPos.x, screenPos.y, screenPos.z);
 
     rv.screenPos = screenPos;
     rv.inverseZ = 1.f / clipSpace.w;
@@ -275,11 +272,8 @@ std::array<Renderer::Plane, 6> Renderer::extractFrustrumPlanes(const Mat4& vp)
     for (Plane& p : planes)
     {
         float length = Utils::length(p.normal);
-        //printf("%f\n", length);
         p.normal /= length;
         p.distance /= length;
-
-        //printf("%f\n", p.distance);
     }
 
     return planes;

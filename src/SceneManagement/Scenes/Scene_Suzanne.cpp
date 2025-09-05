@@ -9,21 +9,20 @@ Scene_Suzanne::Scene_Suzanne(Window& window) :
 
 void Scene_Suzanne::start()
 {
-    m_camera.updateRotation(0, 0);
+    //m_camera.updateRotation(0, 0, m_dt);
 
+    double previous = getTimeSeconds();
     while (m_window.isOpen())
     {
-        auto start = std::chrono::high_resolution_clock::now();
-
-        m_window.pollMessages();
+        double current = getTimeSeconds();
+        m_dt = current-previous;
+        previous = current;
+        
         processInput();
         update();
-        render();  
+        render();
 
-        auto end = std::chrono::high_resolution_clock::now();
-        double duration = std::chrono::duration<double>(end-start).count();
-
-        //printf("FPS: %.0f\n", 1.f/duration);
+        printf("FPS: %.0f\n", 1.f/m_dt);
     }
 }
 
@@ -119,12 +118,7 @@ void Scene_Suzanne::processInput()
 
             case Event::MouseMove:
             {
-                m_camera.updateRotation(e.mousePos.x, e.mousePos.y);
-            } break;
-
-            case Event::MouseScroll:
-            {
-                printf("%d\n", e.scrollDelta);
+                m_camera.updateRotation(e.mousePos.x, e.mousePos.y, m_dt);
             } break;
         }
     }
@@ -132,8 +126,8 @@ void Scene_Suzanne::processInput()
 
 void Scene_Suzanne::update()
 {
-    m_camera.updateMovement();
-    m_angle+=0.2f;
+    m_camera.updateMovement(m_dt);
+    m_angle+=20.f * m_dt;
     
     m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
     m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));

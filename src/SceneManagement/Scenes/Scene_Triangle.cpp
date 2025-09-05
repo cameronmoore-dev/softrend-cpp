@@ -24,7 +24,7 @@ void Scene_Triangle::start()
         m_window.pollMessages();
         processInput();
         update();
-        render();  
+        render();
 
         auto end = std::chrono::high_resolution_clock::now();
         double duration = std::chrono::duration<double>(end-start).count();

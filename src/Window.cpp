@@ -203,6 +203,7 @@ bool Window::pollEvents(Event& event)
 {
     if (m_events.empty())
     {
+        pollMessages();
         return false;
     }
 

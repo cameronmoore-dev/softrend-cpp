@@ -8,8 +8,8 @@ class Camera
 public:
     Camera();
 
-    void updateRotation(int xOffset, int yOffset);
-    void updateMovement();
+    void updateRotation(int xOffset, int yOffset, double dt);
+    void updateMovement(double dt);
     
     Vec3f position  { 0, 0, -5 };
     Vec3f up        { 0, 1, 0 };
@@ -25,5 +25,6 @@ public:
 private:
     float m_yaw = -90.f;
     float m_pitch = 0.f;
-    float m_sensitivity = 0.05f;
+    float m_sensitivity = 10.f;
+    float m_cameraSpeed = 5.f;
 };
