@@ -9,8 +9,6 @@ Scene_Suzanne::Scene_Suzanne(Window& window) :
 
 void Scene_Suzanne::start()
 {
-    //m_camera.updateRotation(0, 0, m_dt);
-
     double previous = getTimeSeconds();
     while (m_window.isOpen())
     {

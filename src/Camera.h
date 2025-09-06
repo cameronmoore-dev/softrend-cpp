@@ -15,11 +15,11 @@ class Camera
 
         float distanceToPoint(const Vec3f& point) const
         {
-            return -(Utils::dot(normal, point)) + distance;
+            return (Utils::dot(normal, point)) - distance;
         }
     };
 
-    using Frustrum = std::array<Plane, 6>;
+    using Frustum = std::array<Plane, 6>;
 
 public:
     Camera(float fov, float aspect, float zNear, float zFar);
@@ -29,12 +29,15 @@ public:
     void updateRotation(int xOffset, int yOffset, double dt);
     void updateMovement(double dt);
 
-    bool isSphereInsideFrustrum(const Vec3f& centre, float radius);
+    bool isSphereInsideFrustum(const Mat4& model, const Vec3f& centre, float radius);
 
     const Mat4& view()       const { return m_view; }
     const Mat4& projection() const { return m_projection; }
     const Vec3f& position()  const { return m_position; }
     const Vec3f& forward()   const { return m_forward; }
+
+    const float farPlane()   const { return m_farPlane; }
+    const float nearPlane()  const { return m_nearPlane; }
 
     bool isMovingForward    = false;
     bool isMovingLeft       = false;
@@ -45,18 +48,19 @@ public:
 
 private:
     Mat4 m_projection = Matrix::identity();
-    Mat4 m_view       = Matrix::identity();
+    Mat4 m_view       = Matrix::lookAt(m_position, m_position + m_forward, {0, 1, 0});
 
     Vec3f m_position  { 0, 0, -5 };
-    Vec3f m_forward   { 0, 0, 1 };
+    Vec3f m_forward   { 0, 0, -1 };
 
-    // frustrum culling
-
+    float m_farPlane    = 0.f;
+    float m_nearPlane   = 0.f;
+    
     float m_yaw         = -90.f;
     float m_pitch       = 0.f;
     float m_sensitivity = 0.1f;
     float m_cameraSpeed = 5.f;
 
 private:
-    Frustrum extractFrustrumPlanes();
+    Frustum extractFrustumPlanes(const Mat4& modelView);
 };

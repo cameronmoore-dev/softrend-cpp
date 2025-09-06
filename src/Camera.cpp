@@ -7,11 +7,15 @@
 Camera::Camera(float fov, float aspect, float zNear, float zFar)
 {
     m_projection = Matrix::perspective(fov, aspect, zNear, zFar);
+    m_farPlane = zFar;
+    m_nearPlane = zNear;
 }
 
 Camera::Camera(int32_t left, int32_t top, int32_t right, int32_t bottom, float zNear, float zFar)
 {
     m_projection = Matrix::orthographic(left, top, right, bottom, zNear, zFar);
+    m_farPlane = zFar;
+    m_nearPlane = zNear;
 }
 
 void Camera::updateView()
@@ -19,46 +23,48 @@ void Camera::updateView()
     m_view = Matrix::lookAt(m_position, m_position + m_forward, {0, 1, 0});
 }
 
-Camera::Frustrum Camera::extractFrustrumPlanes()
+Camera::Frustum Camera::extractFrustumPlanes(const Mat4& modelView)
 {
-    Mat4 vp = Matrix::multiply(m_projection, m_view);
-    Frustrum planes;
+    Mat4 vp = Matrix::multiply(m_projection, modelView);
+    Frustum planes = {};
 
+    /* Gribb & Hartmann method. */
+    
     /* Left */
-    planes[0].normal.x = vp[0][3] + vp[0][0];
-    planes[0].normal.y = vp[1][3] + vp[1][0];
-    planes[0].normal.z = vp[2][3] + vp[2][0];
-    planes[0].distance = vp[3][3] + vp[3][0];
+    planes[0].normal.x = vp[3][0] + vp[0][0];
+    planes[0].normal.y = vp[3][1] + vp[0][1];
+    planes[0].normal.z = vp[3][2] + vp[0][2];
+    planes[0].distance = vp[3][3] + vp[0][3];
 
-    // Right
-    planes[1].normal.x = vp[0][3] - vp[0][0];
-    planes[1].normal.y = vp[1][3] - vp[1][0];
-    planes[1].normal.z = vp[2][3] - vp[2][0];
-    planes[1].distance = vp[3][3] - vp[3][0];
+    /* Right */
+    planes[1].normal.x = vp[3][0] - vp[0][0];
+    planes[1].normal.y = vp[3][1] - vp[0][1];
+    planes[1].normal.z = vp[3][2] - vp[0][2];
+    planes[1].distance = vp[3][3] - vp[0][3];
 
-    // Bottom
-    planes[2].normal.x = vp[0][3] + vp[0][1];
-    planes[2].normal.y = vp[1][3] + vp[1][1];
-    planes[2].normal.z = vp[2][3] + vp[2][1];
-    planes[2].distance = vp[3][3] + vp[3][1];
+    /* Bottom */
+    planes[2].normal.x = vp[3][0] + vp[1][0];
+    planes[2].normal.y = vp[3][1] + vp[1][1];
+    planes[2].normal.z = vp[3][2] + vp[1][2];
+    planes[2].distance = vp[3][3] + vp[1][3];
 
-    // Top
-    planes[3].normal.x = vp[0][3] - vp[0][1];
-    planes[3].normal.y = vp[1][3] - vp[1][1];
-    planes[3].normal.z = vp[2][3] - vp[2][1];
-    planes[3].distance = vp[3][3] - vp[3][1];
+    /* Top */
+    planes[3].normal.x = vp[3][0] - vp[1][0];
+    planes[3].normal.y = vp[3][1] - vp[1][1];
+    planes[3].normal.z = vp[3][2] - vp[1][2];
+    planes[3].distance = vp[3][3] - vp[1][3];
 
-    // Near
-    planes[4].normal.x = vp[0][3] + vp[0][2];
-    planes[4].normal.y = vp[1][3] + vp[1][2];
-    planes[4].normal.z = vp[2][3] + vp[2][2];
-    planes[4].distance = vp[3][3] + vp[3][2];
+    /* Near */
+    planes[4].normal.x = vp[3][0] + vp[2][0];
+    planes[4].normal.y = vp[3][1] + vp[2][1];
+    planes[4].normal.z = vp[3][2] + vp[2][2];
+    planes[4].distance = vp[3][3] + vp[2][3];
 
-    // Far
-    planes[5].normal.x = vp[0][3] - vp[0][2];
-    planes[5].normal.y = vp[1][3] - vp[1][2];
-    planes[5].normal.z = vp[2][3] - vp[2][2];
-    planes[5].distance = vp[3][3] - vp[3][2];
+    /* Far */
+    planes[5].normal.x = vp[3][0] - vp[2][0];
+    planes[5].normal.y = vp[3][1] - vp[2][1];
+    planes[5].normal.z = vp[3][2] - vp[2][2];
+    planes[5].distance = vp[3][3] - vp[2][3];
 
     for (Plane& p : planes)
     {
@@ -70,14 +76,14 @@ Camera::Frustrum Camera::extractFrustrumPlanes()
     return planes;
 }
 
-bool Camera::isSphereInsideFrustrum(const Vec3f& centre, float radius)
+bool Camera::isSphereInsideFrustum(const Mat4& model, const Vec3f& centre, float radius)
 {
-    Frustrum planes = extractFrustrumPlanes();
-    Vec3f viewCentre = Utils::toVec3(Matrix::multiply(m_view, centre));
+    Mat4 modelView = Matrix::multiply(m_view, model);
+    Frustum planes = extractFrustumPlanes(modelView);
 
     for (const Plane& p : planes)
     {
-        if (p.distanceToPoint(viewCentre) < -radius)
+        if (p.distanceToPoint(centre) > radius)
         {
             return false;
         }

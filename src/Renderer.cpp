@@ -1,100 +1,82 @@
 #include "Renderer.h"
 
 #include <algorithm>
-#include <iostream>
 
 Renderer::Renderer(Window& window) : 
     m_context(window)
 {
 }
 
-void Renderer::draw(std::vector<Vertex>& vertices, Image* texture, Camera& camera, const Mat4& model)
+void Renderer::draw(const std::vector<Vertex>& vertices, Image* texture, Camera& camera, const Mat4& model)
 {
     Vec3f centre{0, 0, 0};
-    float radius = 2.5f;
-    if (!camera.isSphereInsideFrustrum(centre, radius))
+    float radius = 1.f;
+    if (!camera.isSphereInsideFrustum(model, centre, radius))
     {
         return;
     }
 
-    std::vector<Renderer::RasterVertex> rvs;
+    std::vector<Renderer::RasterVertex> rVertices;
     for (uint32_t i = 0; i < vertices.size(); i+=3)
     {
-        Renderer::Triangle t = modelSpace(vertices[i], vertices[i+1], vertices[i+2], model);
-        std::vector<Renderer::Triangle> clippedTris = viewSpace(t, camera.view());
-        for (Renderer::Triangle& tr : clippedTris)
+        Renderer::Triangle triangle = toModelSpace(vertices[i], vertices[i+1], vertices[i+2], model);
+        std::vector<Vertex> clipped = toViewSpace(triangle, camera);
+        for (Vertex& v : clipped)
         {
-            Renderer::RasterVertex rv0, rv1, rv2;
-            if (
-                calculateScreenSpace(rv0, tr.v0, camera.projection()) &&
-                calculateScreenSpace(rv1, tr.v1, camera.projection()) &&
-                calculateScreenSpace(rv2, tr.v2, camera.projection()))
-            {
-                rvs.emplace_back(rv0);
-                rvs.emplace_back(rv1);
-                rvs.emplace_back(rv2);
-            }
+            rVertices.emplace_back(toScreenSpace(v, camera.projection()));
         }
     }
 
-    for (uint32_t i = 0; i < rvs.size(); i+=3)
+    for (uint32_t i = 0; i < rVertices.size(); i+=3)
     {
-        rasterise(rvs[i], rvs[i+1], rvs[i+2], texture);
+        rasterise(rVertices[i], rVertices[i+1], rVertices[i+2], texture);
     }
 }
 
-Renderer::Triangle Renderer::modelSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2, const Mat4& model)
+Renderer::Triangle Renderer::toModelSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2, const Mat4& model)
 {
-    Renderer::Triangle triangle{ v0, v1, v2 };
+    Renderer::Triangle modelTri{ v0, v1, v2 };
 
-    triangle.v0.position = Utils::toVec3(Matrix::multiply(model, v0.position));
-    triangle.v1.position = Utils::toVec3(Matrix::multiply(model, v1.position));
-    triangle.v2.position = Utils::toVec3(Matrix::multiply(model, v2.position));
+    modelTri.v0.position = Matrix::multiplyVec3(model, v0.position);
+    modelTri.v1.position = Matrix::multiplyVec3(model, v1.position);
+    modelTri.v2.position = Matrix::multiplyVec3(model, v2.position);
 
-    return triangle;
+    return modelTri;
 }
 
-std::vector<Renderer::Triangle> Renderer::viewSpace(const Renderer::Triangle& tri, const Mat4& view)
+std::vector<Vertex> Renderer::toViewSpace(const Renderer::Triangle& tri, const Camera& camera)
 {
-    Renderer::Triangle transformed = tri;
-    transformed.v0.position = Utils::toVec3(Matrix::multiply(view, tri.v0.position));
-    transformed.v1.position = Utils::toVec3(Matrix::multiply(view, tri.v1.position));
-    transformed.v2.position = Utils::toVec3(Matrix::multiply(view, tri.v2.position));
+    Renderer::Triangle viewTri = tri;
+    
+    viewTri.v0.position = Matrix::multiplyVec3(camera.view(), tri.v0.position);
+    viewTri.v1.position = Matrix::multiplyVec3(camera.view(), tri.v1.position);
+    viewTri.v2.position = Matrix::multiplyVec3(camera.view(), tri.v2.position);
 
-    std::vector<Renderer::Triangle> clippedTris;
-    std::vector<Vertex> clipped;
-    int triCount = nearPlaneClip(clipped, transformed.v0, transformed.v1, transformed.v2, 0.5f);
-
-    for (uint8_t i = 0; i < triCount; i++)
-    {
-        clippedTris.emplace_back(Renderer::Triangle{
-            clipped[i * 3 + 0],
-            clipped[i * 3 + 1],
-            clipped[i * 3 + 2]
-        });
-    }
-
-    return clippedTris;
+    return nearPlaneClip(viewTri.v0, viewTri.v1, viewTri.v2, camera.nearPlane(), camera.farPlane());
 }
 
-bool Renderer::calculateScreenSpace(Renderer::RasterVertex& rv, const Vertex& vertex, const Mat4& projection)
+Renderer::RasterVertex Renderer::toScreenSpace(const Vertex& vertex, const Mat4& projection)
 {
     Vec4f clipSpace = Matrix::multiply(projection, vertex.position);
 
+    /* Perspective Division */
     clipSpace.x /= clipSpace.w;
     clipSpace.y /= clipSpace.w;
     clipSpace.z /= clipSpace.w;
 
+    /* Screen Space */
     Vec3f screenPos;
     screenPos.x = (clipSpace.x + 1) * 0.5f * m_context.m_width;
     screenPos.y = (clipSpace.y + 1) * 0.5f * m_context.m_height;
     screenPos.z = clipSpace.z;
 
+    /* Perspective Correction for Textures */
+    Renderer::RasterVertex rv;
     rv.screenPos = screenPos;
     rv.inverseZ = 1.f / clipSpace.w;
     rv.uvOverZ = vertex.texCoords * rv.inverseZ;
     rv.colour = vertex.colour;
-    return true;
+    return rv;
 }
 
 void Renderer::rasterise(const RasterVertex& v0, const RasterVertex& v1, const RasterVertex& v2, Image* image)
@@ -148,8 +130,8 @@ void Renderer::boundingBox(const Vec3f& a, const Vec3f& b, const Vec3f& c)
     float rightMost  = std::max(a.x, std::max(b.x, c.x));
     float topMost    = std::max(a.y, std::max(b.y, c.y));
 
-    m_bbMin = { leftMost, bottomMost, 0 };
-    m_bbMax = { rightMost, topMost, 0 };
+    m_bbMin = { leftMost, bottomMost };
+    m_bbMax = { rightMost, topMost };
 }
 
 Vec3f Renderer::barycentric(const Vec2i& p, const Vec3f& a, const Vec3f& b, const Vec3f& c)
@@ -199,72 +181,71 @@ Vertex Renderer::interpolate(const Vertex& a, const Vertex& b, float t)
     return out;
 }
 
-int Renderer::nearPlaneClip(std::vector<Vertex>& out, const Vertex& a, const Vertex& b, const Vertex& c, float zNear)
+std::vector<Vertex> Renderer::nearPlaneClip(const Vertex& a, const Vertex& b, const Vertex& c, float zNear, float zFar)
 {
-    const Vertex in[3] = { a, b, c };
-    bool inside[3] = { a.position.z <= -zNear, b.position.z <= -zNear, c.position.z <= -zNear };
+    Vertex triangle[3] = { a, b, c };
 
+    bool inside[3] = { 
+        a.position.z <= -zNear, 
+        b.position.z <= -zNear, 
+        c.position.z <= -zNear };
+        
     int inCount = inside[0] + inside[1] + inside[2];
 
-    if(inCount == 0) return 0;
-
-    if (inCount == 3)
+    /* Triangle is fully outside of view */
+    if (inCount == 0)
     {
-        out.emplace_back(a);
-        out.emplace_back(b);
-        out.emplace_back(c);
-        return 1;
+        return {};
     }
 
-    Vertex inV[2];
-    Vertex outV;
+    /* Triangle is fully inside of view */
+    if (inCount == 3)
+    {
+        return { a, b, c };
+    }
+
     if (inCount == 1)
     {
-        int inIdx = inside[0] ? 0 : inside[1] ? 1 : 2;
-        int outIdx1 = (inIdx + 1) % 3;
-        int outIdx2 = (inIdx + 2) % 3;
+        /* Found out which vertex is inside the view */
+        int inVert = inside[0] ? 0 : inside[1] ? 1 : 2;
 
-        const Vertex& A = in[inIdx];
-        const Vertex& B = in[outIdx1];
-        const Vertex& C = in[outIdx2];
+        /* A is inside, the others are not */
+        Vertex& A = triangle[inVert];
+        Vertex& B = triangle[(inVert + 1) % 3];
+        Vertex& C = triangle[(inVert + 2) % 3];
 
+        /* Scalar to use for finding the intersection points */
         float tAB = (-zNear - A.position.z) / (B.position.z - A.position.z);
         float tAC = (-zNear - A.position.z) / (C.position.z - A.position.z);
 
-        Vertex clipped1 = interpolate(A, B, tAB);
-        Vertex clipped2 = interpolate(A, C, tAC);
+        /* Intersection points for each line between the inside vertex and both outside */
+        B = interpolate(A, B, tAB);
+        C = interpolate(A, C, tAC);
 
-        out.emplace_back(A);
-        out.emplace_back(clipped1);
-        out.emplace_back(clipped2);
-        return 1;
+        return { A, B, C };
     }
 
     if (inCount == 2)
     {
-        int outIdx = !inside[0] ? 0 : (!inside[1] ? 1 : 2);
-        int inIdx1 = (outIdx + 1) % 3;
-        int inIdx2 = (outIdx + 2) % 3;
+        /* Find which vertex is outside the view */
+        int outVert = !inside[0] ? 0 : (!inside[1] ? 1 : 2);
+        Vertex& A = triangle[(outVert + 1) % 3];
+        Vertex& B = triangle[(outVert + 2) % 3];
+        Vertex& C = triangle[outVert];
 
-        const Vertex& A = in[inIdx1];
-        const Vertex& B = in[inIdx2];
-        const Vertex& C = in[outIdx];
-
+        /* Scalar used for the line intersection between the vertex that's outside and the two that are in */
         float tAC = (-zNear - A.position.z) / (C.position.z - A.position.z);
         float tBC = (-zNear - B.position.z) / (C.position.z - B.position.z);
 
+        /* Intersection points for each line between the outside vertex and both inside */
         Vertex clippedA = interpolate(A, C, tAC);
         Vertex clippedB = interpolate(B, C, tBC);
 
-        out.emplace_back(A);
-        out.emplace_back(B);
-        out.emplace_back(clippedA);
-
-        out.emplace_back(B);
-        out.emplace_back(clippedB);
-        out.emplace_back(clippedA);
-        return 2;
+        /* Two new triangles made from the four vertices left after clipping C */
+        return { A, B, clippedA,
+                 B, clippedB, clippedA };
     }
 
-    return 0;
+    /* Return empty */
+    return {};
 }
