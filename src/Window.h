@@ -67,6 +67,8 @@ public:
     void setWindowTitle(const std::string& title);
     const Vec2f windowSize() const { return { (float)m_width, (float)m_height }; }
 
+    void hideLockCursor(bool state);
+
     bool isOpen() { return m_isOpen; }
 
 private:
@@ -88,6 +90,7 @@ private:
     uint32_t m_height = 0;
 
     bool m_isOpen = false;
+    bool m_mouseLocked = false;
 
 private:
     LPCWSTR className() const { return L"WindowClassName"; }

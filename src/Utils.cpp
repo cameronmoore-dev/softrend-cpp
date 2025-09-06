@@ -1,25 +1,36 @@
 #include "Utils.h"
 
 #include <cmath>
-
+#include <algorithm>
 #include <stdio.h>
 
-const uint32_t Utils::lerpHex(uint32_t a, uint32_t b, float t)
+const Vec3f Utils::hexToRGB(const uint32_t colour)
 {
-    int32_t a_r = (a >> 16) & 0xff;
-    int32_t a_g = (a >> 8) & 0xff;
-    int32_t a_b = a & 0xff;
+    float r = float((colour >> 16) & 0xFF) / 255.f;
+    float g = float((colour >> 8) & 0xFF) / 255.f;
+    float b = float(colour & 0xFF) / 255.f;
 
-    int32_t b_r = (b >> 16) & 0xff;
-    int32_t b_g = (b >> 8) & 0xff;
-    int32_t b_b = b & 0xff;
-
-    uint32_t l_r = a_r + (b_r - a_r) * t;
-    uint32_t l_g = a_g + (b_g - a_g) * t;
-    uint32_t l_b = a_b + (b_b - a_b) * t;
-
-    return (l_r << 16) | (l_g << 8) | l_b;
+    return  { r, g, b };
 }
+
+const uint32_t Utils::rgbToHex(const Vec3f& colour)
+{
+    int R = std::clamp(int(colour.x * 255.f), 0, 255);
+    int G = std::clamp(int(colour.y * 255.f), 0, 255);
+    int B = std::clamp(int(colour.z * 255.f), 0, 255);
+
+    return (R << 16) | (G << 8) | B;
+}
+
+const uint32_t Utils::combineHex(const uint32_t& ca, const uint32_t& cb, const float ratio)
+{
+    uint8_t r = ((ca >> 16) & 0xFF) * (1-ratio) + ((cb >> 16) & 0xFF) * ratio;
+    uint8_t g = ((ca >> 8)  & 0xFF) * (1-ratio) + ((cb >> 8)  & 0xFF) * ratio;
+    uint8_t b = ((ca)       & 0xFF) * (1-ratio) + ((cb)       & 0xFF) * ratio;
+
+    return (0xFF << 24) | (r << 16) | (g << 8) | b;
+} 
+
 
 const uint32_t Utils::rasteriseColour(uint32_t c0, uint32_t c1, uint32_t c2, float w0, float w1, float w2)
 {
@@ -105,7 +116,7 @@ const float Utils::dot(const Vec3f& a, const Vec3f& b)
 
 const float Utils::degToRad(const float& deg)
 {
-    return deg * (pi / 180.f);
+    return deg * (math::pi / 180.f);
 }
 
 const Vec4f Utils::toVec4(const Vec3f& vec, float w)
@@ -116,13 +127,6 @@ const Vec4f Utils::toVec4(const Vec3f& vec, float w)
 const Vec3f Utils::toVec3(const Vec4f& vec)
 {
     return { vec.x, vec.y, vec.z };
-}
-
-const Vec3f Utils::screenToClip(const Vec3f& pos, int32_t width, int32_t height)
-{
-    float xClip = (pos.x / (width * 0.5f)) - 1.f;
-    float yClip = -(pos.y / (height * 0.5f)) + 1.f;
-    return { xClip, yClip, pos.z };
 }
 
 const float Utils::lerp(const float& a, const float& b, float t)

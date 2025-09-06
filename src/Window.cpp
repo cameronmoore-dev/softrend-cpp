@@ -164,10 +164,9 @@ void Window::setup()
     m_frameInfo.bmiHeader.biCompression = BI_RGB;
     m_deviceContext = CreateCompatibleDC(0);
 
-    ShowCursor(false);
+    hideLockCursor(true);
     GetWindowRect(m_hwnd, &m_rect);
     ShowWindow(m_hwnd, 1);
-    ClipCursor(&m_rect);
     SetFocus(m_hwnd);
 }
 
@@ -222,6 +221,11 @@ void Window::clear(uint32_t clearColour)
 
 void Window::display()
 {
+    if (m_mouseLocked)
+    {
+        SetCursorPos(m_width / 2 + xorigin, m_height / 2 + yorigin);
+    }
+    
     PAINTSTRUCT paint;
     HDC hdc = BeginPaint(m_hwnd, &paint);
 
@@ -242,6 +246,21 @@ void Window::setWindowTitle(const std::string& title)
 {
     LPCWSTR str = std::wstring(title.begin(), title.end()).c_str();
     SetWindowTextW(m_hwnd, str);
+}
+
+void Window::hideLockCursor(bool state)
+{
+    if (state)
+    {
+        
+        ShowCursor(false);
+        m_mouseLocked = true;
+        return;
+    }
+
+    ClipCursor(nullptr);
+    ShowCursor(true);
+    m_mouseLocked = false;
 }
 
 void Window::onWindowResize(LPARAM lParam)

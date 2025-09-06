@@ -49,6 +49,6 @@ private:
 
     std::vector<Vertex> nearPlaneClip(const Vertex& a, const Vertex& b, const Vertex& c, float zNear, float zFar);
     Vertex interpolate(const Vertex& a, const Vertex& b, float t);
-
     
+    uint32_t fog(uint32_t idx, uint32_t fogColour);
 };

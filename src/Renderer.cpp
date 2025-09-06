@@ -1,6 +1,7 @@
 #include "Renderer.h"
 
 #include <algorithm>
+#include <cmath>
 
 Renderer::Renderer(Window& window) : 
     m_context(window)
@@ -111,7 +112,15 @@ void Renderer::rasterise(const RasterVertex& v0, const RasterVertex& v1, const R
 
                     if (image)
                     {
-                        m_context.m_backBuffer[idx] = texel(v0, v1, v2, *image, point);
+                        float max = 1.f;
+                        float min = 0.1f;
+                        float multi = 1.1f;
+                        float d = ((2.f * min * max) / (max + min - z * (max - min)));
+                        float r = ((d - min) / (max - min)) * multi;
+                        r = std::clamp(r, 0.f, 1.f);
+
+                        uint32_t final = Utils::combineHex(texel(v0, v1, v2, *image, point), fog(idx, 0x111111), r);
+                        m_context.m_backBuffer[idx] = final;
                     }
                     else
                     {
@@ -249,3 +258,64 @@ std::vector<Vertex> Renderer::nearPlaneClip(const Vertex& a, const Vertex& b, co
     /* Return empty */
     return {};
 }
+
+uint32_t Renderer::fog(uint32_t idx, uint32_t fogColour)
+{
+    float depth = m_context.m_depthBuffer[idx];
+    if (depth <= 0.f || depth >= 1.f)
+    {
+        return fogColour;
+    }
+
+    return Utils::combineHex(m_context.m_backBuffer[idx], fogColour, 1);
+}
+
+// void Renderer::linearFog(float zNear, float zFar, float fogStart, float fogEnd)
+// {
+//     _Fog(zNear, zFar, fogStart, fogEnd, 0);
+// }
+
+// void Renderer::exponentialFog(float zNear, float zFar, float density)
+// {
+//     _Fog(zNear, zFar, 0, 0, density);
+// }
+
+// void Renderer::_Fog(float zNear, float zFar, float fogStart, float fogEnd, float density)
+// {
+//     for (uint32_t i = 0; i < m_context.m_width*m_context.m_height; i++)
+//     {
+//         uint32_t& currentPixel = m_context.m_backBuffer[i];
+//         float depth = m_context.m_depthBuffer[i];
+
+//         /* 1.1f to give some leeway for objects clipping the far plane */
+//         if (depth <= 0 || depth >= 1.1f)
+//         {
+//             continue;
+//         }
+        
+//         float distance = (2.f * zNear * zFar) / (zFar + zNear - depth * (zFar - zNear));
+//         float factor = 0.f;
+
+//         if (density == 0)
+//         {
+//             /* Linear */
+//             factor = (fogEnd - distance) / (fogEnd - fogStart);
+//         }
+//         else
+//         {
+//             /* Exponential */
+//             factor = 1.f / std::pow(math::e, distance * density);
+//         }
+
+//         Vec3f rgb = Utils::hexToRGB(currentPixel);
+
+//         /* Window clear colour */
+//         Vec3f fogColour = Utils::hexToRGB(0x111111);
+
+//         rgb.x = rgb.x * factor + fogColour.x * (1.f - factor);
+//         rgb.y = rgb.y * factor + fogColour.y * (1.f - factor);
+//         rgb.z = rgb.z * factor + fogColour.z * (1.f - factor);
+
+//         currentPixel = Utils::rgbToHex(rgb);
+//     }
+// }

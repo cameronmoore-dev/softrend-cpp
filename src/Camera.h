@@ -48,7 +48,7 @@ public:
 
 private:
     Mat4 m_projection = Matrix::identity();
-    Mat4 m_view       = Matrix::lookAt(m_position, m_position + m_forward, {0, 1, 0});
+    Mat4 m_view       = Matrix::identity();
 
     Vec3f m_position  { 0, 0, -5 };
     Vec3f m_forward   { 0, 0, -1 };
