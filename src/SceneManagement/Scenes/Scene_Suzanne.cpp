@@ -9,21 +9,18 @@ Scene_Suzanne::Scene_Suzanne(Window& window) :
 
 void Scene_Suzanne::start()
 {
-    m_camera.updateRotation(0, 0);
-
+    double previous = getTimeSeconds();
     while (m_window.isOpen())
     {
-        auto start = std::chrono::high_resolution_clock::now();
+        double current = getTimeSeconds();
+        m_dt = current-previous;
+        previous = current;
 
-        m_window.pollMessages();
         processInput();
         update();
-        render();  
+        render();
 
-        auto end = std::chrono::high_resolution_clock::now();
-        double duration = std::chrono::duration<double>(end-start).count();
-
-        //printf("FPS: %.0f\n", 1.f/duration);
+        printf("FPS: %.0f\n", 1.f/m_dt);
     }
 }
 
@@ -44,66 +41,82 @@ void Scene_Suzanne::processInput()
                 /* A */
                 if (e.keyCode == 0x41)
                 {
-                    m_camera.position += Utils::normalise(Utils::cross(m_camera.forward, m_camera.up));
+                    m_camera.isMovingLeft = true;
                 }
 
                 /* D */
-                if (e.keyCode == 0x44)
+                else if (e.keyCode == 0x44)
                 {
-                    m_camera.position -= Utils::normalise(Utils::cross(m_camera.forward, m_camera.up));
+                    m_camera.isMovingRight = true;
                 }
+
                 /* S */
                 if (e.keyCode == 0x53)
                 {
-                    m_camera.position += m_camera.forward;
-                }
-                /* W */
-                if (e.keyCode == 0x57)
-                {
-                    m_camera.position -= m_camera.forward;
+                    m_camera.isMovingBackward = true;
                 }
 
+                /* W */
+                else if (e.keyCode == 0x57)
+                {
+                    m_camera.isMovingForward = true;
+                }
+
+                /* E */
                 if (e.keyCode == 0x45)
                 {
-                    m_camera.updateRotation(10, 0);
+                    m_camera.isMovingUp = true;
                 }
 
-                if (e.keyCode == 0x51)
+                /* Q */
+                else if (e.keyCode == 0x51)
                 {
-                    m_camera.updateRotation(-10, 0);
+                    m_camera.isMovingDown = true;
+                }
+            } break;
+
+            case Event::KeyReleased:
+            {
+                /* A */
+                if (e.keyCode == 0x41)
+                {
+                    m_camera.isMovingLeft = false;
                 }
 
-                if (e.keyCode == 0x5A)
+                /* D */
+                else if (e.keyCode == 0x44)
                 {
-                    m_camera.updateRotation(0, 10);
+                    m_camera.isMovingRight = false;
                 }
 
-                if (e.keyCode == 0x43)
+                /* S */
+                if (e.keyCode == 0x53)
                 {
-                    m_camera.updateRotation(0, -10);
+                    m_camera.isMovingBackward = false;
+                }
+
+                /* W */
+                else if (e.keyCode == 0x57)
+                {
+                    m_camera.isMovingForward = false;
+                }
+
+                /* E */
+                if (e.keyCode == 0x45)
+                {
+                    m_camera.isMovingUp = false;
+                }
+
+                /* Q */
+                else if (e.keyCode == 0x51)
+                {
+                    m_camera.isMovingDown = false;
                 }
             } break;
 
             case Event::MouseMove:
             {
-                // float x = e.x;
-                // float y = e.y;
-
-                // if (firstMouse)
-                // {
-                //     lastMousePosX = x;
-                //     lastMousePosY = y;
-                //     firstMouse = false;
-                //     return;
-                // }
-                
-                // float ox = x - lastMousePosX;
-                // float oy = lastMousePosY - y;
-
-                // lastMousePosX = x;
-                // lastMousePosY = y;
-
-                // m_camera.updateRotation(ox, oy);
+                m_camera.updateRotation(e.mousePos.x, e.mousePos.y, m_dt);
             } break;
         }
     }
@@ -111,20 +124,21 @@ void Scene_Suzanne::processInput()
 
 void Scene_Suzanne::update()
 {
-    // m_angle+=0.2f;
+    m_camera.updateMovement(m_dt);
+    m_angle+=20.f * m_dt;
     
-    // m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
-    // m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
+    m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
+    m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
 
     m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
-    m_view = Matrix::lookAt(m_camera.position, m_camera.position + m_camera.forward, m_camera.up);
+    m_camera.updateView();
 }
 
 void Scene_Suzanne::render()
 {
-    m_window.clear(0x000000);
+    m_window.clear(0x111111);
 
-    m_window.draw(m_suzanne.vertices, &m_texture, m_model, m_view, m_projection);
+    m_renderer.draw(m_suzanne.vertices, &m_texture, m_camera, m_model);
 
     m_window.display();
 }

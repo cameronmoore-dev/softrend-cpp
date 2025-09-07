@@ -31,69 +31,82 @@ LRESULT Window::handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
             onWindowResize(lParam);
         } break;
 
-        case WM_KEYDOWN:
+        case WM_INPUT:
         {
-            Event e;
-            e.type = Event::KeyPressed;
-            e.keyCode = wParam;
-            m_events.push(e);
-        } break;
+            UINT size = 0;
+            GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER));
 
-        case WM_KEYUP:
-        {
-            Event e;
-            e.type = Event::KeyReleased;
-            e.keyCode = wParam;
-            m_events.push(e);
-        }break;
+            BYTE buffer[size] = {};
+            if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, buffer, &size, sizeof(RAWINPUTHEADER)) != size)
+            {
+                break;
+            }
 
-        case WM_LBUTTONDOWN:
-        {
-            Event e;
-            e.type = Event::MousePressed;
-            e.mouseButton = 0;
-            m_events.push(e);
-        } break;
+            RAWINPUT* raw = (RAWINPUT*)buffer;
 
-        case WM_LBUTTONUP:
-        {
-            Event e;
-            e.type = Event::MouseReleased;
-            e.mouseButton = 0;
-            m_events.push(e);
-        } break;
+            if (raw->header.dwType == RIM_TYPEKEYBOARD)
+            {
+                Event e;
+                e.keyCode = raw->data.keyboard.VKey;
+                
+                if (raw->data.keyboard.Message == WM_KEYDOWN)
+                {
+                    e.type = Event::KeyPressed;
+                }
+                else if (raw->data.keyboard.Message == WM_KEYUP)
+                {
+                    e.type = Event::KeyReleased;
+                }
 
-        case WM_RBUTTONDOWN:
-        {
-            Event e;
-            e.type = Event::MousePressed;
-            e.mouseButton = 1;
-            m_events.push(e);
-        } break;
+                m_events.push(e);
+            }
 
-        case WM_RBUTTONUP:
-        {
-            Event e;
-            e.type = Event::MouseReleased;
-            e.mouseButton = 1;
-            m_events.push(e);
-        } break;
+            if (raw->header.dwType == RIM_TYPEMOUSE)
+            {
+                Event e;
 
-        case WM_MOUSEMOVE:
-        {
-            Event e;
-            e.type = Event::MouseMove;
-            e.x = GET_X_LPARAM(lParam);
-            e.y = GET_Y_LPARAM(lParam);
-            m_events.push(e);
-        } break;
+                if (raw->data.mouse.usFlags == MOUSE_MOVE_RELATIVE)
+                {
+                    e.type = Event::MouseMove;
+                    e.mousePos.x = raw->data.mouse.lLastX;
+                    e.mousePos.y = raw->data.mouse.lLastY;
+                }
 
-        case WM_MOUSEWHEEL:
-        {
-            Event e;
-            e.type = Event::MouseScroll;
-            e.scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-            m_events.push(e);
+                switch (raw->data.mouse.usButtonFlags)
+                {
+                    case RI_MOUSE_LEFT_BUTTON_DOWN:
+                    {
+                        e.type = Event::MousePressed;
+                        e.mouseButton = 1;
+                    } break;
+
+                    case RI_MOUSE_RIGHT_BUTTON_DOWN:
+                    {
+                        e.type = Event::MousePressed;
+                        e.mouseButton = 2;
+                    } break;
+
+                    case RI_MOUSE_LEFT_BUTTON_UP:
+                    {
+                        e.type = Event::MouseReleased;
+                        e.mouseButton = 1;
+                    } break;
+
+                    case RI_MOUSE_RIGHT_BUTTON_UP:
+                    {
+                        e.type = Event::MouseReleased;
+                        e.mouseButton = 2;
+                    } break;
+
+                    case RI_MOUSE_WHEEL:
+                    {
+                        e.type = Event::MouseScroll;
+                        e.scrollDelta = raw->data.mouse.usButtonData / WHEEL_DELTA;
+                    } break;
+                }
+
+                m_events.push(e);
+            }
         } break;
 
         default:
@@ -128,7 +141,7 @@ bool Window::create(LPCWSTR lpWindowName, INT width, INT height)
     if (m_hwnd)
     {
         setup();
-        ShowWindow(m_hwnd, 1);
+        registerInputDevices();
 
         m_isOpen = m_hwnd;
         return TRUE;
@@ -150,6 +163,30 @@ void Window::setup()
     m_frameInfo.bmiHeader.biBitCount = 32;
     m_frameInfo.bmiHeader.biCompression = BI_RGB;
     m_deviceContext = CreateCompatibleDC(0);
+
+    hideLockCursor(true);
+    GetWindowRect(m_hwnd, &m_rect);
+    ShowWindow(m_hwnd, 1);
+    SetFocus(m_hwnd);
+}
+
+void Window::registerInputDevices()
+{
+    RAWINPUTDEVICE rid[2];
+
+    /* Mouse */
+    rid[0].usUsagePage = 0x01;
+    rid[0].usUsage = 0x02;
+    rid[0].dwFlags = 0;
+    rid[0].hwndTarget = m_hwnd;
+
+    /* Keyboard */
+    rid[1].usUsagePage = 0x01;
+    rid[1].usUsage = 0x06;
+    rid[1].dwFlags = 0;
+    rid[1].hwndTarget = m_hwnd;
+
+    RegisterRawInputDevices(rid, 2, sizeof(rid[0]));
 }
 
 void Window::pollMessages()
@@ -165,6 +202,7 @@ bool Window::pollEvents(Event& event)
 {
     if (m_events.empty())
     {
+        pollMessages();
         return false;
     }
 
@@ -181,32 +219,15 @@ void Window::clear(uint32_t clearColour)
     std::fill(m_depthBuffer.begin(), m_depthBuffer.end(), INFINITY);
 }
 
-void Window::draw(std::vector<Vertex>& vertices, Image* texture, const Mat4& model, const Mat4& view, const Mat4& projection)
-{
-    std::vector<Renderer::RasterVertex> rvs;
-    for (Vertex& v : vertices)
-    {
-        rvs.emplace_back(m_renderer.calculateScreenSpace(v, model, view, projection, m_width, m_height));
-    }
-
-    for (uint32_t i = 0; i < rvs.size(); i+=3)
-    {
-        m_renderer.rasterise(m_backBuffer, m_depthBuffer, 1.f, rvs[i], rvs[i+1], rvs[i+2], m_width, m_height, texture);
-    }
-}
-
 void Window::display()
 {
+    if (m_mouseLocked)
+    {
+        SetCursorPos(m_width / 2 + xorigin, m_height / 2 + yorigin);
+    }
+    
     PAINTSTRUCT paint;
     HDC hdc = BeginPaint(m_hwnd, &paint);
-
-    // nextBuffer.pixels[(p++) % (nextBuffer.width*nextBuffer.height)] = Utils::pcgHash(rand());
-    // nextBuffer.pixels[Utils::pcgHash(rand()) % (nextBuffer.width*nextBuffer.height)] = 0;
-
-    // for (UINT i = 0; i < nextBuffer.width*nextBuffer.height; i++)
-    // {
-    //     nextBuffer.pixels[i] = Utils::pcgHash(rand());
-    // }
 
     m_backBuffer[m_width / 2 + m_height / 2 * m_width] = 0xff00ff;
 
@@ -225,6 +246,21 @@ void Window::setWindowTitle(const std::string& title)
 {
     LPCWSTR str = std::wstring(title.begin(), title.end()).c_str();
     SetWindowTextW(m_hwnd, str);
+}
+
+void Window::hideLockCursor(bool state)
+{
+    if (state)
+    {
+        
+        ShowCursor(false);
+        m_mouseLocked = true;
+        return;
+    }
+
+    ClipCursor(nullptr);
+    ShowCursor(true);
+    m_mouseLocked = false;
 }
 
 void Window::onWindowResize(LPARAM lParam)

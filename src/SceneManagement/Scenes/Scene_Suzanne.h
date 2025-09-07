@@ -2,6 +2,7 @@
 
 #include "../Scene.h"
 #include "../../Window.h"
+#include "../../Renderer.h"
 #include "../../Matrix.h"
 #include "../../Model.h"
 #include "../../Camera.h"
@@ -21,13 +22,11 @@ protected:
 
 private:
     Window& m_window;
+    Renderer m_renderer = Renderer(m_window);
     Model m_suzanne = Model("./resources/model_suzanne.obj");
     Image m_texture = Image("./resources/texture_suzanne.tga");
-    Camera m_camera;
-
-    Mat4 m_projection = Matrix::perspective(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.1f, 100.f);
-    //Mat4 m_projection = Matrix::orthographic(-3.2, 3.2, 2.4, -2.4, 0.1f, 100.f);
-    Mat4 m_view = Matrix::identity();
+    Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 100.f);
+    
     Mat4 m_model = Matrix::identity();
 
     Mat4 m_translate = Matrix::identity();
@@ -36,7 +35,5 @@ private:
 
     float m_angle = 0.f;
 
-    float lastMousePosX = 320.f;
-    float lastMousePosY = 240.f;
-    bool firstMouse = true;
+    double m_dt = 0.f;
 };

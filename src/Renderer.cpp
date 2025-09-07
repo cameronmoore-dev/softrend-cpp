@@ -1,29 +1,78 @@
 #include "Renderer.h"
 
 #include <algorithm>
+#include <cmath>
 
-Renderer::RasterVertex Renderer::calculateScreenSpace(const Vertex& vertex, const Mat4& model, const Mat4& view, const Mat4& projection, const uint32_t width, const uint32_t height)
+Renderer::Renderer(Window& window) : 
+    m_context(window)
 {
-    RasterVertex rv;
+}
 
-    Vec4f m = Matrix::multiply(model, vertex.position);
-    Vec4f mv = Matrix::multiply(view, m);
-    Vec4f clipSpace = Matrix::multiply(projection, mv);
-
-    //printf("%f\n", clipSpace.w);
-    
-    if (clipSpace.w > 0 && clipSpace.z > 0.1f)
+void Renderer::draw(const std::vector<Vertex>& vertices, Image* texture, Camera& camera, const Mat4& model)
+{
+    Vec3f centre{0, 0, 0};
+    float radius = 1.f;
+    if (!camera.isSphereInsideFrustum(model, centre, radius))
     {
-        clipSpace.x /= clipSpace.w;
-        clipSpace.y /= clipSpace.w;
-        clipSpace.z /= clipSpace.w;
+        return;
     }
 
+    std::vector<Renderer::RasterVertex> rVertices;
+    for (uint32_t i = 0; i < vertices.size(); i+=3)
+    {
+        Renderer::Triangle triangle = toModelSpace(vertices[i], vertices[i+1], vertices[i+2], model);
+        std::vector<Vertex> clipped = toViewSpace(triangle, camera);
+        for (Vertex& v : clipped)
+        {
+            rVertices.emplace_back(toScreenSpace(v, camera.projection()));
+        }
+    }
+
+    for (uint32_t i = 0; i < rVertices.size(); i+=3)
+    {
+        rasterise(rVertices[i], rVertices[i+1], rVertices[i+2], texture);
+    }
+}
+
+Renderer::Triangle Renderer::toModelSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2, const Mat4& model)
+{
+    Renderer::Triangle modelTri{ v0, v1, v2 };
+
+    modelTri.v0.position = Matrix::multiplyVec3(model, v0.position);
+    modelTri.v1.position = Matrix::multiplyVec3(model, v1.position);
+    modelTri.v2.position = Matrix::multiplyVec3(model, v2.position);
+
+    return modelTri;
+}
+
+std::vector<Vertex> Renderer::toViewSpace(const Renderer::Triangle& tri, const Camera& camera)
+{
+    Renderer::Triangle viewTri = tri;
+    
+    viewTri.v0.position = Matrix::multiplyVec3(camera.view(), tri.v0.position);
+    viewTri.v1.position = Matrix::multiplyVec3(camera.view(), tri.v1.position);
+    viewTri.v2.position = Matrix::multiplyVec3(camera.view(), tri.v2.position);
+
+    return nearPlaneClip(viewTri.v0, viewTri.v1, viewTri.v2, camera.nearPlane(), camera.farPlane());
+}
+
+Renderer::RasterVertex Renderer::toScreenSpace(const Vertex& vertex, const Mat4& projection)
+{
+    Vec4f clipSpace = Matrix::multiply(projection, vertex.position);
+
+    /* Perspective Division */
+    clipSpace.x /= clipSpace.w;
+    clipSpace.y /= clipSpace.w;
+    clipSpace.z /= clipSpace.w;
+
+    /* Screen Space */
     Vec3f screenPos;
-    screenPos.x = (clipSpace.x + 1) * 0.5f * width;
-    screenPos.y = (clipSpace.y + 1) * 0.5f * height;
+    screenPos.x = (clipSpace.x + 1) * 0.5f * m_context.m_width;
+    screenPos.y = (clipSpace.y + 1) * 0.5f * m_context.m_height;
     screenPos.z = clipSpace.z;
 
+    /* Perspective Correction for Textures */
+    Renderer::RasterVertex rv;
     rv.screenPos = screenPos;
     rv.inverseZ = 1.f / clipSpace.w;
     rv.uvOverZ = vertex.texCoords * rv.inverseZ;
@@ -31,7 +80,7 @@ Renderer::RasterVertex Renderer::calculateScreenSpace(const Vertex& vertex, cons
     return rv;
 }
 
-void Renderer::rasterise(std::vector<uint32_t>& backBuffer, std::vector<float>& depthBuffer, float intensity, const RasterVertex& v0, const RasterVertex& v1, const RasterVertex& v2, uint32_t width, uint32_t height, Image* image)
+void Renderer::rasterise(const RasterVertex& v0, const RasterVertex& v1, const RasterVertex& v2, Image* image)
 {
     /* Back-face Culling */
     float winding = edgeFunction(v0.screenPos, v1.screenPos, v2.screenPos);
@@ -47,7 +96,7 @@ void Renderer::rasterise(std::vector<uint32_t>& backBuffer, std::vector<float>& 
     {
         for (p.x = m_bbMin.x; p.x <= m_bbMax.x; p.x++)
         {
-            if (p.x < 0 || p.y < 0 || p.x >= width || p.y >= height)
+            if (p.x < 0 || p.y < 0 || p.x >= m_context.m_width || p.y >= m_context.m_height)
             {
                 continue;
             }
@@ -56,18 +105,31 @@ void Renderer::rasterise(std::vector<uint32_t>& backBuffer, std::vector<float>& 
             if (point.x >= 0 && point.y >= 0 && point.z >= 0)
             {
                 float z = v0.screenPos.z * point.x + v1.screenPos.z * point.y + v2.screenPos.z * point.z;
-                uint32_t idx = p.x + p.y * width;
-                if (z < depthBuffer[idx])
+                uint32_t idx = p.x + p.y * m_context.m_width;
+                if (z < m_context.m_depthBuffer[idx])
                 {
-                    depthBuffer[idx] = z;
+                    m_context.m_depthBuffer[idx] = z;
 
                     if (image)
                     {
-                        backBuffer[idx] = texel(v0, v1, v2, *image, point);
+                        /* Move all this into a fragment shader */
+                        float max = 1.f;
+                        float min = 0.1f;
+                        float multi = 1.2f;
+                        float d = ((2.f * min * max) / (max + min - z * (max - min)));
+                        float r = ((d - min) / (max - min)) * multi;
+                        r = std::clamp(r, 0.f, 1.f);
+
+                        Vec3f lightDir{ 0, 0, 1 };
+                        Vec3f normal = Utils::getNormals(v0.screenPos, v1.screenPos, v2.screenPos);
+
+                        uint32_t final = Utils::combineHex(0x111111, texel(v0, v1, v2, *image, point), Utils::dot(normal, lightDir));
+
+                        m_context.m_backBuffer[idx] = final;
                     }
                     else
                     {
-                        backBuffer[idx] = Utils::rasteriseColour(v0.colour, v1.colour, v2.colour, point.x, point.y, point.z);
+                        m_context.m_backBuffer[idx] = Utils::rasteriseColour(v0.colour, v1.colour, v2.colour, point.x, point.y, point.z);
                     }
                 }
             }
@@ -82,8 +144,8 @@ void Renderer::boundingBox(const Vec3f& a, const Vec3f& b, const Vec3f& c)
     float rightMost  = std::max(a.x, std::max(b.x, c.x));
     float topMost    = std::max(a.y, std::max(b.y, c.y));
 
-    m_bbMin = { leftMost, bottomMost, 0 };
-    m_bbMax = { rightMost, topMost, 0 };
+    m_bbMin = { leftMost, bottomMost };
+    m_bbMax = { rightMost, topMost };
 }
 
 Vec3f Renderer::barycentric(const Vec2i& p, const Vec3f& a, const Vec3f& b, const Vec3f& c)
@@ -123,3 +185,142 @@ float Renderer::edgeFunction(const Vec3f& a, const Vec3f& b, const Vec3f& c)
 {
     return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
+
+Vertex Renderer::interpolate(const Vertex& a, const Vertex& b, float t)
+{
+    Vertex out;
+    out.position = a.position + (b.position - a.position) * t;
+    out.texCoords = a.texCoords + (b.texCoords - a.texCoords) * t;
+
+    return out;
+}
+
+std::vector<Vertex> Renderer::nearPlaneClip(const Vertex& a, const Vertex& b, const Vertex& c, float zNear, float zFar)
+{
+    Vertex triangle[3] = { a, b, c };
+
+    bool inside[3] = { 
+        a.position.z <= -zNear, 
+        b.position.z <= -zNear, 
+        c.position.z <= -zNear };
+        
+    int inCount = inside[0] + inside[1] + inside[2];
+
+    /* Triangle is fully outside of view */
+    if (inCount == 0)
+    {
+        return {};
+    }
+
+    /* Triangle is fully inside of view */
+    if (inCount == 3)
+    {
+        return { a, b, c };
+    }
+
+    if (inCount == 1)
+    {
+        /* Found out which vertex is inside the view */
+        int inVert = inside[0] ? 0 : inside[1] ? 1 : 2;
+
+        /* A is inside, the others are not */
+        Vertex& A = triangle[inVert];
+        Vertex& B = triangle[(inVert + 1) % 3];
+        Vertex& C = triangle[(inVert + 2) % 3];
+
+        /* Scalar to use for finding the intersection points */
+        float tAB = (-zNear - A.position.z) / (B.position.z - A.position.z);
+        float tAC = (-zNear - A.position.z) / (C.position.z - A.position.z);
+
+        /* Intersection points for each line between the inside vertex and both outside */
+        B = interpolate(A, B, tAB);
+        C = interpolate(A, C, tAC);
+
+        return { A, B, C };
+    }
+
+    if (inCount == 2)
+    {
+        /* Find which vertex is outside the view */
+        int outVert = !inside[0] ? 0 : (!inside[1] ? 1 : 2);
+        Vertex& A = triangle[(outVert + 1) % 3];
+        Vertex& B = triangle[(outVert + 2) % 3];
+        Vertex& C = triangle[outVert];
+
+        /* Scalar used for the line intersection between the vertex that's outside and the two that are in */
+        float tAC = (-zNear - A.position.z) / (C.position.z - A.position.z);
+        float tBC = (-zNear - B.position.z) / (C.position.z - B.position.z);
+
+        /* Intersection points for each line between the outside vertex and both inside */
+        Vertex clippedA = interpolate(A, C, tAC);
+        Vertex clippedB = interpolate(B, C, tBC);
+
+        /* Two new triangles made from the four vertices left after clipping C */
+        return { A, B, clippedA,
+                 B, clippedB, clippedA };
+    }
+
+    /* Return empty */
+    return {};
+}
+
+uint32_t Renderer::fog(uint32_t idx, uint32_t fogColour)
+{
+    float depth = m_context.m_depthBuffer[idx];
+    if (depth <= 0.f || depth >= 1.f)
+    {
+        return fogColour;
+    }
+
+    return Utils::combineHex(m_context.m_backBuffer[idx], fogColour, 1);
+}
+
+// void Renderer::linearFog(float zNear, float zFar, float fogStart, float fogEnd)
+// {
+//     _Fog(zNear, zFar, fogStart, fogEnd, 0);
+// }
+
+// void Renderer::exponentialFog(float zNear, float zFar, float density)
+// {
+//     _Fog(zNear, zFar, 0, 0, density);
+// }
+
+// void Renderer::_Fog(float zNear, float zFar, float fogStart, float fogEnd, float density)
+// {
+//     for (uint32_t i = 0; i < m_context.m_width*m_context.m_height; i++)
+//     {
+//         uint32_t& currentPixel = m_context.m_backBuffer[i];
+//         float depth = m_context.m_depthBuffer[i];
+
+//         /* 1.1f to give some leeway for objects clipping the far plane */
+//         if (depth <= 0 || depth >= 1.1f)
+//         {
+//             continue;
+//         }
+        
+//         float distance = (2.f * zNear * zFar) / (zFar + zNear - depth * (zFar - zNear));
+//         float factor = 0.f;
+
+//         if (density == 0)
+//         {
+//             /* Linear */
+//             factor = (fogEnd - distance) / (fogEnd - fogStart);
+//         }
+//         else
+//         {
+//             /* Exponential */
+//             factor = 1.f / std::pow(math::e, distance * density);
+//         }
+
+//         Vec3f rgb = Utils::hexToRGB(currentPixel);
+
+//         /* Window clear colour */
+//         Vec3f fogColour = Utils::hexToRGB(0x111111);
+
+//         rgb.x = rgb.x * factor + fogColour.x * (1.f - factor);
+//         rgb.y = rgb.y * factor + fogColour.y * (1.f - factor);
+//         rgb.z = rgb.z * factor + fogColour.z * (1.f - factor);
+
+//         currentPixel = Utils::rgbToHex(rgb);
+//     }
+// }
