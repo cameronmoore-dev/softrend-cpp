@@ -20,7 +20,10 @@ private:
 
     struct RasterVertex
     {
+        Vec3f worldPos;
+        Vec3f viewPos;
         Vec3f screenPos;
+        Vec3f normal;
         Vec2f uvOverZ;
         float inverseZ;
         uint32_t colour;

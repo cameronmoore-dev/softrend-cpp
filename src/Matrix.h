@@ -14,6 +14,7 @@ public:
     static Vec4f multiply(const Mat4& mat, const Vec3f& vec);
     static Vec4f multiply(const Mat4& mat, const Vec4f& vec);
     static Vec3f multiplyVec3(const Mat4& mat, const Vec3f& vec);
+    static Vec3f multiplyVec3AsNormal(const Mat4& mat, const Vec3f& vec);
 
     static Mat4 perspective(float fov, float aspect, float zNear, float zFar);
     static Mat4 orthographic(int32_t left, int32_t top, int32_t right, int32_t bottom, float zNear, float zFar);

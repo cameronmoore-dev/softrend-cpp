@@ -38,9 +38,13 @@ Renderer::Triangle Renderer::toModelSpace(const Vertex& v0, const Vertex& v1, co
 {
     Renderer::Triangle modelTri{ v0, v1, v2 };
 
-    modelTri.v0.position = Matrix::multiplyVec3(model, v0.position);
-    modelTri.v1.position = Matrix::multiplyVec3(model, v1.position);
-    modelTri.v2.position = Matrix::multiplyVec3(model, v2.position);
+    modelTri.v0.worldPos = Matrix::multiplyVec3(model, v0.position);
+    modelTri.v1.worldPos = Matrix::multiplyVec3(model, v1.position);
+    modelTri.v2.worldPos = Matrix::multiplyVec3(model, v2.position);
+
+    modelTri.v0.normal = Utils::normalise(Matrix::multiplyVec3AsNormal(model, v0.normal));
+    modelTri.v1.normal = Utils::normalise(Matrix::multiplyVec3AsNormal(model, v1.normal));
+    modelTri.v2.normal = Utils::normalise(Matrix::multiplyVec3AsNormal(model, v2.normal));
 
     return modelTri;
 }
@@ -49,9 +53,13 @@ std::vector<Vertex> Renderer::toViewSpace(const Renderer::Triangle& tri, const C
 {
     Renderer::Triangle viewTri = tri;
     
-    viewTri.v0.position = Matrix::multiplyVec3(camera.view(), tri.v0.position);
-    viewTri.v1.position = Matrix::multiplyVec3(camera.view(), tri.v1.position);
-    viewTri.v2.position = Matrix::multiplyVec3(camera.view(), tri.v2.position);
+    viewTri.v0.position = Matrix::multiplyVec3(camera.view(), tri.v0.worldPos);
+    viewTri.v1.position = Matrix::multiplyVec3(camera.view(), tri.v1.worldPos);
+    viewTri.v2.position = Matrix::multiplyVec3(camera.view(), tri.v2.worldPos);
+
+    // viewTri.v0.normal = Utils::normalise(Matrix::multiplyVec3AsNormal(camera.view(), tri.v0.normal));
+    // viewTri.v1.normal = Utils::normalise(Matrix::multiplyVec3AsNormal(camera.view(), tri.v1.normal));
+    // viewTri.v2.normal = Utils::normalise(Matrix::multiplyVec3AsNormal(camera.view(), tri.v2.normal));
 
     return nearPlaneClip(viewTri.v0, viewTri.v1, viewTri.v2, camera.nearPlane(), camera.farPlane());
 }
@@ -73,6 +81,9 @@ Renderer::RasterVertex Renderer::toScreenSpace(const Vertex& vertex, const Mat4&
 
     /* Perspective Correction for Textures */
     Renderer::RasterVertex rv;
+    rv.worldPos = vertex.worldPos;
+    rv.viewPos = vertex.position;
+    rv.normal = vertex.normal;
     rv.screenPos = screenPos;
     rv.inverseZ = 1.f / clipSpace.w;
     rv.uvOverZ = vertex.texCoords * rv.inverseZ;
@@ -112,6 +123,7 @@ void Renderer::rasterise(const RasterVertex& v0, const RasterVertex& v1, const R
 
                     if (image)
                     {
+                        /* Move all this into a fragment shader */
                         float max = 1.f;
                         float min = 0.1f;
                         float multi = 1.1f;
@@ -119,7 +131,25 @@ void Renderer::rasterise(const RasterVertex& v0, const RasterVertex& v1, const R
                         float r = ((d - min) / (max - min)) * multi;
                         r = std::clamp(r, 0.f, 1.f);
 
-                        uint32_t final = Utils::combineHex(texel(v0, v1, v2, *image, point), fog(idx, 0x111111), r);
+                        Vec3f lightDir{ 1.f, 0.f, -1.f };
+
+                        /* Gouraud Shading */
+                        Vec3f normal = v0.normal * point.x + v1.normal * point.y + v2.normal * point.z;
+
+                        /* Flat Shading */
+                        //Vec3f normal = Utils::getFaceNormal(v0.worldPos, v1.worldPos, v2.worldPos);
+
+                        Utils::normalise(normal);
+                        float intensity = std::max(0.f, Utils::dot(normal, lightDir));
+
+                        /* Dividing intensity by r, I think, increases the contrast and keeps lit parts lighter, deeper into the fog */
+                        /* Multiply by r results in smoother, but duller light */
+                        // intensity /= r;
+                        // intensity = std::clamp(intensity, 0.f, 1.f);
+                        
+                        uint32_t final = Utils::combineHex(0x111111, texel(v0, v1, v2, *image, point), intensity);
+                        //final = Utils::combineHex(final, fog(idx, 0x111111), r);
+
                         m_context.m_backBuffer[idx] = final;
                     }
                     else

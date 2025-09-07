@@ -18,11 +18,11 @@ public:
     static const uint32_t rgbToHex(const Vec3f& colour);
     static const uint32_t combineHex(const uint32_t& ca, const uint32_t& cb, const float ratio);
     static const uint32_t rasteriseColour(const uint32_t c0, const uint32_t c1, const uint32_t c2, const float w0, const float w1, const float w2);
-    static const uint32_t pcgHash(const uint32_t seed);
     static const uint32_t applyLighting(const uint32_t baseColour, const float intensity);
+    static const uint32_t pcgHash(const uint32_t seed);
 
-    static const Vec3f getViewSpaceNormals(const Mat4& mv, const Vec3f& a, const Vec3f& b, const Vec3f& c);
-    static const Vec3f getNormals(const Vec3f& a, const Vec3f& b, const Vec3f& c);
+    static const Vec3f reflect(const Vec3f& i, const Vec3f& n);
+    static const Vec3f getFaceNormal(const Vec3f& a, const Vec3f& b, const Vec3f& c);
     static const Vec3f normalise(const Vec3f& vec);
     static const float length(const Vec3f& normal);
     static const Vec3f cross(const Vec3f& a, const Vec3f& b);

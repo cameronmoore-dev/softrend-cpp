@@ -56,6 +56,15 @@ Vec3f Matrix::multiplyVec3(const Mat4& mat, const Vec3f& vec)
     return result;
 }
 
+Vec3f Matrix::multiplyVec3AsNormal(const Mat4& mat, const Vec3f& vec)
+{
+    Vec3f result = {};
+    result.x = mat[0][0] * vec.x + mat[0][1] * vec.y + mat[0][2] * vec.z;
+    result.y = mat[1][0] * vec.x + mat[1][1] * vec.y + mat[1][2] * vec.z;
+    result.z = mat[2][0] * vec.x + mat[2][1] * vec.y + mat[2][2] * vec.z;
+    return result;
+}
+
 Mat4 Matrix::perspective(float fov, float aspect, float zNear, float zFar)
 {
     Mat4 result = {};

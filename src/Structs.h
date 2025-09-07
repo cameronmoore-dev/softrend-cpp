@@ -58,12 +58,11 @@ struct Vec3f
     }
 };
 
-
-
 struct Vertex
 {
+    Vec3f worldPos;
     Vec3f position;
-    Vec3f normals;
+    Vec3f normal;
     Vec2f texCoords;
     uint32_t colour;
 };

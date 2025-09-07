@@ -69,15 +69,12 @@ const uint32_t Utils::applyLighting(uint32_t baseColour, float intensity)
     return (r << 16) | (g << 8) | b;
 }
 
-const Vec3f Utils::getViewSpaceNormals(const Mat4& mv, const Vec3f& a, const Vec3f& b, const Vec3f& c)
+const Vec3f Utils::reflect(const Vec3f& i, const Vec3f& n)
 {
-    return getNormals(
-        toVec3(Matrix::multiply(mv, a)), 
-        toVec3(Matrix::multiply(mv, b)), 
-        toVec3(Matrix::multiply(mv, c)));
+    return i - n * (2.0f * dot(n, i));
 }
 
-const Vec3f Utils::getNormals(const Vec3f& a, const Vec3f& b, const Vec3f& c)
+const Vec3f Utils::getFaceNormal(const Vec3f& a, const Vec3f& b, const Vec3f& c)
 {
     Vec3f ab;
     Vec3f ac;
@@ -85,7 +82,7 @@ const Vec3f Utils::getNormals(const Vec3f& a, const Vec3f& b, const Vec3f& c)
     ab = b - a;
     ac = c - a;
 
-    return cross(ac, ab);
+    return normalise(cross(ac, ab));
 }
 
 const Vec3f Utils::normalise(const Vec3f& vec)
