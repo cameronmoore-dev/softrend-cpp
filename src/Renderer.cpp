@@ -131,26 +131,35 @@ void Renderer::rasterise(const RasterVertex& v0, const RasterVertex& v1, const R
                         float r = ((d - min) / (max - min)) * multi;
                         r = std::clamp(r, 0.f, 1.f);
 
-                        Vec3f lightDir{ 1.f, 0.f, -1.f };
+                        Vec3f lightDir{ 0.f, 0.f, -1.f };
+                        Vec3f lightColour = Utils::hexToRGB(0xffffff);
+
+                        /* Flat Shading */
+                        // Vec3f normal = Utils::getFaceNormal(v0.worldPos, v1.worldPos, v2.worldPos);
 
                         /* Gouraud Shading */
                         Vec3f normal = v0.normal * point.x + v1.normal * point.y + v2.normal * point.z;
+                        normal = Utils::normalise(normal);
 
-                        /* Flat Shading */
-                        //Vec3f normal = Utils::getFaceNormal(v0.worldPos, v1.worldPos, v2.worldPos);
+                        float diff = std::max(0.f, Utils::dot(normal, lightDir));
+                        Vec3f diffuse = lightColour * diff;
 
-                        Utils::normalise(normal);
-                        float intensity = std::max(0.f, Utils::dot(normal, lightDir));
+                        /* Phong Lighting Model - the lightDir used in the dot product is a substitute for the view direction */
+                        // Vec3f reflectDir = Utils::reflect(-lightDir, normal);
+                        // float spec = std::pow(std::max(Utils::dot(lightDir, reflectDir), 0.f), 64);
+                        // float specStrength = 0.5f;
+                        // Vec3f specular = lightColour * specStrength * spec;
 
-                        /* Dividing intensity by r, I think, increases the contrast and keeps lit parts lighter, deeper into the fog */
-                        /* Multiply by r results in smoother, but duller light */
-                        // intensity /= r;
-                        // intensity = std::clamp(intensity, 0.f, 1.f);
-                        
-                        uint32_t final = Utils::combineHex(0x111111, texel(v0, v1, v2, *image, point), intensity);
-                        //final = Utils::combineHex(final, fog(idx, 0x111111), r);
+                        /* Blinn-Phong Lighting Model */
+                        Vec3f halfwayDir = Utils::normalise(lightDir + lightDir);
+                        float spec = std::pow(std::max(Utils::dot(normal, halfwayDir), 0.f), 256);
+                        Vec3f specular = lightColour * spec;
 
-                        m_context.m_backBuffer[idx] = final;
+                        Vec3f final_light = (Utils::hexToRGB(0x111111) + diffuse + specular) * Utils::hexToRGB(texel(v0, v1, v2, *image, point));
+
+                        //uint32_t final = Utils::combineHex(Utils::rgbToHex(final_light), fog(idx, 0x111111), r);
+
+                        m_context.m_backBuffer[idx] = Utils::rgbToHex(final_light);
                     }
                     else
                     {

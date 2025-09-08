@@ -1,6 +1,7 @@
 #include "Model.h"
 
 #include <filesystem>
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -67,8 +68,6 @@ void Model::loadModel(const std::string& dir)
             std::string vtxStr;
             while (s_stream >> vtxStr)
             {
-                std::istringstream vs_stream(vtxStr);
-
                 std::string v, t, n;
 
                 size_t v_pos = vtxStr.find("/");
@@ -93,9 +92,9 @@ void Model::loadModel(const std::string& dir)
                     v = vtxStr;
                 }
 
-                vtx.position    = positions[std::stoi(v) - 1];
-                vtx.texCoords   = texCoords[std::stoi(t) - 1];
-                vtx.normal      = normals[std::stoi(n) - 1];
+                vtx.position = positions[std::stoi(v) - 1];
+                if (t.size() > 0) vtx.texCoords = texCoords[std::stoi(t) - 1];
+                if (n.size() > 0) vtx.normal = normals[std::stoi(n) - 1];
 
                 vertices.emplace_back(vtx);
             }
