@@ -9,6 +9,8 @@ Scene_Suzanne::Scene_Suzanne(Window& window) :
 
 void Scene_Suzanne::start()
 {
+    shader.image = &m_texture;
+
     double previous = getTimeSeconds();
     while (m_window.isOpen())
     {
@@ -132,13 +134,22 @@ void Scene_Suzanne::update()
 
     m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
     m_camera.updateView();
+
+    shader.model = m_model;
+    shader.view = m_camera.view();
+    shader.projection = m_camera.projection();
 }
 
 void Scene_Suzanne::render()
 {
     m_window.clear(0x111111);
 
-    m_renderer.draw(m_suzanne.vertices, &m_texture, m_camera, m_model);
+    Vec3f centre{ 0, 0, 0 };
+    float radius = 1.f;
+    if (m_camera.isSphereInsideFrustum(shader.model, centre, radius))
+    {
+        m_renderer.draw(m_suzanne.vertices, shader);
+    }
 
     m_window.display();
 }

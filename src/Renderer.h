@@ -1,37 +1,17 @@
 #pragma once
 
 #include <vector>
-#include <stdint.h>
 
 #include "Window.h"
+#include "IShader.h"
 #include "Structs.h"
 #include "Utils.h"
-#include "Matrix.h"
-#include "Image.h"
-#include "Camera.h"
 
 class Renderer
 {
-private:
-    struct Triangle
-    {
-        Vertex v0, v1, v2;
-    };
-
-    struct RasterVertex
-    {
-        Vec3f worldPos;
-        Vec3f viewPos;
-        Vec3f screenPos;
-        Vec3f normal;
-        Vec2f uvOverZ;
-        float inverseZ;
-        uint32_t colour;
-    };
-
 public:
-    Renderer(Window& window);
-    void draw(const std::vector<Vertex>& vertices, Image* texture, Camera& camera, const Mat4& model);
+    Renderer(Window& context);
+    void draw(const std::vector<Vertex>& vertices, IShader& shader);
 
 private:
     Window& m_context;
@@ -39,19 +19,18 @@ private:
     Vec2f m_bbMin;
     Vec2f m_bbMax;
 
-private:
-    Triangle toModelSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2, const Mat4& model);
-    std::vector<Vertex> toViewSpace(const Triangle& tri, const Camera& camera);
-    RasterVertex toScreenSpace(const Vertex& vertex, const Mat4& projection);
-    
-    void rasterise(const RasterVertex& v0, const RasterVertex& v1, const RasterVertex& v2, Image* image);
-    void boundingBox(const Vec3f& a, const Vec3f& b, const Vec3f& c);
-    Vec3f barycentric(const Vec2i& p, const Vec3f& a, const Vec3f& b, const Vec3f& c);
-    float edgeFunction(const Vec3f& a, const Vec3f& b, const Vec3f& c);
-    uint32_t texel(const RasterVertex& v0, const RasterVertex& v1, const RasterVertex& v2, const Image& image, const Vec3f& weights);
+    std::vector<glVertex> clipped;
 
-    std::vector<Vertex> nearPlaneClip(const Vertex& a, const Vertex& b, const Vertex& c, float zNear, float zFar);
-    Vertex interpolate(const Vertex& a, const Vertex& b, float t);
+private:
+    void transformVertex(glVertex& vertex);
     
-    uint32_t fog(uint32_t idx, uint32_t fogColour);
+    void rasterise(IShader& shader, const glTriangle& polygon);
+    void boundingBox(const Vec4f& a, const Vec4f& b, const Vec4f& c);
+    Vec3f barycentric(const Vec2i& p, const Vec4f& a, const Vec4f& b, const Vec4f& c);
+    float edgeFunction(const Vec4f& a, const Vec4f& b, const Vec4f& c);
+
+    void nearPlaneClip(glTriangle& polygon, std::vector<glVertex>& out);
+    glVertex interpolate(const glVertex& a, const glVertex& b);
+    
+    // uint32_t fog(uint32_t idx, uint32_t fogColour);
 };

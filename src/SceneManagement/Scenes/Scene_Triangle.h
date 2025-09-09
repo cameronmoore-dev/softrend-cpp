@@ -1,9 +1,12 @@
 #pragma once
 
 #include "../Scene.h"
+#include "../../IShader.h"
 #include "../../Renderer.h"
 #include "../../Camera.h"
 #include "../../Matrix.h"
+
+#include "../../Shaders/Shader.h"
 
 class Scene_Triangle : public Scene
 {
@@ -22,6 +25,8 @@ private:
     Window& m_window;
     Renderer m_renderer = Renderer(m_window);
     Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 100.f);
+
+    Shader m_shader;
 
     Mat4 m_model = Matrix::identity();
 

@@ -1,11 +1,14 @@
 #pragma once
 
 #include "../Scene.h"
+#include "../../IShader.h"
 #include "../../Window.h"
 #include "../../Renderer.h"
 #include "../../Matrix.h"
 #include "../../Model.h"
 #include "../../Camera.h"
+
+#include "../../Shaders/Shader.h"
 
 class Scene_Cube : public Scene
 {
@@ -26,6 +29,8 @@ private:
     Model m_cube = Model("./resources/model_cube.obj");
     Image m_texture = Image("./resources/texture_dirtcube.tga");
     Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 100.f);
+
+    Shader m_shader;
     
     Mat4 m_model = Matrix::identity();
 

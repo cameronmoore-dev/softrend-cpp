@@ -7,6 +7,8 @@
 #include "../../Model.h"
 #include "../../Camera.h"
 
+#include "../../Shaders/Shader.h"
+
 class Scene_Suzanne : public Scene
 {
 public:
@@ -26,6 +28,8 @@ private:
     Model m_suzanne = Model("./resources/model_suzanne.obj");
     Image m_texture = Image("./resources/texture_suzanne.tga");
     Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 100.f);
+
+    Shader shader;
     
     Mat4 m_model = Matrix::identity();
 

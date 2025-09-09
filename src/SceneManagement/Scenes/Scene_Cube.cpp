@@ -9,8 +9,7 @@ Scene_Cube::Scene_Cube(Window& window) :
 
 void Scene_Cube::start()
 {
-    //m_camera.updateRotation(0, 0, m_dt);
-    //m_renderer.setContext(m_window);
+    m_shader.image = &m_texture;
 
     double previous = getTimeSeconds();
     while (m_window.isOpen())
@@ -135,13 +134,17 @@ void Scene_Cube::update()
 
     m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
     m_camera.updateView();
+
+    m_shader.model = m_model;
+    m_shader.view = m_camera.view();
+    m_shader.projection = m_camera.projection();
 }
 
 void Scene_Cube::render()
 {
     m_window.clear(0x111111);
 
-    m_renderer.draw(m_cube.vertices, &m_texture, m_camera, m_model);
+    m_renderer.draw(m_cube.vertices, m_shader);
 
     m_window.display();
 }
