@@ -14,4 +14,5 @@ public:
 
 private:
     void loadModel(const std::string& dir);
+    void computeTangents();
 };

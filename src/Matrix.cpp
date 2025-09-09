@@ -56,13 +56,31 @@ Vec3f Matrix::multiplyVec3(const Mat4& mat, const Vec3f& vec)
     return result;
 }
 
-Vec3f Matrix::multiplyVec3AsNormal(const Mat4& mat, const Vec3f& vec)
+Vec3f Matrix::multiplyVec3(const Mat3& mat, const Vec3f& vec)
 {
     Vec3f result = {};
     result.x = mat[0][0] * vec.x + mat[0][1] * vec.y + mat[0][2] * vec.z;
     result.y = mat[1][0] * vec.x + mat[1][1] * vec.y + mat[1][2] * vec.z;
     result.z = mat[2][0] * vec.x + mat[2][1] * vec.y + mat[2][2] * vec.z;
     return result;
+}
+
+Mat3 Matrix::constructTBN(const Vec3f& t, const Vec3f& b, const Vec3f& n)
+{
+    Mat3 tbn;
+    tbn[0][0] = t.x;
+    tbn[1][0] = t.y;
+    tbn[2][0] = t.z;
+
+    tbn[0][1] = b.x;
+    tbn[1][1] = b.y;
+    tbn[2][1] = b.z;
+
+    tbn[0][2] = n.x;
+    tbn[1][2] = n.y;
+    tbn[2][2] = n.z;
+
+    return tbn;
 }
 
 Mat4 Matrix::perspective(float fov, float aspect, float zNear, float zFar)

@@ -9,7 +9,8 @@ Scene_Suzanne::Scene_Suzanne(Window& window) :
 
 void Scene_Suzanne::start()
 {
-    shader.image = &m_texture;
+    shader.texture = &m_texture;
+    shader.normalMap = &m_normalMap;
 
     double previous = getTimeSeconds();
     while (m_window.isOpen())

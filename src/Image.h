@@ -35,12 +35,25 @@ public:
     Image(const std::string& dir);
     ~Image();
 
-    const uint32_t pixel(uint32_t index) const {
+    const uint32_t pixel(uint32_t index) const
+    {
         return (m_pixels[index].data[0] << 16) |
                (m_pixels[index].data[1] << 8)  | 
                (m_pixels[index].data[2])       |
                (m_pixels[index].data[3] << 24);
     }
+
+    const Vec4i pixelRGBA(uint32_t index) const
+    {
+        return 
+        {   
+            m_pixels[index].data[0], 
+            m_pixels[index].data[1], 
+            m_pixels[index].data[2], 
+            m_pixels[index].data[3]
+        };
+    }
+
     const Vec2i size() const { return { m_width, m_height }; }
 
     void write(const std::string& fileName);

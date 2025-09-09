@@ -83,9 +83,7 @@ private:
     std::vector<float>      m_depthBuffer;
     
     std::queue<Event>       m_events;
-
-    int xorigin = 0;
-    int yorigin = 0;
+    
     uint32_t m_width = 0;
     uint32_t m_height = 0;
 

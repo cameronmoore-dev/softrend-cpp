@@ -7,7 +7,7 @@
 #include "../../Model.h"
 #include "../../Camera.h"
 
-#include "../../Shaders/Shader.h"
+#include "../../Shaders/Suzanne_Shader.h"
 
 class Scene_Suzanne : public Scene
 {
@@ -27,9 +27,10 @@ private:
     Renderer m_renderer = Renderer(m_window);
     Model m_suzanne = Model("./resources/model_suzanne.obj");
     Image m_texture = Image("./resources/texture_suzanne.tga");
+    Image m_normalMap = Image("./resources/suzanne_normal.tga");
     Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 100.f);
 
-    Shader shader;
+    Suzanne_Shader shader;
     
     Mat4 m_model = Matrix::identity();
 

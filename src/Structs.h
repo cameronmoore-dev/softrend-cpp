@@ -13,21 +13,9 @@ struct Vec3i
     int32_t x, y, z;
 };
 
-struct Vec2f
+struct Vec4i
 {
-    float x, y;
-
-    const Vec2f operator+(const Vec2f& rhs) const { return { x + rhs.x, y + rhs.y }; }
-    const Vec2f operator-(const Vec2f& rhs) const { return { x - rhs.x, y - rhs.y }; }
-    const Vec2f operator*(const Vec2f& rhs) const { return { x * rhs.x, y * rhs.y }; }
-    const Vec2f operator/(const Vec2f& rhs) const { return { x / rhs.x, y / rhs.y }; }
-
-    const Vec2f operator+(const float& value) const { return { x + value, y + value }; }
-    const Vec2f operator-(const float& value) const { return { x - value, y - value }; }
-    const Vec2f operator*(const float& value) const { return { x * value, y * value }; }
-    const Vec2f operator/(const float& value) const { return { x / value, y / value }; }
-
-    const Vec2f operator*=(const float& value) { return {x *= value, y *= value }; }
+    int32_t x, y, z, w;
 };
 
 struct Vec4f
@@ -55,6 +43,28 @@ struct Vec4f
     }
 };
 
+struct Vec2f
+{
+    float x, y;
+
+    const Vec2f operator+(const Vec2f& rhs) const { return { x + rhs.x, y + rhs.y }; }
+    const Vec2f operator-(const Vec2f& rhs) const { return { x - rhs.x, y - rhs.y }; }
+    const Vec2f operator*(const Vec2f& rhs) const { return { x * rhs.x, y * rhs.y }; }
+    const Vec2f operator/(const Vec2f& rhs) const { return { x / rhs.x, y / rhs.y }; }
+
+    const Vec2f operator+(const Vec4f& rhs) const { return { x + rhs.x, y + rhs.y }; }
+    const Vec2f operator-(const Vec4f& rhs) const { return { x - rhs.x, y - rhs.y }; }
+    const Vec2f operator*(const Vec4f& rhs) const { return { x * rhs.x, y * rhs.y }; }
+    const Vec2f operator/(const Vec4f& rhs) const { return { x / rhs.x, y / rhs.y }; }
+
+    const Vec2f operator+(const float& value) const { return { x + value, y + value }; }
+    const Vec2f operator-(const float& value) const { return { x - value, y - value }; }
+    const Vec2f operator*(const float& value) const { return { x * value, y * value }; }
+    const Vec2f operator/(const float& value) const { return { x / value, y / value }; }
+
+    const Vec2f operator*=(const float& value) { return {x *= value, y *= value }; }
+};
+
 struct Vec3f
 {
     float x, y, z;
@@ -80,20 +90,28 @@ struct Vec3f
     }
 };
 
+
+
 struct Vertex
 {
     Vec3f position;
     Vec3f normal;
-    Vec2f texCoords;
+    Vec2f uv;
     uint32_t colour;
+
+    Vec3f tangent;
+    Vec3f bitangent;
 };
 
 struct glVertex
 {
     Vec4f position;
     Vec3f normal;
-    Vec2f texCoords;
+    Vec2f uv;
     uint32_t colour;
+
+    Vec3f tangent;
+    Vec3f bitangent;
 
     float inverseW;
 };

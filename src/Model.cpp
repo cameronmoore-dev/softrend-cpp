@@ -6,6 +6,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "Utils.h"
+
 Model::Model(const std::string& dir)
 {
     loadModel(dir);
@@ -93,11 +95,59 @@ void Model::loadModel(const std::string& dir)
                 }
 
                 vtx.position = positions[std::stoi(v) - 1];
-                if (t.size() > 0) vtx.texCoords = texCoords[std::stoi(t) - 1];
+                if (t.size() > 0) vtx.uv = texCoords[std::stoi(t) - 1];
                 if (n.size() > 0) vtx.normal = normals[std::stoi(n) - 1];
 
                 vertices.emplace_back(vtx);
             }
         }
+    }
+
+    computeTangents();
+}
+
+void Model::computeTangents()
+{
+    for (uint32_t i = 0; i < vertices.size(); i+=3)
+    {
+        Vec3f pos0 = vertices[i].position;
+        Vec3f pos1 = vertices[i+1].position;
+        Vec3f pos2 = vertices[i+2].position;
+
+        Vec2f uv0 = vertices[i].uv;
+        Vec2f uv1 = vertices[i+1].uv;
+        Vec2f uv2 = vertices[i+2].uv;
+
+        Vec3f edge1 = pos1 - pos0;
+        Vec3f edge2 = pos2 - pos0;
+
+        Vec2f delta1 = uv1 - uv0;
+        Vec2f delta2 = uv2 - uv0;
+
+        float f = 1.f / (delta1.x * delta2.y - delta2.x * delta1.y);
+
+        Vec3f t, b;
+
+        t.x = (delta2.y * edge1.x - delta1.y * edge2.x) * f;
+        t.y = (delta2.y * edge1.y - delta1.y * edge2.y) * f;
+        t.z = (delta2.y * edge1.z - delta1.y * edge2.z) * f;
+
+        b.x = (-delta2.x * edge1.x + delta1.x * edge2.x) * f;
+        b.y = (-delta2.x * edge1.y + delta1.x * edge2.y) * f;
+        b.z = (-delta2.x * edge1.z + delta1.x * edge2.z) * f;
+
+        vertices[i].tangent += t;
+        vertices[i+1].tangent += t;
+        vertices[i+2].tangent += t;
+
+        vertices[i].bitangent += b;
+        vertices[i+1].bitangent += b;
+        vertices[i+2].bitangent += b;
+    }
+
+    for (Vertex& vertex : vertices)
+    {
+        vertex.tangent = Utils::normalise(vertex.tangent);
+        vertex.bitangent = Utils::normalise(vertex.bitangent);
     }
 }

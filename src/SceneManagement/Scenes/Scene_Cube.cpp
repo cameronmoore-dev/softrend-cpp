@@ -9,7 +9,7 @@ Scene_Cube::Scene_Cube(Window& window) :
 
 void Scene_Cube::start()
 {
-    m_shader.image = &m_texture;
+    m_shader.texture = &m_texture;
 
     double previous = getTimeSeconds();
     while (m_window.isOpen())

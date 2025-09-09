@@ -40,7 +40,7 @@ void Renderer::transformVertex(glVertex& vertex)
 
     /* For Perspective Corrected Texture Mapping */
     vertex.inverseW = 1.0f / clip.w;
-    vertex.texCoords *= vertex.inverseW;
+    vertex.uv *= vertex.inverseW;
 
     /* Perspective Division */
     clip.x /= clip.w;
@@ -124,7 +124,7 @@ glVertex Renderer::interpolate(const glVertex& a, const glVertex& b)
 
     glVertex out;
     out.position = a.position + (b.position - a.position) * t;
-    out.texCoords = a.texCoords + (b.texCoords - a.texCoords) * t;
+    out.uv = a.uv + (b.uv - a.uv) * t;
     out.normal = a.normal + (b.normal - a.normal) * t;
     out.inverseW = a.inverseW + (b.inverseW - a.inverseW) * t;
     out.colour = a.colour + (b.colour - a.colour) * t;

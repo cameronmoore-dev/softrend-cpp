@@ -223,7 +223,7 @@ void Window::display()
 {
     if (m_mouseLocked)
     {
-        SetCursorPos(m_width / 2 + xorigin, m_height / 2 + yorigin);
+        SetCursorPos(m_rect.left + (m_width / 2), m_rect.bottom - (m_height / 2));
     }
     
     PAINTSTRUCT paint;
