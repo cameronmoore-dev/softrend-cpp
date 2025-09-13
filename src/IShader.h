@@ -45,20 +45,9 @@ protected:
     Vec3f sampleNormalMap(const glTriangle& polygon, const Image& image, const Vec3f& barycentric)
     {
         // Perspective-correct TBN
-        Vec3f T = ( 
-            polygon.v0.tangent * barycentric.x +
-            polygon.v1.tangent * barycentric.y +
-            polygon.v2.tangent * barycentric.z);
-
-        Vec3f B = (
-            polygon.v0.bitangent * barycentric.x +
-            polygon.v1.bitangent * barycentric.y +
-            polygon.v2.bitangent * barycentric.z);
-
-        Vec3f N = (
-            polygon.v0.normal * barycentric.x +
-            polygon.v1.normal * barycentric.y +
-            polygon.v2.normal * barycentric.z);
+        Vec3f T = polygon.v0.tangent * barycentric.x + polygon.v1.tangent * barycentric.y + polygon.v2.tangent * barycentric.z;
+        Vec3f B = polygon.v0.bitangent * barycentric.x + polygon.v1.bitangent * barycentric.y + polygon.v2.bitangent * barycentric.z;
+        Vec3f N = polygon.v0.normal * barycentric.x + polygon.v1.normal * barycentric.y + polygon.v2.normal * barycentric.z;
 
         Vec2i uv = perspectiveCorrectedUV(polygon, image, barycentric);
         Vec4i texel = image.pixelRGBA(uv.x + uv.y * image.size().x);

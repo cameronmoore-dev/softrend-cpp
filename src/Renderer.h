@@ -10,14 +10,27 @@
 class Renderer
 {
 public:
+    enum class RenderMode
+    {
+        Shadow,
+        Final
+    };
+
     Renderer(Window& context);
     void draw(const std::vector<Vertex>& vertices, IShader& shader);
 
+    inline static std::vector<float> depthMap;
+    
+    RenderMode renderMode = RenderMode::Shadow;
 private:
     Window& m_context;
 
     Vec2f m_bbMin;
     Vec2f m_bbMax;
+    bool a = true;
+
+    uint32_t viewportWidth;
+    uint32_t viewportHeight;
 
     std::vector<glVertex> clipped;
 

@@ -6,6 +6,9 @@
 struct Vec2i
 {
     int32_t x, y;
+
+    const Vec2i operator+(const float& value) const { return { x + (int32_t)value, y + (int32_t)value }; }
+    const Vec2i operator*(const float& value) const { return { x * (int32_t)value, y * (int32_t)value }; }
 };
 
 struct Vec3i
@@ -23,14 +26,14 @@ struct Vec4f
     float x, y, z, w;
 
     const Vec4f operator+(const Vec4f& rhs) const { return { x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w }; }
-    const Vec4f operator-(const Vec4f& rhs) const { return { x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w}; }
+    const Vec4f operator-(const Vec4f& rhs) const { return { x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w }; }
     const Vec4f operator*(const Vec4f& rhs) const { return { x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w }; }
     const Vec4f operator/(const Vec4f& rhs) const { return { x / rhs.x, y / rhs.y, z / rhs.z, w / rhs.w }; }
 
-    const Vec4f operator+(const float& value) const { return { x + value, y + value, z + value }; }
-    const Vec4f operator-(const float& value) const { return { x - value, y - value, z - value }; }
-    const Vec4f operator*(const float& value) const { return { x * value, y * value, z * value }; }
-    const Vec4f operator/(const float& value) const { return { x / value, y / value, z / value }; }
+    const Vec4f operator+(const float& value) const { return { x + value, y + value, z + value, w + value }; }
+    const Vec4f operator-(const float& value) const { return { x - value, y - value, z - value, w - value }; }
+    const Vec4f operator*(const float& value) const { return { x * value, y * value, z * value, w * value }; }
+    const Vec4f operator/(const float& value) const { return { x / value, y / value, z / value, w / value }; }
 
     const Vec4f operator+=(const Vec4f& rhs) { return { x += rhs.x, y += rhs.y, z += rhs.z }; }
     const Vec4f operator-=(const Vec4f& rhs) { return { x -= rhs.x, y -= rhs.y, z -= rhs.z }; }
@@ -114,6 +117,7 @@ struct glVertex
     Vec3f bitangent;
 
     float inverseW;
+    Vec4f fragPos;
 };
 
 struct glTriangle

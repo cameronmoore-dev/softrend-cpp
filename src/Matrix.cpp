@@ -27,13 +27,14 @@ Mat4 Matrix::multiply(const Mat4& matA, const Mat4& matB)
 
 Vec4f Matrix::multiply(const Mat4& mat, const Vec3f& _vec)
 {
-    Vec4f vec = Utils::toVec4(_vec);
+    Vec4f vec = Utils::toVec4(_vec, 1.f);
 
     Vec4f result = {};
     result.x = mat[0][0] * vec.x + mat[0][1] * vec.y + mat[0][2] * vec.z + mat[0][3] * vec.w;
     result.y = mat[1][0] * vec.x + mat[1][1] * vec.y + mat[1][2] * vec.z + mat[1][3] * vec.w;
     result.z = mat[2][0] * vec.x + mat[2][1] * vec.y + mat[2][2] * vec.z + mat[2][3] * vec.w;
     result.w = mat[3][0] * vec.x + mat[3][1] * vec.y + mat[3][2] * vec.z + mat[3][3] * vec.w;
+
     return result;
 }
 
@@ -97,12 +98,12 @@ Mat4 Matrix::perspective(float fov, float aspect, float zNear, float zFar)
     return result;
 }
 
-Mat4 Matrix::orthographic(int32_t left, int32_t top, int32_t right, int32_t bottom, float zNear, float zFar)
+Mat4 Matrix::orthographic(int32_t left, int32_t right, int32_t bottom, int32_t top, float zNear, float zFar)
 {
     Mat4 result = {};
     result[0][0] = 2.f / (right - left);
     result[0][3] = -(right + left) / (right - left);
-    result[1][1] = -2.f / (top - bottom);
+    result[1][1] = 2.f / (top - bottom);
     result[1][3] = -(top + bottom) / (top - bottom);
     result[2][2] = -2.f / (zFar - zNear);
     result[2][3] = -(zFar + zNear) / (zFar - zNear);

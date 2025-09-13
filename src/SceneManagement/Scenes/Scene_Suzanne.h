@@ -31,6 +31,9 @@ private:
     Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 100.f);
 
     Suzanne_Shader shader;
+    // -3.2f, 2.4f, 3.2f, -2.4f, 1.f, 10.f
+    Mat4 m_lightProj = Matrix::orthographic(-2.f, 2.f, -2.f, 2.f, 1.f, 10.f);
+    Mat4 m_lightView = Matrix::identity();
     
     Mat4 m_model = Matrix::identity();
 
@@ -39,6 +42,7 @@ private:
     Mat4 m_scale = Matrix::identity();
 
     float m_angle = 0.f;
-
     double m_dt = 0.f;
+
+    bool a = true;
 };

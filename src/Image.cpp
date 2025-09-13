@@ -189,3 +189,34 @@ void Image::readRLEPacket(std::ifstream& file, const uint8_t chunkHeader, size_t
         bufPixel.data[3] = hasAlphaChannel ? imgPixel[3] : 255;
     }
 }
+
+void Image::fromDepthMap(const std::vector<float>& depthMap, int width, int height)
+{
+    m_width = width;
+    m_height = height;
+    m_pixels = new TGAPixel[width * height];
+
+    // Find max and min to normalize (optional, depends on your map range)
+    float minDepth = 1.0f, maxDepth = 0.0f;
+    for (float d : depthMap)
+    {
+        if (d < minDepth) minDepth = d;
+        if (d > maxDepth) maxDepth = d;
+    }
+
+    // Avoid divide by zero
+    float range = std::max(maxDepth - minDepth, 1e-5f);
+
+    for (int i = 0; i < width * height; ++i)
+    {
+        float d = depthMap[i];
+
+        // Normalize to [0, 1]
+        float norm = (d - minDepth) / range;
+        
+        // Invert for visualization: closer = white
+        uint8_t grayscale = static_cast<uint8_t>((1.0f - norm) * 255.0f);
+        TGAPixel pixel = { grayscale, grayscale, grayscale, 255 };
+        m_pixels[i] = pixel;
+    }
+}

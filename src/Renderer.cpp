@@ -9,16 +9,27 @@ Renderer::Renderer(Window& context) :
     m_context(context)
 {
     clipped.reserve(6);
+    depthMap.resize(1024*1024, 1.f);
 }
 
 void Renderer::draw(const std::vector<Vertex>& vertices, IShader& shader)
 {
+    viewportWidth   = renderMode == RenderMode::Shadow ? 1024 : m_context.m_width;
+    viewportHeight  = renderMode == RenderMode::Shadow ? 1024 : m_context.m_height;
+
     for (uint32_t i = 0; i < vertices.size(); i+=3)
     {
         glTriangle polygon;
         shader.vertex(vertices[i],   polygon.v0);
         shader.vertex(vertices[i+1], polygon.v1);
         shader.vertex(vertices[i+2], polygon.v2);
+
+        /* Back-face Culling */
+        float winding = edgeFunction(polygon.v0.position, polygon.v1.position, polygon.v2.position);
+        if (winding <= 0)
+        {
+            continue;
+        }
 
         nearPlaneClip(polygon, clipped);
         for (uint32_t i = 0; i < clipped.size(); i+=3)
@@ -28,9 +39,16 @@ void Renderer::draw(const std::vector<Vertex>& vertices, IShader& shader)
             transformVertex(clipped[i+2]);
 
             glTriangle clippedPoly { clipped[i], clipped[i+1], clipped[i+2] };
-            
             rasterise(shader, clippedPoly);
         }
+    }
+
+    if (a)
+    {
+        Image dm;
+        dm.fromDepthMap(depthMap, 1024, 1024);
+        dm.write("output.tga");
+        a=false;
     }
 }
 
@@ -49,8 +67,8 @@ void Renderer::transformVertex(glVertex& vertex)
 
     /* To Screen Space Coordinates */
     Vec4f screenPos;
-    screenPos.x = (clip.x + 1) * 0.5f * m_context.m_width;
-    screenPos.y = (clip.y + 1) * 0.5f * m_context.m_height;
+    screenPos.x = (clip.x + 1.f) * 0.5f * viewportWidth;
+    screenPos.y = (clip.y + 1.f) * 0.5f * viewportHeight;
     screenPos.z = clip.z;
 
     vertex.position = screenPos;
@@ -58,13 +76,6 @@ void Renderer::transformVertex(glVertex& vertex)
 
 void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
 {
-    /* Back-face Culling */
-    float winding = edgeFunction(polygon.v0.position, polygon.v1.position, polygon.v2.position);
-    if (winding <= 0)
-    {
-        return;
-    }
-
     boundingBox(polygon.v0.position, polygon.v1.position, polygon.v2.position);
 
     Vec2i p;
@@ -72,7 +83,7 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
     {
         for (p.x = m_bbMin.x; p.x <= m_bbMax.x; p.x++)
         {
-            if (p.x < 0 || p.y < 0 || p.x >= m_context.m_width || p.y >= m_context.m_height)
+            if (p.x < 0 || p.y < 0 || p.x >= viewportWidth|| p.y >= viewportHeight)
             {
                 continue;
             }
@@ -81,11 +92,22 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
             if (point.x >= 0 && point.y >= 0 && point.z >= 0)
             {
                 float z = polygon.v0.position.z * point.x + polygon.v1.position.z * point.y + polygon.v2.position.z * point.z;
-                uint32_t idx = p.x + p.y * m_context.m_width;
-                if (z < m_context.m_depthBuffer[idx])
+                uint32_t idx = p.x + p.y * viewportWidth;
+                
+                if (renderMode == RenderMode::Shadow)
                 {
-                    m_context.m_depthBuffer[idx] = z;
-                    m_context.m_backBuffer[idx] = shader.fragment(point, polygon, z);
+                    if (z < depthMap[idx])
+                    {
+                        depthMap[idx] = z;
+                    }
+                }
+                else if (renderMode == RenderMode::Final)
+                {
+                    if (z < m_context.m_depthBuffer[idx])
+                    {
+                        m_context.m_depthBuffer[idx] = z;
+                        m_context.m_backBuffer[idx] = shader.fragment(point, polygon, z);
+                    }
                 }
             }
         }

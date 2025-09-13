@@ -32,6 +32,7 @@ struct TGAPixel
 class Image
 {
 public:
+    Image(){}
     Image(const std::string& dir);
     ~Image();
 
@@ -57,6 +58,8 @@ public:
     const Vec2i size() const { return { m_width, m_height }; }
 
     void write(const std::string& fileName);
+
+    void fromDepthMap(const std::vector<float>& depthMap, int width, int height);
 
 private:
     int16_t m_width = 0;

@@ -1,7 +1,5 @@
 #include "Scene_Suzanne.h"
 
-#include <chrono>
-
 Scene_Suzanne::Scene_Suzanne(Window& window) :
     m_window(window)
 {
@@ -11,6 +9,13 @@ void Scene_Suzanne::start()
 {
     shader.texture = &m_texture;
     shader.normalMap = &m_normalMap;
+
+    Vec3f pos{ 0.f, 0.f, -5.f };
+    Vec3f forward{ 0.f, 0.f, -1.f };
+    m_lightView = Matrix::lookAt(pos, pos+forward, { 0, 1, 0 });
+
+    shader.lightProj = m_lightProj;
+    shader.lightView = m_lightView;
 
     double previous = getTimeSeconds();
     while (m_window.isOpen())
@@ -128,13 +133,13 @@ void Scene_Suzanne::processInput()
 void Scene_Suzanne::update()
 {
     m_camera.updateMovement(m_dt);
-    m_angle+=20.f * m_dt;
+    m_camera.updateView();
     
+    m_angle+=20.f * m_dt;
     m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
     m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
-
+    
     m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
-    m_camera.updateView();
 
     shader.model = m_model;
     shader.view = m_camera.view();
@@ -147,8 +152,17 @@ void Scene_Suzanne::render()
 
     Vec3f centre{ 0, 0, 0 };
     float radius = 1.f;
+    
     if (m_camera.isSphereInsideFrustum(shader.model, centre, radius))
     {
+        std::fill(Renderer::depthMap.begin(), Renderer::depthMap.end(), 1.f);
+
+        m_renderer.renderMode = Renderer::RenderMode::Shadow;
+        shader.isShadowPass = true;
+        m_renderer.draw(m_suzanne.vertices, shader);
+
+        m_renderer.renderMode = Renderer::RenderMode::Final;
+        shader.isShadowPass = false;
         m_renderer.draw(m_suzanne.vertices, shader);
     }
 
