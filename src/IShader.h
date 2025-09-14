@@ -13,7 +13,7 @@ public:
     virtual uint32_t fragment(const Vec3f& barycentric, const glTriangle& polygon, float depth) = 0;
 
 private:
-    Vec2i perspectiveCorrectedUV(const glTriangle& polygon, const Image& image, const Vec3f& barycentric)
+    Vec2f perspectiveCorrectedUV(const glTriangle& polygon, const Image& image, const Vec3f& barycentric)
     {
         /* Perspective-correct interpolation */
         float invInterp =       polygon.v0.inverseW * barycentric.x +
@@ -26,31 +26,34 @@ private:
 
         Vec2f finalUV = uvOverZInterp / invInterp;
 
-        int32_t u = finalUV.x * (image.size().x - 1);
-        int32_t v = finalUV.y * (image.size().y - 1);
-
-        u = std::clamp(u, 0, image.size().x - 1);
-        v = std::clamp(v, 0, image.size().y - 1);
-
-        return { u, v };
+        return { finalUV.x, finalUV.y };
     }
 
 protected:
-    uint32_t sampleDiffuseMap(const glTriangle& polygon, const Image& image, const Vec3f& barycentric)
+    uint32_t sampleDiffuseMap(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
     {
-        Vec2i uv = perspectiveCorrectedUV(polygon, image, barycentric);
-        return image.pixel(uv.x + uv.y * image.size().x);
+        float dudx, dudy, dvdx, dvdy;
+        image.derivatives(polygon, dudx, dudy, dvdx, dvdy);
+
+        float lod = image.lod(dudx, dudy, dvdx, dvdy);
+
+        Vec2f uv = perspectiveCorrectedUV(polygon, image, barycentric);
+        return image.pixel(uv.x, uv.y, lod);
     }
 
-    Vec3f sampleNormalMap(const glTriangle& polygon, const Image& image, const Vec3f& barycentric)
+    Vec3f sampleNormalMap(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
     {
         // Perspective-correct TBN
         Vec3f T = polygon.v0.tangent * barycentric.x + polygon.v1.tangent * barycentric.y + polygon.v2.tangent * barycentric.z;
         Vec3f B = polygon.v0.bitangent * barycentric.x + polygon.v1.bitangent * barycentric.y + polygon.v2.bitangent * barycentric.z;
         Vec3f N = polygon.v0.normal * barycentric.x + polygon.v1.normal * barycentric.y + polygon.v2.normal * barycentric.z;
 
-        Vec2i uv = perspectiveCorrectedUV(polygon, image, barycentric);
-        Vec4i texel = image.pixelRGBA(uv.x + uv.y * image.size().x);
+        float dudx, dudy, dvdx, dvdy;
+        image.derivatives(polygon, dudx, dudy, dvdx, dvdy);
+        float lod = image.lod(dudx, dudy, dvdx, dvdy);
+
+        Vec2f uv = perspectiveCorrectedUV(polygon, image, barycentric);
+        Vec4i texel = image.pixelRGBA(uv.x, uv.y, lod);
         Vec3f normal;
         normal.x = (texel.x / 255.f) * 2.f - 1.f;
         normal.y = (texel.y / 255.f) * 2.f - 1.f;

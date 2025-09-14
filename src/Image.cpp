@@ -4,6 +4,8 @@
 #include <fstream>
 #include <iostream>
 #include <cstring>
+#include <cmath>
+#include <algorithm>
 
 Image::Image(const std::string& dir)
 {
@@ -17,11 +19,6 @@ Image::Image(const std::string& dir)
     }
     
     loadImage(file);
-}
-
-Image::~Image()
-{
-    delete[] m_pixels;
 }
 
 void Image::loadImage(std::ifstream& file)
@@ -47,7 +44,7 @@ void Image::loadImage(std::ifstream& file)
         return;
     }
 
-    m_pixels = new TGAPixel[pixelCount];
+    m_pixels.resize(pixelCount);
 
     const bool isRLE = header.dataTypeCode == 10 || header.dataTypeCode == 11;
     const bool hasAlpha = m_bytesPerPixel == 4;
@@ -76,6 +73,12 @@ void Image::loadImage(std::ifstream& file)
     }
 
     file.close();
+
+    MipMapLevel baseMip;
+    baseMip.width = header.width;
+    baseMip.height = header.height;
+    baseMip.pixels = m_pixels;
+    generateMipMaps(baseMip);
 }
 
 void Image::write(const std::string& fileName)
@@ -106,6 +109,178 @@ void Image::write(const std::string& fileName)
     }
 
     file.close();
+}
+
+const TGAPixel Image::bilinear(float u, float v, const MipMapLevel& mip) const
+{
+    u = std::clamp(u, 0.f, 1.f);
+    v = std::clamp(v, 0.f, 1.f);
+
+    float texX = u * (mip.width - 1);
+    float texY = v * (mip.height - 1);
+
+    int x = uint32_t(texX);
+    int y = uint32_t(texY);
+
+    float fx = texX - x;
+    float fy = texY - y;
+
+    int x1 = std::clamp(x, 0, mip.width - 1);
+    int y1 = std::clamp(y, 0, mip.height - 1);
+    int x2 = std::clamp(x + 1, 0, mip.width - 1);
+    int y2 = std::clamp(y + 1, 0, mip.height - 1);
+
+    const TGAPixel& tl = mip.pixels[x1 + y1 * mip.width];
+    const TGAPixel& tr = mip.pixels[x2 + y1 * mip.width];
+    const TGAPixel& bl = mip.pixels[x1 + y2 * mip.width];
+    const TGAPixel& br = mip.pixels[x2 + y2 * mip.width];
+
+    auto lerp = [](uint8_t a, uint8_t b, float t)
+    {
+        return (uint8_t)((1.0f - t) * a + t * b + 0.5f);
+    };
+
+    TGAPixel result;
+
+    for (int i = 0; i < 4; i++)
+    {
+        uint8_t top = lerp(tl.data[i], tr.data[i], fx);
+        uint8_t bottom = lerp(bl.data[i], br.data[i], fx);
+        result.data[i] = lerp(top, bottom, fy);
+    }
+
+    return result;
+}
+
+const uint32_t Image::pixel(float u, float v, float lod)
+{
+    uint8_t level = std::clamp((int)(lod + 0.5f), 0, (int)m_mipLevels.size() - 1);
+    currentMip = level;
+    const MipMapLevel& mip = m_mipLevels[level];
+
+    TGAPixel result = bilinear(u, v, mip);
+    return (result.data[0] << 16) | (result.data[1] << 8) | (result.data[2] << 0) | (result.data[3] << 24);
+}
+
+const Vec4i Image::pixelRGBA(float u, float v, float lod)
+{
+    uint8_t level = std::clamp((int)(lod + 0.5f), 0, (int)m_mipLevels.size() - 1);
+    currentMip = level;
+    const MipMapLevel& mip = m_mipLevels[level];
+
+    TGAPixel result = bilinear(u, v, mip);
+    return  { result.data[0], result.data[1], result.data[2], result.data[3] };
+}
+
+void Image::generateMipMaps(const MipMapLevel& base)
+{
+    m_mipLevels.emplace_back(base);
+    MipMapLevel current = base;
+
+    while (current.width > 1 && current.height > 1)
+    {
+        uint16_t newWidth = std::max(1, current.width / 2);
+        uint16_t newHeight = std::max(1, current.height / 2);
+
+        MipMapLevel next;
+        next.width = newWidth;
+        next.height = newHeight;
+        next.pixels.resize(newWidth*newHeight);
+
+        for (uint16_t y = 0; y < newHeight; y++)
+        {
+            for (uint16_t x = 0; x < newWidth; x++)
+            {
+                TGAPixel a = current.pixels[(x*2) + (y*2) * current.width];
+                TGAPixel b = current.pixels[(x*2+1) + (y*2) * current.width];
+                TGAPixel c = current.pixels[(x*2) + (y*2+1) * current.width];
+                TGAPixel d = current.pixels[(x*2+1) + (y*2+1) * current.width];
+                next.pixels[x + y * newWidth] = blendColours({ a, b, c, d });
+            }
+        }
+
+        m_mipLevels.emplace_back(next);
+        current = std::move(next);
+    }
+}
+
+TGAPixel Image::blendColours(const std::initializer_list<TGAPixel>& colours)
+{
+    uint32_t r = 0;
+    uint32_t g = 0;
+    uint32_t b = 0;
+    uint32_t a = 0;
+
+    for (TGAPixel c : colours)
+    {
+        b += c.data[0];
+        g += c.data[1];
+        r += c.data[2];
+        a += c.data[3];
+    }
+
+    uint8_t count = colours.size();
+    TGAPixel blended;
+    blended.data[0] = b / count;
+    blended.data[1] = g / count;
+    blended.data[2] = r / count;
+    blended.data[3] = a / count;
+    return blended;
+}
+
+float Image::lod(float dudx, float dudy, float dvdx, float dvdy)
+{
+    float dx = dudx * dudx + dvdx * dvdx;
+    float dy = dudy * dudy + dvdy * dvdy;
+    float rho = sqrt(std::max(dx, dy));
+    // printf("%f\n", rho);
+
+    float lod = std::log2(std::max(rho, 1e-5f));
+    return std::max(0.0f, lod);
+}
+
+void Image::derivatives(const glTriangle& polygon, float& dudx, float& dudy, float& dvdx, float& dvdy)
+{
+    const float texWidth = m_mipLevels[0].width;
+    const float texHeight = m_mipLevels[0].height;
+
+    const auto& p0 = polygon.v0.position;
+    const auto& p1 = polygon.v1.position;
+    const auto& p2 = polygon.v2.position;
+
+    float x1 = p1.x - p0.x;
+    float y1 = p1.y - p0.y;
+    float x2 = p2.x - p0.x;
+    float y2 = p2.y - p0.y;
+
+    Vec2f uv0 = polygon.v0.orig_uv;
+    Vec2f uv1 = polygon.v1.orig_uv;
+    Vec2f uv2 = polygon.v2.orig_uv;
+
+    // Convert to texel space
+    uv0.x *= texWidth;
+    uv0.y *= texHeight;
+    uv1.x *= texWidth;
+    uv1.y *= texHeight;
+    uv2.x *= texWidth;
+    uv2.y *= texHeight;
+
+    float u1 = uv1.x - uv0.x;
+    float v1 = uv1.y - uv0.y;
+    float u2 = uv2.x - uv0.x;
+    float v2 = uv2.y - uv0.y;
+
+    float det = x1 * y2 - x2 * y1;
+    if (std::abs(det) < 1e-8f) {
+        dudx = dudy = dvdx = dvdy = 0;
+        return;
+    }
+
+    float invDet = 1.f / det;
+    dudx = (u1 * y2 - u2 * y1) * invDet;
+    dudy = (u2 * x1 - u1 * x2) * invDet;
+    dvdx = (v1 * y2 - v2 * y1) * invDet;
+    dvdy = (v2 * x1 - v1 * x2) * invDet;
 }
 
 void Image::readUnCompressed(std::ifstream& file, bool hasAlphaChannel)
@@ -194,7 +369,7 @@ void Image::fromDepthMap(const std::vector<float>& depthMap, int width, int heig
 {
     m_width = width;
     m_height = height;
-    m_pixels = new TGAPixel[width * height];
+    m_pixels.resize(width*height);
 
     // Find max and min to normalize (optional, depends on your map range)
     float minDepth = 1.0f, maxDepth = 0.0f;

@@ -56,6 +56,8 @@ void Renderer::transformVertex(glVertex& vertex)
 {
     Vec4f clip = vertex.position;
 
+    vertex.orig_uv = vertex.uv;
+
     /* For Perspective Corrected Texture Mapping */
     vertex.inverseW = 1.0f / clip.w;
     vertex.uv *= vertex.inverseW;

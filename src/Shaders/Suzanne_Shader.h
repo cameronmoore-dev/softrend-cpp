@@ -74,7 +74,6 @@ private:
         float bias = std::max(0.05f * (1.0f - Utils::dot(normal, lightDir)), 0.005f);
         float shadow = currentDepth - bias > shadowDepth ? 1.f : 0.f;
 
-
         float diff = std::max(0.f, Utils::dot(normal, lightDir));
         Vec3f diffuse = colour * diff;
 

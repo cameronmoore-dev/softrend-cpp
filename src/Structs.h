@@ -118,6 +118,8 @@ struct glVertex
 
     float inverseW;
     Vec4f fragPos;
+
+    Vec2f orig_uv;
 };
 
 struct glTriangle
