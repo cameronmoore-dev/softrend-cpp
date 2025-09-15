@@ -16,6 +16,7 @@ class Utils
 public:
     static const Vec3f hexToRGB(const uint32_t colour);
     static const uint32_t rgbToHex(const Vec3f& colour);
+    static const uint8_t linearToSRGB(float colour);
     static const uint32_t combineHex(const uint32_t& ca, const uint32_t& cb, const float ratio);
     static const uint32_t rasteriseColour(const uint32_t c0, const uint32_t c1, const uint32_t c2, const float w0, const float w1, const float w2);
     static const uint32_t applyLighting(const uint32_t baseColour, const float intensity);

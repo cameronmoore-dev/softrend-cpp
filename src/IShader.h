@@ -10,7 +10,7 @@ class IShader
 {
 public:
     virtual void vertex(const Vertex& v, glVertex& copy) = 0;
-    virtual uint32_t fragment(const Vec3f& barycentric, const glTriangle& polygon, float depth) = 0;
+    virtual Vec3f fragment(const Vec3f& barycentric, const glTriangle& polygon, float depth) = 0;
 
 private:
     Vec2f perspectiveCorrectedUV(const glTriangle& polygon, const Image& image, const Vec3f& barycentric)
@@ -30,7 +30,7 @@ private:
     }
 
 protected:
-    uint32_t sampleDiffuseMap(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
+    Vec3f sampleDiffuseMap(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
     {
         float dudx, dudy, dvdx, dvdy;
         image.derivatives(polygon, dudx, dudy, dvdx, dvdy);

@@ -22,6 +22,12 @@ const uint32_t Utils::rgbToHex(const Vec3f& colour)
     return (R << 16) | (G << 8) | B;
 }
 
+const uint8_t Utils::linearToSRGB(float channel)
+{
+    channel = std::clamp(channel, 0.0f, 1.0f);
+    return (std::powf(channel, 1.f / 2.2f) * 255.f) + 0.5f;
+}
+
 const uint32_t Utils::combineHex(const uint32_t& ca, const uint32_t& cb, const float ratio)
 {
     uint8_t r = ((ca >> 16) & 0xFF) * (1-ratio) + ((cb >> 16) & 0xFF) * ratio;
@@ -29,8 +35,7 @@ const uint32_t Utils::combineHex(const uint32_t& ca, const uint32_t& cb, const f
     uint8_t b = ((ca)       & 0xFF) * (1-ratio) + ((cb)       & 0xFF) * ratio;
 
     return (0xFF << 24) | (r << 16) | (g << 8) | b;
-} 
-
+}
 
 const uint32_t Utils::rasteriseColour(uint32_t c0, uint32_t c1, uint32_t c2, float w0, float w1, float w2)
 {

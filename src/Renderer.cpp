@@ -108,7 +108,14 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
                     if (z < m_context.m_depthBuffer[idx])
                     {
                         m_context.m_depthBuffer[idx] = z;
-                        m_context.m_backBuffer[idx] = shader.fragment(point, polygon, z);
+
+                        Vec3f linearColour = shader.fragment(point, polygon, z);
+
+                        uint8_t r = Utils::linearToSRGB(linearColour.x);
+                        uint8_t g = Utils::linearToSRGB(linearColour.y);
+                        uint8_t b = Utils::linearToSRGB(linearColour.z);
+
+                        m_context.m_backBuffer[idx] = (r<<16) | (g<<8) | b;
                     }
                 }
             }

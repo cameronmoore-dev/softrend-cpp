@@ -81,6 +81,12 @@ void Image::loadImage(std::ifstream& file)
     generateMipMaps(baseMip);
 }
 
+const float Image::srgbToLinear(const uint8_t component)
+{
+    float c = component / 255.0f; // Normalize to [0, 1]
+    return std::powf(c, 2.2f);
+}
+
 void Image::write(const std::string& fileName)
 {
     std::ofstream file(fileName, std::ios::binary);
@@ -152,14 +158,19 @@ const TGAPixel Image::bilinear(float u, float v, const MipMapLevel& mip) const
     return result;
 }
 
-const uint32_t Image::pixel(float u, float v, float lod)
+const Vec3f Image::pixel(float u, float v, float lod)
 {
     uint8_t level = std::clamp((int)(lod + 0.5f), 0, (int)m_mipLevels.size() - 1);
     currentMip = level;
     const MipMapLevel& mip = m_mipLevels[level];
 
     TGAPixel result = bilinear(u, v, mip);
-    return (result.data[0] << 16) | (result.data[1] << 8) | (result.data[2] << 0) | (result.data[3] << 24);
+
+    float r = srgbToLinear(result.data[0]);
+    float g = srgbToLinear(result.data[1]);
+    float b = srgbToLinear(result.data[2]);
+
+    return { r, g, b };
 }
 
 const Vec4i Image::pixelRGBA(float u, float v, float lod)
@@ -285,7 +296,7 @@ void Image::derivatives(const glTriangle& polygon, float& dudx, float& dudy, flo
 
 void Image::readUnCompressed(std::ifstream& file, bool hasAlphaChannel)
 {
-    for (size_t i = 0; i < m_width * m_height; ++i)
+    for (size_t i = 0; i < m_width * m_height; i++)
     {
         uint8_t imgPixel[4] = {0};
         file.read(reinterpret_cast<char*>(imgPixel), m_bytesPerPixel);

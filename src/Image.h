@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "Structs.h"
+#include "Utils.h"
 
 #pragma pack(push, 1)
 struct TGAHeader
@@ -42,7 +43,7 @@ public:
     Image(){}
     Image(const std::string& dir);
 
-    const uint32_t pixel(float u, float v, float lod);
+    const Vec3f pixel(float u, float v, float lod);
     const Vec4i pixelRGBA(float u, float v, float lod);
 
     void derivatives(const glTriangle& polygon, float& dudx, float& dudy, float& dvdx, float& dvdy);
@@ -74,4 +75,6 @@ private:
     TGAPixel blendColours(const std::initializer_list<TGAPixel>& colours);
 
     const TGAPixel bilinear(float u, float v, const MipMapLevel& mip) const;
+
+    const float srgbToLinear(const uint8_t channel);
 };
