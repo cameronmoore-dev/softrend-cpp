@@ -10,7 +10,7 @@ class IShader
 {
 public:
     virtual void vertex(const Vertex& v, glVertex& copy) = 0;
-    virtual Vec3f fragment(const Vec3f& barycentric, const glTriangle& polygon, float depth) = 0;
+    virtual bool fragment(const Vec3f& barycentric, const glTriangle& polygon, Vec4f& finalColour) = 0;
 
 private:
     Vec2f perspectiveCorrectedUV(const glTriangle& polygon, const Image& image, const Vec3f& barycentric)
@@ -39,6 +39,17 @@ protected:
 
         Vec2f uv = perspectiveCorrectedUV(polygon, image, barycentric);
         return image.pixel(uv.x, uv.y, lod);
+    }
+
+    Vec4i sampleRGBA(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
+    {
+        float dudx, dudy, dvdx, dvdy;
+        image.derivatives(polygon, dudx, dudy, dvdx, dvdy);
+
+        float lod = image.lod(dudx, dudy, dvdx, dvdy);
+
+        Vec2f uv = perspectiveCorrectedUV(polygon, image, barycentric);
+        return image.pixelRGBA(uv.x, uv.y, lod);
     }
 
     Vec3f sampleNormalMap(const glTriangle& polygon, Image& image, const Vec3f& barycentric)

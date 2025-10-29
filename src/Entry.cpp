@@ -5,6 +5,7 @@
 #include "SceneManagement/Scenes/Scene_Cube.h"
 #include "SceneManagement/Scenes/Scene_Triangle.h"
 #include "SceneManagement/Scenes/Scene_Suzanne.h"
+#include "SceneManagement/Scenes/Scene_AlphaBlending.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
@@ -18,7 +19,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     SceneManager sceneManager;
-    sceneManager.addScene<Scene_Suzanne>(window);
+    sceneManager.addScene<Scene_AlphaBlending>(window);
 
     return 0;
 }

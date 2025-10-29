@@ -21,7 +21,7 @@ public:
 
     inline static std::vector<float> depthMap;
     
-    RenderMode renderMode = RenderMode::Shadow;
+    RenderMode renderMode = RenderMode::Final;
 private:
     Window& m_context;
 

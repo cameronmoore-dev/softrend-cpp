@@ -105,17 +105,35 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
                 }
                 else if (renderMode == RenderMode::Final)
                 {
-                    if (z < m_context.m_depthBuffer[idx])
+                    Vec4f linearColour;
+                    if (z < m_context.m_depthBuffer[idx] && shader.fragment(point, polygon, linearColour))
                     {
                         m_context.m_depthBuffer[idx] = z;
 
-                        Vec3f linearColour = shader.fragment(point, polygon, z);
+                        // if (m_context.m_backBuffer[idx] != 0x111111)
+                        // {
+                            
+                        //     return;
+                        // }
+                        
+                        Vec4f src = { linearColour.x * linearColour.w, linearColour.y * linearColour.w, linearColour.z * linearColour.w, linearColour.w };
+                        Vec4f dest = Utils::hexToRGBA(m_context.m_backBuffer[idx]);
+                        Vec4f blendColour = src + dest * (1.f - src.w);
 
-                        uint8_t r = Utils::linearToSRGB(linearColour.x);
-                        uint8_t g = Utils::linearToSRGB(linearColour.y);
-                        uint8_t b = Utils::linearToSRGB(linearColour.z);
+                        m_context.m_backBuffer[idx] = Utils::rgbaToHex(blendColour);
+                        // m_context.m_backBuffer[idx] = Utils::rgbaToHex(linearColour);
 
-                        m_context.m_backBuffer[idx] = (r<<16) | (g<<8) | b;
+                        // Vec3f linearColour;
+                        // if (shader.fragment(point, polygon, linearColour))
+                        // {
+                            
+                        // }
+
+                        // uint8_t r = Utils::linearToSRGB(linearColour.x);
+                        // uint8_t g = Utils::linearToSRGB(linearColour.y);
+                        // uint8_t b = Utils::linearToSRGB(linearColour.z);
+
+                        // m_context.m_backBuffer[idx] = (r<<16) | (g<<8) | b;
                     }
                 }
             }

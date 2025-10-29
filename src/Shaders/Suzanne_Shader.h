@@ -48,7 +48,7 @@ private:
         copy.position = Matrix::multiply(projection, Matrix::multiply(view, Matrix::multiply(model, v.position)));
     }
 
-    Vec3f fragment(const Vec3f& barycentric, const glTriangle& polygon, float depth) override
+    bool fragment(const Vec3f& barycentric, const glTriangle& polygon, Vec4f& finalColour) override
     {
         Vec3f normal = sampleNormalMap(polygon, *normalMap, barycentric);
         normal = Utils::normalise(normal);
@@ -83,7 +83,8 @@ private:
 
         Vec3f final_light = (ambient + (diffuse + specular) * (1.0f - shadow)) * sampleDiffuseMap(polygon, *texture, barycentric);
 
-        return final_light;
+        finalColour = Utils::toVec4(final_light);
+        return true;
     }
 };
 

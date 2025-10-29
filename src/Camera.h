@@ -31,8 +31,8 @@ public:
 
     bool isSphereInsideFrustum(const Mat4& model, const Vec3f& centre, float radius);
 
-    const Mat4& view()       const { return m_view; }
-    const Mat4& projection() const { return m_projection; }
+    Mat4& view()       { return m_view; }
+    Mat4& projection() { return m_projection; }
     const Vec3f& position()  const { return m_position; }
     const Vec3f& forward()   const { return m_forward; }
 
@@ -50,7 +50,7 @@ private:
     Mat4 m_projection = Matrix::identity();
     Mat4 m_view       = Matrix::identity();
 
-    Vec3f m_position  { 0, 0, -5 };
+    Vec3f m_position  { 0, 0, -10 };
     Vec3f m_forward   { 0, 0, -1 };
 
     float m_farPlane    = 0.f;

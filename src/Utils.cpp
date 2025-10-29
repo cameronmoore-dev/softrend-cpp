@@ -13,6 +13,16 @@ const Vec3f Utils::hexToRGB(const uint32_t colour)
     return  { r, g, b };
 }
 
+const Vec4f Utils::hexToRGBA(const uint32_t colour)
+{
+    float r = float((colour >> 16) & 0xFF) / 255.f;
+    float g = float((colour >> 8) & 0xFF) / 255.f;
+    float b = float(colour & 0xFF) / 255.f;
+    float a = float(colour >> 24 & 0xFF) / 255.f;
+
+    return  { r, g, b, a };
+}
+
 const uint32_t Utils::rgbToHex(const Vec3f& colour)
 {
     int R = std::clamp(int(colour.x * 255.f), 0, 255);
@@ -20,6 +30,16 @@ const uint32_t Utils::rgbToHex(const Vec3f& colour)
     int B = std::clamp(int(colour.z * 255.f), 0, 255);
 
     return (R << 16) | (G << 8) | B;
+}
+
+const uint32_t Utils::rgbaToHex(const Vec4f& colour)
+{
+    int R = std::clamp(int(colour.x * 255.f), 0, 255);
+    int G = std::clamp(int(colour.y * 255.f), 0, 255);
+    int B = std::clamp(int(colour.z * 255.f), 0, 255);
+    int A = std::clamp(int(colour.w * 255.f), 0, 255);
+
+    return (R << 16) | (G << 8) | B | (A << 24);
 }
 
 const uint8_t Utils::linearToSRGB(float channel)
