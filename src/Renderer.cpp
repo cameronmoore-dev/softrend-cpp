@@ -23,20 +23,20 @@ void Renderer::draw(const std::vector<Vertex>& vertices, IShader& shader)
         shader.vertex(vertices[i],   polygon.v0);
         shader.vertex(vertices[i+1], polygon.v1);
         shader.vertex(vertices[i+2], polygon.v2);
-
-        /* Back-face Culling */
-        float winding = edgeFunction(polygon.v0.position, polygon.v1.position, polygon.v2.position);
-        if (winding <= 0)
-        {
-            continue;
-        }
-
+        
         nearPlaneClip(polygon, clipped);
         for (uint32_t i = 0; i < clipped.size(); i+=3)
         {
             transformVertex(clipped[i]);
             transformVertex(clipped[i+1]);
             transformVertex(clipped[i+2]);
+
+            /* Back-face Culling, post vertex transformation */
+            float winding = edgeFunction(clipped[i].position, clipped[i+1].position, clipped[i+2].position);
+            if (winding <= 0.f)
+            {
+                continue;
+            }
 
             glTriangle clippedPoly { clipped[i], clipped[i+1], clipped[i+2] };
             rasterise(shader, clippedPoly);
@@ -109,31 +109,17 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
                     if (z < m_context.m_depthBuffer[idx] && shader.fragment(point, polygon, linearColour))
                     {
                         m_context.m_depthBuffer[idx] = z;
+                        // Vec4f src = { linearColour.x * linearColour.w, linearColour.y * linearColour.w, linearColour.z * linearColour.w, linearColour.w };
+                        // Vec4f dest = Utils::hexToRGBA(m_context.m_backBuffer[idx]);
+                        // Vec4f blendColour = src + dest * (1.f - src.w);
 
-                        // if (m_context.m_backBuffer[idx] != 0x111111)
-                        // {
-                            
-                        //     return;
-                        // }
-                        
-                        Vec4f src = { linearColour.x * linearColour.w, linearColour.y * linearColour.w, linearColour.z * linearColour.w, linearColour.w };
-                        Vec4f dest = Utils::hexToRGBA(m_context.m_backBuffer[idx]);
-                        Vec4f blendColour = src + dest * (1.f - src.w);
+                        // m_context.m_backBuffer[idx] = Utils::rgbaToHex(blendColour);
 
-                        m_context.m_backBuffer[idx] = Utils::rgbaToHex(blendColour);
-                        // m_context.m_backBuffer[idx] = Utils::rgbaToHex(linearColour);
+                        uint8_t r = Utils::linearToSRGB(linearColour.x);
+                        uint8_t g = Utils::linearToSRGB(linearColour.y);
+                        uint8_t b = Utils::linearToSRGB(linearColour.z);
 
-                        // Vec3f linearColour;
-                        // if (shader.fragment(point, polygon, linearColour))
-                        // {
-                            
-                        // }
-
-                        // uint8_t r = Utils::linearToSRGB(linearColour.x);
-                        // uint8_t g = Utils::linearToSRGB(linearColour.y);
-                        // uint8_t b = Utils::linearToSRGB(linearColour.z);
-
-                        // m_context.m_backBuffer[idx] = (r<<16) | (g<<8) | b;
+                        m_context.m_backBuffer[idx] = (r<<16) | (g<<8) | b;
                     }
                 }
             }

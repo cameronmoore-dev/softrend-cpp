@@ -280,5 +280,5 @@ void Window::onWindowResize(LPARAM lParam)
     SelectObject(m_deviceContext, m_bitmapHandle);
 
     m_backBuffer.resize(m_width*m_height);
-    m_depthBuffer.resize(m_width*m_height);
+    m_depthBuffer.resize(m_width*m_height, INFINITY);
 }

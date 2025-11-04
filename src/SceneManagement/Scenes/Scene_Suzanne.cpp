@@ -7,15 +7,27 @@ Scene_Suzanne::Scene_Suzanne(Window& window) :
 
 void Scene_Suzanne::start()
 {
-    shader.texture = &m_texture;
-    shader.normalMap = &m_normalMap;
+    shader.setAttribute<Mat4>(shader.model, m_model);
+    shader.setAttribute<Mat4>(shader.view, m_camera.view());
+    shader.setAttribute<Mat4>(shader.projection, m_camera.projection());
 
-    Vec3f pos{ 0.f, 0.f, -5.f };
-    Vec3f forward{ 0.f, 0.f, -1.f };
-    m_lightView = Matrix::lookAt(pos, pos+forward, { 0, 1, 0 });
+    shader.setAttribute<Image>(shader.diffuseMap, m_texture);
+    shader.setAttribute<Image>(shader.normalMap, m_normalMap);
+    shader.setAttribute<Image>(shader.specularMap, m_specularMap);
 
-    shader.lightProj = m_lightProj;
-    shader.lightView = m_lightView;
+    m_ssao.fb = &m_window.m_backBuffer;
+    m_ssao.zbuffer = &m_window.m_depthBuffer;
+    m_ssao.width = (int)m_window.windowSize().x;
+    m_ssao.height = (int)m_window.windowSize().y;
+
+    m_ssao.initAOBuffer();
+
+    // Vec3f pos{ 0.f, 0.f, -5.f };
+    // Vec3f forward{ 0.f, 0.f, -1.f };
+    // m_lightView = Matrix::lookAt(pos, pos+forward, { 0, 1, 0 });
+
+    // shader.lightProj = m_lightProj;
+    // shader.lightView = m_lightView;
 
     double previous = getTimeSeconds();
     while (m_window.isOpen())
@@ -81,6 +93,16 @@ void Scene_Suzanne::processInput()
                 {
                     m_camera.isMovingDown = true;
                 }
+
+                else if (e.keyCode == VK_BACK)
+                {
+                    ssao = !ssao;
+                }
+
+                else if (e.keyCode == VK_RETURN)
+                {
+                    m_ssao.doBlur = !m_ssao.doBlur;
+                }
             } break;
 
             case Event::KeyReleased:
@@ -135,15 +157,11 @@ void Scene_Suzanne::update()
     m_camera.updateMovement(m_dt);
     m_camera.updateView();
     
-    m_angle+=20.f * m_dt;
-    m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
-    m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
+    // m_angle+=20.f * m_dt;
+    // m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
+    // m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
     
-    m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
-
-    shader.model = m_model;
-    shader.view = m_camera.view();
-    shader.projection = m_camera.projection();
+    // m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
 }
 
 void Scene_Suzanne::render()
@@ -153,17 +171,22 @@ void Scene_Suzanne::render()
     Vec3f centre{ 0, 0, 0 };
     float radius = 1.f;
     
-    if (m_camera.isSphereInsideFrustum(shader.model, centre, radius))
+    if (m_camera.isSphereInsideFrustum(*shader.model, centre, radius))
     {
-        std::fill(Renderer::depthMap.begin(), Renderer::depthMap.end(), 1.f);
+        // std::fill(Renderer::depthMap.begin(), Renderer::depthMap.end(), 1.f);
 
-        m_renderer.renderMode = Renderer::RenderMode::Shadow;
-        shader.isShadowPass = true;
-        m_renderer.draw(m_suzanne.vertices, shader);
+        // m_renderer.renderMode = Renderer::RenderMode::Shadow;
+        // shader.isShadowPass = true;
+        // m_renderer.draw(m_suzanne.vertices, shader);
 
-        m_renderer.renderMode = Renderer::RenderMode::Final;
-        shader.isShadowPass = false;
+        // m_renderer.renderMode = Renderer::RenderMode::Final;
+        // shader.isShadowPass = false;
         m_renderer.draw(m_suzanne.vertices, shader);
+    }
+
+    if (ssao)
+    {
+        m_ssao.apply();
     }
 
     m_window.display();

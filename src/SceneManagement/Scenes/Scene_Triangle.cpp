@@ -141,9 +141,9 @@ void Scene_Triangle::update()
     m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
     m_camera.updateView();
 
-    m_shader.model = m_model;
-    m_shader.view = m_camera.view();
-    m_shader.projection = m_camera.projection();
+    // m_shader.model = m_model;
+    // m_shader.view = m_camera.view();
+    // m_shader.projection = m_camera.projection();
 }
 
 void Scene_Triangle::render()

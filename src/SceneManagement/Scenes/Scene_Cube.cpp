@@ -9,7 +9,12 @@ Scene_Cube::Scene_Cube(Window& window) :
 
 void Scene_Cube::start()
 {
-    m_shader.texture = &m_texture;
+    m_shader.setAttribute<Mat4>(m_shader.model, m_model);
+    m_shader.setAttribute<Mat4>(m_shader.view, m_camera.view());
+    m_shader.setAttribute<Mat4>(m_shader.projection, m_camera.projection());
+    m_shader.setAttribute<Image>(m_shader.texture, m_texture);
+
+    m_fxaa.frameSize = m_window.windowSize();
 
     double previous = getTimeSeconds();
     while (m_window.isOpen())
@@ -127,17 +132,13 @@ void Scene_Cube::processInput()
 void Scene_Cube::update()
 {
     m_camera.updateMovement(m_dt);
-    m_angle+=20.f * m_dt;
+    m_angle+=5.f * m_dt;
     
     m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
     m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
 
     m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
     m_camera.updateView();
-
-    m_shader.model = &m_model;
-    m_shader.view = &m_camera.view();
-    m_shader.projection = &m_camera.projection();
 }
 
 void Scene_Cube::render()
@@ -145,6 +146,9 @@ void Scene_Cube::render()
     m_window.clear(0x111111);
 
     m_renderer.draw(m_cube.vertices, m_shader);
+
+    m_fxaa.frameBuffer = &m_window.m_backBuffer;
+    m_fxaa.apply();
 
     m_window.display();
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <memory>
 
 #include "Structs.h"
 #include "Utils.h"
@@ -8,7 +9,19 @@
 
 class IShader
 {
+protected:
+    template<typename T>
+    using Attribute = std::unique_ptr<T>;
+
 public:
+    // virtual ~IShader() = 0;
+
+    template<typename T>
+    void setAttribute(Attribute<T> &attr, T &data)
+    {
+        attr.reset(&data);
+    }
+
     virtual void vertex(const Vertex& v, glVertex& copy) = 0;
     virtual bool fragment(const Vec3f& barycentric, const glTriangle& polygon, Vec4f& finalColour) = 0;
 
@@ -74,5 +87,16 @@ protected:
         Mat3 tbn = Matrix::constructTBN(T, B, N);
 
         return Utils::normalise(Matrix::multiplyVec3(tbn, normal));
+    }
+
+    Vec3f sampleSpecularMap(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
+    {
+        float dudx, dudy, dvdx, dvdy;
+        image.derivatives(polygon, dudx, dudy, dvdx, dvdy);
+
+        float lod = image.lod(dudx, dudy, dvdx, dvdy);
+
+        Vec2f uv = perspectiveCorrectedUV(polygon, image, barycentric);
+        return image.pixel(uv.x, uv.y, lod);
     }
 };

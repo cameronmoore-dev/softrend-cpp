@@ -8,6 +8,7 @@
 #include "../../Camera.h"
 
 #include "../../Shaders/Suzanne_Shader.h"
+#include "../../Shaders/SSAO_Shader.h"
 
 class Scene_Suzanne : public Scene
 {
@@ -28,11 +29,15 @@ private:
     Model m_suzanne = Model("./resources/model_suzanne.obj");
     Image m_texture = Image("./resources/texture_suzanne.tga");
     Image m_normalMap = Image("./resources/suzanne_normal.tga");
+    Image m_specularMap = Image("./resources/suzanne_specular.tga");
+
     Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 100.f);
 
     Suzanne_Shader shader;
-    Mat4 m_lightProj = Matrix::orthographic(-2.f, 2.f, -2.f, 2.f, 1.f, 10.f);
-    Mat4 m_lightView = Matrix::identity();
+    SSAO_Shader m_ssao;
+
+    // Mat4 m_lightProj = Matrix::orthographic(-2.f, 2.f, -2.f, 2.f, 1.f, 10.f);
+    // Mat4 m_lightView = Matrix::identity();
     
     Mat4 m_model = Matrix::identity();
 
@@ -44,4 +49,6 @@ private:
     double m_dt = 0.f;
 
     bool a = true;
+
+    bool ssao = false;
 };

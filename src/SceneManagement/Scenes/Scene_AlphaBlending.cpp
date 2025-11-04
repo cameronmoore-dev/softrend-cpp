@@ -10,7 +10,7 @@ Scene_AlphaBlending::Scene_AlphaBlending(Window& window) :
 void Scene_AlphaBlending::start()
 {
     m_grassShader.texture = &m_grassTexture;
-    m_cubeShader.texture = &m_dirtTexture;
+    // m_cubeShader.setAttribute<Image>(m_cubeShader.texture, m_dirtTexture);
     m_windowShader.texture = &m_windowTexture;
 
     m_rotation = Matrix::rotate(-180, 1);
@@ -140,8 +140,8 @@ void Scene_AlphaBlending::update()
     m_grassShader.view = m_camera.view();
     m_grassShader.projection = m_camera.projection();
 
-    m_cubeShader.view = &m_camera.view();
-    m_cubeShader.projection = &m_camera.projection();
+    // m_cubeShader.view = &m_camera.view();
+    // m_cubeShader.projection = &m_camera.projection();
 
     m_windowShader.view = &m_camera.view();
     m_windowShader.projection = &m_camera.projection();
@@ -153,7 +153,7 @@ void Scene_AlphaBlending::render()
 
     m_cubeTranslate = Matrix::translate({ -5.f, 0.f, 5.f });
     m_cubeModel = Matrix::multiply(Matrix::multiply(m_cubeTranslate, m_cubeRotation), m_scale);
-    m_cubeShader.model = &m_cubeModel;
+    // m_cubeShader.model = &m_cubeModel;
     m_renderer.draw(m_cube.vertices, m_cubeShader);
 
     m_grassModel = Matrix::multiply(Matrix::multiply(m_grassTranslate, m_rotation), m_scale);

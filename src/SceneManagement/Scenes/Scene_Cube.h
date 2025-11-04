@@ -9,6 +9,7 @@
 #include "../../Camera.h"
 
 #include "../../Shaders/Cube_Shader.h"
+#include "../../Shaders/FXAA_Shader.h"
 
 class Scene_Cube : public Scene
 {
@@ -31,6 +32,7 @@ private:
     Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 100.f);
 
     Cube_Shader m_shader;
+    FXAA_Shader m_fxaa;
     
     Mat4 m_model = Matrix::identity();
 

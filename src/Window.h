@@ -65,11 +65,14 @@ public:
     void display();
 
     void setWindowTitle(const std::string& title);
-    const Vec2f windowSize() const { return { (float)m_width, (float)m_height }; }
+    Vec2f& windowSize() { m_windowSize = Vec2f{ (float)m_width, (float)m_height }; return m_windowSize; }
 
     void hideLockCursor(bool state);
 
     bool isOpen() { return m_isOpen; }
+
+    std::vector<uint32_t>   m_backBuffer;
+    std::vector<float>      m_depthBuffer;
 
 private:
     HWND        m_hwnd;
@@ -79,13 +82,14 @@ private:
     RECT        m_rect;
 
     uint32_t*               m_frontBuffer = nullptr;
-    std::vector<uint32_t>   m_backBuffer;
-    std::vector<float>      m_depthBuffer;
+    
+    
     
     std::queue<Event>       m_events;
     
     uint32_t m_width = 0;
     uint32_t m_height = 0;
+    Vec2f m_windowSize = { 0.f, 0.f };
 
     bool m_isOpen = false;
     bool m_mouseLocked = false;

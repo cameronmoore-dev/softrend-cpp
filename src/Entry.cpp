@@ -19,7 +19,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     SceneManager sceneManager;
-    sceneManager.addScene<Scene_AlphaBlending>(window);
+    sceneManager.addScene<Scene_Suzanne>(window);
 
     return 0;
 }

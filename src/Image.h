@@ -40,7 +40,7 @@ struct MipMapLevel
 class Image
 {
 public:
-    Image(){}
+    Image() = default;
     Image(const std::string& dir);
 
     const Vec3f pixel(float u, float v, float lod);
