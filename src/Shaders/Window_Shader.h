@@ -7,11 +7,11 @@
 class Window_Shader : public IShader
 {
 public:
-    Mat4* model = nullptr;
-    Mat4* view = nullptr;
-    Mat4* projection = nullptr;
+    Attribute<Mat4> model;
+    Attribute<Mat4> view;
+    Attribute<Mat4> projection;
 
-    Image* texture = nullptr;
+    Attribute<Image> texture;
 
     void vertex(const Vertex& v, glVertex& copy) override
     {

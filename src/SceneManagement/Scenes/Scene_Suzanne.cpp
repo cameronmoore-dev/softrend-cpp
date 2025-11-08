@@ -40,7 +40,7 @@ void Scene_Suzanne::start()
         update();
         render();
 
-        // printf("FPS: %.0f\n", 1.f/m_dt);
+        printf("FPS: %.0f\n", 1.f/m_dt);
     }
 }
 
@@ -157,11 +157,11 @@ void Scene_Suzanne::update()
     m_camera.updateMovement(m_dt);
     m_camera.updateView();
     
-    // m_angle+=20.f * m_dt;
-    // m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
-    // m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
+    m_angle+=20.f * m_dt;
+    m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
+    m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
     
-    // m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
+    m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
 }
 
 void Scene_Suzanne::render()
