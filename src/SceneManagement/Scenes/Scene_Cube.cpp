@@ -132,13 +132,13 @@ void Scene_Cube::processInput()
 void Scene_Cube::update()
 {
     m_camera.updateMovement(m_dt);
+    m_camera.updateView();
+
     m_angle+=5.f * m_dt;
-    
     m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
     m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
 
     m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
-    m_camera.updateView();
 }
 
 void Scene_Cube::render()
@@ -147,8 +147,8 @@ void Scene_Cube::render()
 
     m_renderer.draw(m_cube.vertices, m_shader);
 
-    m_fxaa.frameBuffer = &m_window.m_backBuffer;
-    m_fxaa.apply();
+    // m_fxaa.frameBuffer = &m_window.m_backBuffer;
+    // m_fxaa.apply();
 
     m_window.display();
 }

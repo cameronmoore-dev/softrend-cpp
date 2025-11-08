@@ -32,8 +32,6 @@ private:
     uint32_t viewportWidth;
     uint32_t viewportHeight;
 
-    std::vector<glVertex> clipped;
-
 private:
     void transformVertex(glVertex& vertex);
     
@@ -42,8 +40,14 @@ private:
     Vec3f barycentric(const Vec2i& p, const Vec4f& a, const Vec4f& b, const Vec4f& c);
     float edgeFunction(const Vec4f& a, const Vec4f& b, const Vec4f& c);
 
-    void nearPlaneClip(glTriangle& polygon, std::vector<glVertex>& out);
-    glVertex interpolate(const glVertex& a, const glVertex& b);
+    void clipTriangle(std::vector<glVertex>& polygon, std::vector<glVertex>& out, int plane);
+    glVertex interpolate(const glVertex& a, const glVertex& b, int plane);
+
+    std::vector<glVertex> input;
+    std::vector<glVertex> output;
+
+    double dt = 0.0;
+    double previous = 0.0;
     
     // uint32_t fog(uint32_t idx, uint32_t fogColour);
 };

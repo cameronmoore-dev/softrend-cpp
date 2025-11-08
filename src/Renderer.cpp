@@ -5,51 +5,85 @@
 
 #include <iostream>
 
+#define LEFT_PLANE      0
+#define RIGHT_PLANE     1
+#define BOTTOM_PLANE    2
+#define TOP_PLANE       3
+#define NEAR_PLANE      4
+#define FAR_PLANE       5
+#define NUM_PLANES      6
+
 Renderer::Renderer(Window& context) : 
     m_context(context)
 {
-    clipped.reserve(6);
+    input.reserve(6);
+    output.reserve(6);
+
     depthMap.resize(1024*1024, 1.f);
+    previous = getTimeSeconds();
 }
 
 void Renderer::draw(const std::vector<Vertex>& vertices, IShader& shader)
 {
+    double current = getTimeSeconds();
+    dt += current - previous;
+    previous = current;
+
     viewportWidth   = renderMode == RenderMode::Shadow ? 1024 : m_context.m_width;
     viewportHeight  = renderMode == RenderMode::Shadow ? 1024 : m_context.m_height;
-
+    
     for (uint32_t i = 0; i < vertices.size(); i+=3)
     {
         glTriangle polygon;
         shader.vertex(vertices[i],   polygon.v0);
         shader.vertex(vertices[i+1], polygon.v1);
         shader.vertex(vertices[i+2], polygon.v2);
-        
-        nearPlaneClip(polygon, clipped);
-        for (uint32_t i = 0; i < clipped.size(); i+=3)
-        {
-            transformVertex(clipped[i]);
-            transformVertex(clipped[i+1]);
-            transformVertex(clipped[i+2]);
 
-            /* Back-face Culling, post vertex transformation */
-            float winding = edgeFunction(clipped[i].position, clipped[i+1].position, clipped[i+2].position);
+        input = { polygon.v0, polygon.v1, polygon.v2 };
+        for (size_t p = 0; p < NUM_PLANES; p++)
+        {
+            output.clear();
+
+            clipTriangle(input, output, p);
+
+            if (output.empty())
+            {
+                input.clear();
+                break;
+            }
+
+            input.swap(output);
+        }
+
+        for (uint32_t j = 1; j + 1 < input.size(); j++)
+        {
+            /* Copy the vertices so transforming doesn’t corrupt shared data */
+            glVertex v0 = input[0];
+            glVertex v1 = input[j];
+            glVertex v2 = input[j + 1];
+
+            transformVertex(v0);
+            transformVertex(v1);
+            transformVertex(v2);
+
+            float winding = edgeFunction(v0.position, v1.position, v2.position);
             if (winding <= 0.f)
             {
                 continue;
             }
 
-            glTriangle clippedPoly { clipped[i], clipped[i+1], clipped[i+2] };
+            glTriangle clippedPoly { v0, v1, v2 };
             rasterise(shader, clippedPoly);
         }
     }
 
-    if (a)
-    {
-        Image dm;
-        dm.fromDepthMap(depthMap, 1024, 1024);
-        dm.write("output.tga");
-        a=false;
-    }
+    // if (a)
+    // {
+    //     Image dm;
+    //     dm.fromDepthMap(depthMap, 1024, 1024);
+    //     dm.write("output.tga");
+    //     a=false;
+    // }
 }
 
 void Renderer::transformVertex(glVertex& vertex)
@@ -73,7 +107,9 @@ void Renderer::transformVertex(glVertex& vertex)
     screenPos.y = (clip.y + 1.f) * 0.5f * viewportHeight;
     screenPos.z = clip.z;
 
-    vertex.position = screenPos;
+    /* The extra - 0.1f is to stop flickering along the left and bottom screen edges after polygon clipping, most likely due to floating-point precision issues */
+    /* Might not be scalable with different screen resolutions. Test this later */
+    vertex.position = screenPos - 0.1f;
 }
 
 void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
@@ -120,6 +156,8 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
                         uint8_t b = Utils::linearToSRGB(linearColour.z);
 
                         m_context.m_backBuffer[idx] = (r<<16) | (g<<8) | b;
+
+                        // m_context.m_backBuffer[idx] = Utils::rgbaToHex(linearColour);
                     }
                 }
             }
@@ -153,97 +191,74 @@ float Renderer::edgeFunction(const Vec4f& a, const Vec4f& b, const Vec4f& c)
     return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
-glVertex Renderer::interpolate(const glVertex& a, const glVertex& b)
+glVertex Renderer::interpolate(const glVertex& a, const glVertex& b, const int plane)
 {
-    float t = (-a.position.z - a.position.w) / ((b.position.z - a.position.z) + (b.position.w - a.position.w));
+    float t = 1.f;
+
+    switch (plane)
+    {
+        case LEFT_PLANE:    t = (-a.position.x - a.position.w) / ((b.position.x - a.position.x) + (b.position.w - a.position.w)); break;
+        case RIGHT_PLANE:   t =  (a.position.w - a.position.x) / ((b.position.x - a.position.x) - (b.position.w - a.position.w)); break;
+        case BOTTOM_PLANE:  t = (-a.position.y - a.position.w) / ((b.position.y - a.position.y) + (b.position.w - a.position.w)); break;
+        case TOP_PLANE:     t =  (a.position.w - a.position.y) / ((b.position.y - a.position.y) - (b.position.w - a.position.w)); break;
+        case NEAR_PLANE:    t = (-a.position.z - a.position.w) / ((b.position.z - a.position.z) + (b.position.w - a.position.w)); break;
+        case FAR_PLANE:     t =  (a.position.w - a.position.z) / ((b.position.z - a.position.z) - (b.position.w - a.position.w)); break;
+        default:            break;
+    }
 
     glVertex out;
     out.position = a.position + (b.position - a.position) * t;
     out.uv = a.uv + (b.uv - a.uv) * t;
     out.normal = a.normal + (b.normal - a.normal) * t;
-    out.inverseW = a.inverseW + (b.inverseW - a.inverseW) * t;
+    out.tangent = a.tangent + (b.tangent - a.tangent) * t;
+    out.bitangent = a.bitangent + (b.bitangent - a.bitangent) * t;
     out.colour = a.colour + (b.colour - a.colour) * t;
 
     return out;
 }
 
-void Renderer::nearPlaneClip(glTriangle& polygon, std::vector<glVertex>& out)
+void Renderer::clipTriangle(std::vector<glVertex>& polygon, std::vector<glVertex>& out, const int plane)
 {
-    out.clear();
-
-    glVertex& a = polygon.v0;
-    glVertex& b = polygon.v1;
-    glVertex& c = polygon.v2;
-
-    glVertex triangle[3] = { a, b, c };
-
-    auto isInside = [](const glVertex& v)
+    auto isInside = [](const glVertex& v, const int plane)
     {
         const Vec4f& p = v.position;
-        return p.z >= -p.w;
+        switch (plane)
+        {
+            case LEFT_PLANE:    return p.x >= -p.w;
+            case RIGHT_PLANE:   return p.x <= p.w;
+            case BOTTOM_PLANE:  return p.y >= -p.w;
+            case TOP_PLANE:     return p.y <= p.w;
+            case NEAR_PLANE:    return p.z >= -p.w;
+            case FAR_PLANE:     return p.z <= p.w;
+            default:            return false;
+        }
     };
 
-    bool inside[3] =
+    for (size_t v = 0; v < polygon.size(); v++)
     {
-        isInside(a),
-        isInside(b),
-        isInside(c)
-    };
+        const glVertex& curr = polygon[v];
+        const glVertex& next = polygon[(v + 1) % polygon.size()];
 
-    int inCount = inside[0] + inside[1] + inside[2];
+        bool currInside = isInside(curr, plane);
+        bool nextInside = isInside(next, plane);
 
-    if (inCount == 0)
-    {
-        return;
-    }
+        if (currInside && nextInside)
+        {
+            out.emplace_back(next);
+        }
 
-    if (inCount == 3)
-    {
-        out.emplace_back(a);
-        out.emplace_back(b);
-        out.emplace_back(c);
-        return;
-    }
+        else if (currInside && !nextInside)
+        {
+            out.emplace_back(interpolate(curr, next, plane));
+        }
 
-    if (inCount == 1)
-    {
-        int inVert = inside[0] ? 0 : inside[1] ? 1 : 2;
-
-        glVertex& A = triangle[inVert];
-        glVertex& B = triangle[(inVert + 1) % 3];
-        glVertex& C = triangle[(inVert + 2) % 3];
-
-        B = interpolate(A, B);
-        C = interpolate(A, C);
-
-        out.emplace_back(A);
-        out.emplace_back(B);
-        out.emplace_back(C);
-        return;
-    }
-
-    if (inCount == 2)
-    {
-        int outVert = !inside[0] ? 0 : (!inside[1] ? 1 : 2);
-
-        glVertex& C = triangle[outVert];
-        glVertex& A = triangle[(outVert + 1) % 3];
-        glVertex& B = triangle[(outVert + 2) % 3];
-
-        glVertex newA = interpolate(A, C);
-        glVertex newB = interpolate(B, C);
-
-        out.emplace_back(A);
-        out.emplace_back(B);
-        out.emplace_back(newA);
-
-        out.emplace_back(B);
-        out.emplace_back(newB);
-        out.emplace_back(newA);
-        return;
+        else if (!currInside && nextInside)
+        {
+            out.emplace_back(interpolate(curr, next, plane));
+            out.emplace_back(next);
+        }
     }
 }
-
 
 // uint32_t Renderer::fog(uint32_t idx, uint32_t fogColour)
 // {

@@ -40,7 +40,7 @@ void Scene_Suzanne::start()
         update();
         render();
 
-        printf("FPS: %.0f\n", 1.f/m_dt);
+        // printf("FPS: %.0f\n", 1.f/m_dt);
     }
 }
 
@@ -171,18 +171,18 @@ void Scene_Suzanne::render()
     Vec3f centre{ 0, 0, 0 };
     float radius = 1.f;
     
-    if (m_camera.isSphereInsideFrustum(*shader.model, centre, radius))
-    {
-        // std::fill(Renderer::depthMap.begin(), Renderer::depthMap.end(), 1.f);
+    // if (m_camera.isSphereInsideFrustum(*shader.model, centre, radius))
+    // {
+    //     // std::fill(Renderer::depthMap.begin(), Renderer::depthMap.end(), 1.f);
 
-        // m_renderer.renderMode = Renderer::RenderMode::Shadow;
-        // shader.isShadowPass = true;
-        // m_renderer.draw(m_suzanne.vertices, shader);
+    //     // m_renderer.renderMode = Renderer::RenderMode::Shadow;
+    //     // shader.isShadowPass = true;
+    //     // m_renderer.draw(m_suzanne.vertices, shader);
 
-        // m_renderer.renderMode = Renderer::RenderMode::Final;
-        // shader.isShadowPass = false;
-        m_renderer.draw(m_suzanne.vertices, shader);
-    }
+    //     // m_renderer.renderMode = Renderer::RenderMode::Final;
+    //     // shader.isShadowPass = false;
+    // }
+    m_renderer.draw(m_suzanne.vertices, shader);
 
     if (ssao)
     {

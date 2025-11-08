@@ -72,21 +72,21 @@ private:
         // float bias = std::max(0.05f * (1.0f - Utils::dot(normal, lightDir)), 0.005f);
         // float shadow = currentDepth - bias > shadowDepth ? 1.f : 0.f;
 
-        // Vec3f normal = sampleNormalMap(polygon, *normalMap, barycentric);
+        Vec3f normal = sampleNormalMap(polygon, *normalMap, barycentric);
         // Vec3f normal = polygon.v0.normal * barycentric.x + polygon.v1.normal * barycentric.y + polygon.v2.normal * barycentric.z;
-        // normal = Utils::normalise(normal);
+        normal = Utils::normalise(normal);
 
-        // float diff = std::max(0.f, Utils::dot(normal, lightDir));
-        // Vec3f diffuse = colour * diff;
+        float diff = std::max(0.f, Utils::dot(normal, lightDir));
+        Vec3f diffuse = colour * diff;
 
-        // Vec3f halfwayDir = Utils::normalise(lightDir + lightDir);
-        // float spec = std::pow(std::max(Utils::dot(normal, halfwayDir), 0.f), 128);
-        // Vec3f specular = sampleSpecularMap(polygon, *specularMap, barycentric) * spec;
+        Vec3f halfwayDir = Utils::normalise(lightDir + lightDir);
+        float spec = std::pow(std::max(Utils::dot(normal, halfwayDir), 0.f), 128);
+        Vec3f specular = sampleSpecularMap(polygon, *specularMap, barycentric) * spec;
 
-        // Vec3f final_light = (ambient + (diffuse + specular) /* * (1.0f - shadow) */) * sampleDiffuseMap(polygon, *diffuseMap, barycentric);
+        Vec3f final_light = (ambient + (diffuse + specular) /* * (1.0f - shadow) */) * sampleDiffuseMap(polygon, *diffuseMap, barycentric);
 
-        // finalColour = Utils::toVec4(final_light);
-        finalColour = Utils::hexToRGBA(0xFFFFFFFF);
+        finalColour = Utils::toVec4(final_light);
+        // finalColour = Utils::hexToRGBA(0xFFFFFFFF);
         return true;
     }
 };

@@ -31,7 +31,7 @@ private:
     Image m_normalMap = Image("./resources/suzanne_normal.tga");
     Image m_specularMap = Image("./resources/suzanne_specular.tga");
 
-    Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 100.f);
+    Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 20.f);
 
     Suzanne_Shader shader;
     SSAO_Shader m_ssao;
