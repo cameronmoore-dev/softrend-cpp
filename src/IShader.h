@@ -7,11 +7,16 @@
 #include "Utils.h"
 #include "Image.h"
 
+#include "Window.h"
+
 class IShader
 {
 protected:
     template<typename T>
     using Attribute = std::unique_ptr<T>;
+
+    float offset = 0.f;
+    double previous = getTimeSeconds();
 
 public:
     // virtual ~IShader() = 0;
@@ -56,12 +61,21 @@ protected:
 
     Vec4i sampleRGBA(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
     {
+        double current = getTimeSeconds();
+        double dt = current - previous;
+        previous = current;
+
+
         float dudx, dudy, dvdx, dvdy;
         image.derivatives(polygon, dudx, dudy, dvdx, dvdy);
 
         float lod = image.lod(dudx, dudy, dvdx, dvdy);
 
         Vec2f uv = perspectiveCorrectedUV(polygon, image, barycentric);
+
+        offset += dt;
+        uv += offset;
+
         return image.pixelRGBA(uv.x, uv.y, lod);
     }
 

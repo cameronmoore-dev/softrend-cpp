@@ -65,6 +65,8 @@ struct Vec2f
     const Vec2f operator*(const float& value) const { return { x * value, y * value }; }
     const Vec2f operator/(const float& value) const { return { x / value, y / value }; }
 
+    const Vec2f operator+=(const float& value) { return {x += value, y += value }; }
+    const Vec2f operator-=(const float& value) { return {x -= value, y -= value }; }
     const Vec2f operator*=(const float& value) { return {x *= value, y *= value }; }
 };
 

@@ -7,6 +7,9 @@
 #include <cmath>
 #include <algorithm>
 
+/* 0 = repeated, 1 = mirrored repeat, 2 = clamp to edge, 3 = clamp to border */
+#define WRAP_MODE 0
+
 Image::Image(const std::string& dir)
 {
     std::filesystem::path path = std::filesystem::current_path().string() + dir;
@@ -175,12 +178,59 @@ const Vec3f Image::pixel(float u, float v, float lod)
 
 const Vec4i Image::pixelRGBA(float u, float v, float lod)
 {
-    uint8_t level = std::clamp((int)(lod + 0.5f), 0, (int)m_mipLevels.size() - 1);
-    currentMip = level;
-    const MipMapLevel& mip = m_mipLevels[level];
+    // uint8_t level = std::clamp((int)(lod + 0.5f), 0, (int)m_mipLevels.size() - 1);
+    // currentMip = level;
+    // const MipMapLevel& mip = m_mipLevels[level];
 
-    TGAPixel result = bilinear(u, v, mip);
-    return  { result.data[0], result.data[1], result.data[2], result.data[3] };
+    // TGAPixel result = bilinear(u, v, mip);
+
+    /* Shrinks texture size when projected onto object when multiplied and increases when divided */
+    // u *= 3.f;
+    // v *= 3.f;
+
+    float uFraction = u - (long)u;
+    float vFraction = v - (long)v;
+    uint32_t x = uint32_t(uFraction * m_width)  % m_width;
+    uint32_t y = uint32_t(vFraction * m_height) % m_height;
+
+    if (WRAP_MODE == 1)
+    {
+        if ((int)std::ceil(u) & 1 != 0)
+        {
+            x = uint32_t((1.f - uFraction) * m_width)  % m_width;
+        }
+
+        if ((int)std::ceil(v) & 1 != 0)
+        {
+            y = uint32_t((1.f - vFraction) * m_height) % m_height;
+        }
+    }
+
+    else if (WRAP_MODE == 2)
+    {
+        if (u > 1.f || u < 0.f)
+        {
+            x = (int)u * m_width;
+        }
+
+        if (v > 1.f || v < 0.f)
+        {
+            y = (int)v * m_height;
+        }
+    }
+
+    else if (WRAP_MODE == 3)
+    {
+        if (u < 0.f || u > 1.f || 
+            v < 0.f || v > 1.f)
+        {
+            return { (0xFF), (0x00), (0xFF), (0xFF) };
+        }
+    }
+    
+    TGAPixel texel = m_pixels[x + y * m_width];
+
+    return { texel.data[0], texel.data[1], texel.data[2], texel.data[3] };
 }
 
 void Image::generateMipMaps(const MipMapLevel& base)
@@ -244,9 +294,8 @@ float Image::lod(float dudx, float dudy, float dvdx, float dvdy)
     float dx = dudx * dudx + dvdx * dvdx;
     float dy = dudy * dudy + dvdy * dvdy;
     float rho = sqrt(std::max(dx, dy));
-    // printf("%f\n", rho);
-
     float lod = std::log2(std::max(rho, 1e-5f));
+
     return std::max(0.0f, lod);
 }
 
@@ -268,7 +317,6 @@ void Image::derivatives(const glTriangle& polygon, float& dudx, float& dudy, flo
     Vec2f uv1 = polygon.v1.orig_uv;
     Vec2f uv2 = polygon.v2.orig_uv;
 
-    // Convert to texel space
     uv0.x *= texWidth;
     uv0.y *= texHeight;
     uv1.x *= texWidth;
@@ -282,7 +330,8 @@ void Image::derivatives(const glTriangle& polygon, float& dudx, float& dudy, flo
     float v2 = uv2.y - uv0.y;
 
     float det = x1 * y2 - x2 * y1;
-    if (std::abs(det) < 1e-8f) {
+    if (std::abs(det) < 1e-8f)
+    {
         dudx = dudy = dvdx = dvdy = 0;
         return;
     }
