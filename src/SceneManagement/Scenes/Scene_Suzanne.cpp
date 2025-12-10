@@ -40,7 +40,7 @@ void Scene_Suzanne::start()
         update();
         render();
 
-        printf("FPS: %.0f\n", 1.f/m_dt);
+        // printf("FPS: %.0f\n", 1.f/m_dt);
     }
 }
 
@@ -51,6 +51,40 @@ void Scene_Suzanne::processInput()
     {
         switch(e.type)
         {
+            case Event::Gamepad:
+            {
+                m_camera.isMovingLeft = false;
+                m_camera.isMovingRight = false;
+                m_camera.isMovingForward = false;
+                m_camera.isMovingBackward = false;
+
+                uint16_t stickXPos = ((e.gamepadData[XBOX_LEFT_STICK_X_HI] << 8) | (e.gamepadData[XBOX_LEFT_STICK_X_LO]));
+                uint16_t stickYPos = ((e.gamepadData[XBOX_LEFT_STICK_Y_HI] << 8) | (e.gamepadData[XBOX_LEFT_STICK_Y_LO]));
+
+                uint16_t deadzone = 10000;
+                uint16_t centre = UINT16_MAX / 2;
+
+                if (stickXPos < (centre - deadzone))
+                {
+                    m_camera.isMovingLeft = true;
+                }
+
+                else if (stickXPos > (centre + deadzone))
+                {
+                    m_camera.isMovingRight = true;
+                }
+
+                if (stickYPos < (centre - deadzone))
+                {
+                    m_camera.isMovingForward = true;
+                }
+
+                else if (stickYPos > (centre + deadzone))
+                {
+                    m_camera.isMovingBackward = true;
+                }
+            } break;
+
             case Event::KeyPressed:
             {
                 if (e.keyCode == VK_ESCAPE)
