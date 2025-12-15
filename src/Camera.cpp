@@ -94,8 +94,8 @@ bool Camera::isSphereInsideFrustum(const Mat4& model, const Vec3f& centre, float
 
 void Camera::updateRotation(int xOffset, int yOffset, double dt)
 {
-    m_yaw   += xOffset * m_sensitivity * dt;
-    m_pitch += yOffset * m_sensitivity * dt;
+    m_yaw   += xOffset * m_sensitivity;
+    m_pitch += yOffset * m_sensitivity;
 
     m_pitch = std::clamp(m_pitch, -89.f, 89.f);
 
@@ -130,44 +130,25 @@ void Camera::updateRotation(float xOffset, float yOffset, double dt)
 void Camera::updateMovement(double dt)
 {
     Vec3f worldUp{ 0, 1, 0 };
-
     Vec3f right = Utils::normalise(Utils::cross(m_forward, worldUp));
 
-    Vec3f forwardVel = (m_forward * Input::getControllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::LY));
-    Vec3f rightVel   = (right * Input::getControllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::LX));
+    if (Input::isGamepadConnected(0))
+    {
+        Vec3f f = (m_forward * Input::controllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::LY));
+        Vec3f r = (right     * Input::controllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::LX));
+        m_position -= f * m_cameraSpeed * dt;
+        m_position -= r * m_cameraSpeed * dt;
+        m_position.y += Input::isGamepadButtonPressed(0, Input::JAWL_GAMEPAD_BUTTONS::LEFT_SHOULDER)  * m_cameraSpeed * dt;
+        m_position.y -= Input::isGamepadButtonPressed(0, Input::JAWL_GAMEPAD_BUTTONS::RIGHT_SHOULDER) * m_cameraSpeed * dt;
 
-    m_position -= forwardVel * m_cameraSpeed * dt;
-    m_position -= rightVel * m_cameraSpeed * dt;
-    m_position.y += Input::isGamepadButtonPressed(0, Input::JAWL_GAMEPAD_BUTTONS::LEFT_SHOULDER) * m_cameraSpeed * dt;
-    m_position.y -= Input::isGamepadButtonPressed(0, Input::JAWL_GAMEPAD_BUTTONS::RIGHT_SHOULDER) * m_cameraSpeed * dt;
+        return;
+    }
 
-    // if (isMovingForward)
-    // {
-    //     m_position -= m_forward * m_cameraSpeed * dt;
-    // }
+    Vec3f f = m_forward * ((int)Input::isKeyPressed(Input::JAWL_KEY::W) - (int)Input::isKeyPressed(Input::JAWL_KEY::S));
+    Vec3f r = right     * ((int)Input::isKeyPressed(Input::JAWL_KEY::D) - (int)Input::isKeyPressed(Input::JAWL_KEY::A));
+    Vec3f u = worldUp   * ((int)Input::isKeyPressed(Input::JAWL_KEY::Q) - (int)Input::isKeyPressed(Input::JAWL_KEY::E));
 
-    // else if (isMovingBackward)
-    // {
-    //     m_position += m_forward * m_cameraSpeed * dt;
-    // }
-
-    // if (isMovingLeft)
-    // {
-    //     m_position += Utils::normalise(Utils::cross(m_forward, worldUp)) * m_cameraSpeed * dt;
-    // }
-
-    // else if (isMovingRight)
-    // {
-    //     m_position -= Utils::normalise(Utils::cross(m_forward, worldUp)) * m_cameraSpeed * dt;
-    // }
-
-    // if (isMovingUp)
-    // {
-    //     m_position += worldUp * m_cameraSpeed * dt;
-    // }
-
-    // if (isMovingDown)
-    // {
-    //     m_position -= worldUp * m_cameraSpeed * dt;
-    // }
+    m_position -= f * m_cameraSpeed * dt;
+    m_position -= r * m_cameraSpeed * dt;
+    m_position -= u * m_cameraSpeed * dt;
 }

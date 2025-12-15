@@ -56,10 +56,7 @@ LRESULT Window::handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
             RAWINPUT* raw = (RAWINPUT*)buffer;
             if (raw->header.dwType == RIM_TYPEHID)
             {
-                Event e;
-                
-                m_input.pollGamepads(raw, e);
-                m_events.push(e);
+                m_input.pollGamepads(raw->data.hid, m_events);
             }
 
             if (raw->header.dwType == RIM_TYPEKEYBOARD)

@@ -60,7 +60,7 @@ private:
     
     float m_yaw         = -90.f;
     float m_pitch       = 0.f;
-    float m_sensitivity = 5.f;
+    float m_sensitivity = 0.1f;
     float m_cameraSpeed = 5.f;
 
 private:

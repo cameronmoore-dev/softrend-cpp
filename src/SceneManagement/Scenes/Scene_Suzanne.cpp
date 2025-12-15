@@ -53,53 +53,17 @@ void Scene_Suzanne::processInput()
         {
             case Event::KeyPressed:
             {
-                if (e.keyCode == VK_ESCAPE)
+                if (e.keyCode == Input::getKey(Input::JAWL_KEY::Escape))
                 {
                     m_window.close();
                 }
 
-                /* A */
-                if (e.keyCode == 0x41)
-                {
-                    m_camera.isMovingLeft = true;
-                }
-
-                /* D */
-                else if (e.keyCode == 0x44)
-                {
-                    m_camera.isMovingRight = true;
-                }
-
-                /* S */
-                if (e.keyCode == 0x53)
-                {
-                    m_camera.isMovingBackward = true;
-                }
-
-                /* W */
-                else if (e.keyCode == 0x57)
-                {
-                    m_camera.isMovingForward = true;
-                }
-
-                /* E */
-                if (e.keyCode == 0x45)
-                {
-                    m_camera.isMovingUp = true;
-                }
-
-                /* Q */
-                else if (e.keyCode == 0x51)
-                {
-                    m_camera.isMovingDown = true;
-                }
-
-                else if (e.keyCode == VK_BACK)
+                else if (e.keyCode == Input::getKey(Input::JAWL_KEY::Backspace))
                 {
                     ssao = !ssao;
                 }
 
-                else if (e.keyCode == VK_RETURN)
+                else if (e.keyCode == Input::getKey(Input::JAWL_KEY::Enter))
                 {
                     m_ssao.doBlur = !m_ssao.doBlur;
                 }
@@ -107,46 +71,49 @@ void Scene_Suzanne::processInput()
 
             case Event::KeyReleased:
             {
-                /* A */
-                if (e.keyCode == 0x41)
-                {
-                    m_camera.isMovingLeft = false;
-                }
-
-                /* D */
-                else if (e.keyCode == 0x44)
-                {
-                    m_camera.isMovingRight = false;
-                }
-
-                /* S */
-                if (e.keyCode == 0x53)
-                {
-                    m_camera.isMovingBackward = false;
-                }
-
-                /* W */
-                else if (e.keyCode == 0x57)
-                {
-                    m_camera.isMovingForward = false;
-                }
-
-                /* E */
-                if (e.keyCode == 0x45)
-                {
-                    m_camera.isMovingUp = false;
-                }
-
-                /* Q */
-                else if (e.keyCode == 0x51)
-                {
-                    m_camera.isMovingDown = false;
-                }
             } break;
 
             case Event::MouseMove:
             {
                 m_camera.updateRotation(e.mousePos.x, e.mousePos.y, m_dt);
+            } break;
+
+            case Event::GamepadButtonPressed:
+            {
+                if (e.gamepadButton == Input::JAWL_GAMEPAD_BUTTONS::A)
+                {
+                    printf("A pressed\n");
+                }
+            } break;
+
+            case Event::GamepadButtonReleased:
+            {
+                if (e.gamepadButton == Input::JAWL_GAMEPAD_BUTTONS::A)
+                {
+                    printf("A released\n");
+                }
+            } break;
+
+            case Event::GamepadAxisMoved:
+            {
+            } break;
+
+            case Event::GamepadTrigger:
+            {
+                if (e.triggerInfo.value < JAWL_TRIGGER_DEADZONE)
+                {
+                    break;
+                }
+
+                if (e.triggerInfo.trigger == 0)
+                {
+                    printf("lt: %d\n", e.axisInfo.value);
+                }
+
+                if (e.triggerInfo.trigger == 1)
+                {
+                    printf("rt: %d\n", e.axisInfo.value);
+                }
             } break;
         }
     }
@@ -154,12 +121,12 @@ void Scene_Suzanne::processInput()
 
 void Scene_Suzanne::update()
 {
+    m_camera.updateMovement(m_dt);
     if (Input::isGamepadConnected(0))
     {
-        m_camera.updateMovement(m_dt);
-        m_camera.updateRotation(Input::getControllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::RX), -Input::getControllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::RY), m_dt);
-        m_camera.updateView();
+        m_camera.updateRotation(Input::controllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::RX), -Input::controllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::RY), m_dt);
     }
+    m_camera.updateView();
 
     m_angle+=20.f * m_dt;
     m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));

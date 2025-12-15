@@ -12,7 +12,10 @@ struct Event
         MouseMove,
         MouseScroll,
 
-        GamepadButton,
+        GamepadButtonPressed,
+        GamepadButtonReleased,
+        GamepadAxisMoved,
+        GamepadTrigger,
     };
 
     Type type = None;
@@ -28,5 +31,18 @@ struct Event
         } mousePos;
         
         int scrollDelta;
+
+        int gamepadButton; 
+        struct
+        {
+            int axis;
+            int value;
+        } axisInfo;
+
+        struct
+        {
+            int trigger;
+            int value;
+        } triggerInfo;
     };
 };
