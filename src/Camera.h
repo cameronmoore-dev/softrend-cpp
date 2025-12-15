@@ -5,6 +5,7 @@
 
 #include "Matrix.h"
 #include "Utils.h"
+#include "Window.h"
 
 class Camera
 {
@@ -27,6 +28,7 @@ public:
 
     void updateView();
     void updateRotation(int xOffset, int yOffset, double dt);
+    void updateRotation(float xOffset, float yOffset, double dt);
     void updateMovement(double dt);
 
     bool isSphereInsideFrustum(const Mat4& model, const Vec3f& centre, float radius);
@@ -58,7 +60,7 @@ private:
     
     float m_yaw         = -90.f;
     float m_pitch       = 0.f;
-    float m_sensitivity = 0.1f;
+    float m_sensitivity = 5.f;
     float m_cameraSpeed = 5.f;
 
 private:

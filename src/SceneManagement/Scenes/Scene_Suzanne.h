@@ -49,6 +49,9 @@ private:
     double m_dt = 0.f;
 
     bool a = true;
-
     bool ssao = false;
+
+    bool isStickActive = false;
+    int previousStickPosX = 0;
+    int previousStickPosY = 0;
 };

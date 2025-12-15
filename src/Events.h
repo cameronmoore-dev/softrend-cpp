@@ -11,7 +11,8 @@ struct Event
         MouseReleased,
         MouseMove,
         MouseScroll,
-        Gamepad
+
+        GamepadButton,
     };
 
     Type type = None;
@@ -27,6 +28,5 @@ struct Event
         } mousePos;
         
         int scrollDelta;
-        BYTE gamepadData[13];
     };
 };

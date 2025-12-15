@@ -94,9 +94,26 @@ bool Camera::isSphereInsideFrustum(const Mat4& model, const Vec3f& centre, float
 
 void Camera::updateRotation(int xOffset, int yOffset, double dt)
 {
-    m_yaw += xOffset * m_sensitivity;
-    m_pitch += yOffset * m_sensitivity;
+    m_yaw   += xOffset * m_sensitivity * dt;
+    m_pitch += yOffset * m_sensitivity * dt;
 
+    m_pitch = std::clamp(m_pitch, -89.f, 89.f);
+
+    float rad_yaw = Utils::degToRad(m_yaw);
+    float rad_pitch = Utils::degToRad(m_pitch);
+
+    Vec3f dir;
+    dir.x = std::cos(rad_yaw) * std::cos(rad_pitch);
+    dir.y = std::sin(rad_pitch);
+    dir.z = std::sin(rad_yaw) * std::cos(rad_pitch);
+
+    m_forward = Utils::normalise(dir);
+}
+
+void Camera::updateRotation(float xOffset, float yOffset, double dt)
+{
+    m_yaw   += xOffset * 100.f * dt;
+    m_pitch += yOffset * 100.f * dt;
     m_pitch = std::clamp(m_pitch, -89.f, 89.f);
 
     float rad_yaw = Utils::degToRad(m_yaw);
@@ -114,33 +131,43 @@ void Camera::updateMovement(double dt)
 {
     Vec3f worldUp{ 0, 1, 0 };
 
-    if (isMovingForward)
-    {
-        m_position -= m_forward * m_cameraSpeed * dt;
-    }
+    Vec3f right = Utils::normalise(Utils::cross(m_forward, worldUp));
 
-    else if (isMovingBackward)
-    {
-        m_position += m_forward * m_cameraSpeed * dt;
-    }
+    Vec3f forwardVel = (m_forward * Input::getControllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::LY));
+    Vec3f rightVel   = (right * Input::getControllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::LX));
 
-    if (isMovingLeft)
-    {
-        m_position += Utils::normalise(Utils::cross(m_forward, worldUp)) * m_cameraSpeed * dt;
-    }
+    m_position -= forwardVel * m_cameraSpeed * dt;
+    m_position -= rightVel * m_cameraSpeed * dt;
+    m_position.y += Input::isGamepadButtonPressed(0, Input::JAWL_GAMEPAD_BUTTONS::LEFT_SHOULDER) * m_cameraSpeed * dt;
+    m_position.y -= Input::isGamepadButtonPressed(0, Input::JAWL_GAMEPAD_BUTTONS::RIGHT_SHOULDER) * m_cameraSpeed * dt;
 
-    else if (isMovingRight)
-    {
-        m_position -= Utils::normalise(Utils::cross(m_forward, worldUp)) * m_cameraSpeed * dt;
-    }
+    // if (isMovingForward)
+    // {
+    //     m_position -= m_forward * m_cameraSpeed * dt;
+    // }
 
-    if (isMovingUp)
-    {
-        m_position += worldUp * m_cameraSpeed * dt;
-    }
+    // else if (isMovingBackward)
+    // {
+    //     m_position += m_forward * m_cameraSpeed * dt;
+    // }
 
-    else if (isMovingDown)
-    {
-        m_position -= worldUp * m_cameraSpeed * dt;
-    }
+    // if (isMovingLeft)
+    // {
+    //     m_position += Utils::normalise(Utils::cross(m_forward, worldUp)) * m_cameraSpeed * dt;
+    // }
+
+    // else if (isMovingRight)
+    // {
+    //     m_position -= Utils::normalise(Utils::cross(m_forward, worldUp)) * m_cameraSpeed * dt;
+    // }
+
+    // if (isMovingUp)
+    // {
+    //     m_position += worldUp * m_cameraSpeed * dt;
+    // }
+
+    // if (isMovingDown)
+    // {
+    //     m_position -= worldUp * m_cameraSpeed * dt;
+    // }
 }

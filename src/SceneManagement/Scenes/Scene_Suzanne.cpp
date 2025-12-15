@@ -51,40 +51,6 @@ void Scene_Suzanne::processInput()
     {
         switch(e.type)
         {
-            case Event::Gamepad:
-            {
-                m_camera.isMovingLeft = false;
-                m_camera.isMovingRight = false;
-                m_camera.isMovingForward = false;
-                m_camera.isMovingBackward = false;
-
-                uint16_t stickXPos = ((e.gamepadData[XBOX_LEFT_STICK_X_HI] << 8) | (e.gamepadData[XBOX_LEFT_STICK_X_LO]));
-                uint16_t stickYPos = ((e.gamepadData[XBOX_LEFT_STICK_Y_HI] << 8) | (e.gamepadData[XBOX_LEFT_STICK_Y_LO]));
-
-                uint16_t deadzone = 10000;
-                uint16_t centre = UINT16_MAX / 2;
-
-                if (stickXPos < (centre - deadzone))
-                {
-                    m_camera.isMovingLeft = true;
-                }
-
-                else if (stickXPos > (centre + deadzone))
-                {
-                    m_camera.isMovingRight = true;
-                }
-
-                if (stickYPos < (centre - deadzone))
-                {
-                    m_camera.isMovingForward = true;
-                }
-
-                else if (stickYPos > (centre + deadzone))
-                {
-                    m_camera.isMovingBackward = true;
-                }
-            } break;
-
             case Event::KeyPressed:
             {
                 if (e.keyCode == VK_ESCAPE)
@@ -188,9 +154,13 @@ void Scene_Suzanne::processInput()
 
 void Scene_Suzanne::update()
 {
-    m_camera.updateMovement(m_dt);
-    m_camera.updateView();
-    
+    if (Input::isGamepadConnected(0))
+    {
+        m_camera.updateMovement(m_dt);
+        m_camera.updateRotation(Input::getControllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::RX), -Input::getControllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::RY), m_dt);
+        m_camera.updateView();
+    }
+
     m_angle+=20.f * m_dt;
     m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
     m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
@@ -205,24 +175,24 @@ void Scene_Suzanne::render()
     Vec3f centre{ 0, 0, 0 };
     float radius = 1.f;
     
-    // if (m_camera.isSphereInsideFrustum(*shader.model, centre, radius))
-    // {
-    //     // std::fill(Renderer::depthMap.begin(), Renderer::depthMap.end(), 1.f);
-
-    //     // m_renderer.renderMode = Renderer::RenderMode::Shadow;
-    //     // shader.isShadowPass = true;
-    //     // m_renderer.draw(m_suzanne.vertices, shader);
-
-    //     // m_renderer.renderMode = Renderer::RenderMode::Final;
-    //     // shader.isShadowPass = false;
-    // }
-    m_renderer.draw(m_suzanne.vertices, shader);
-
-    if (ssao)
+    if (m_camera.isSphereInsideFrustum(*shader.model, centre, radius))
     {
-        m_ssao.apply();
-    }
+        // std::fill(Renderer::depthMap.begin(), Renderer::depthMap.end(), 1.f);
 
+        // m_renderer.renderMode = Renderer::RenderMode::Shadow;
+        // shader.isShadowPass = true;
+        // m_renderer.draw(m_suzanne.vertices, shader);
+
+        // m_renderer.renderMode = Renderer::RenderMode::Final;
+        // shader.isShadowPass = false;
+        m_renderer.draw(m_suzanne.vertices, shader);
+
+        if (ssao)
+        {
+            m_ssao.apply();
+        }
+    }
+    
     m_window.display();
 }
 

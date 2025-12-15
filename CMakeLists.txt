@@ -8,6 +8,7 @@ set(${CMAKE_CXX_STANDARD_REQUIRED} TRUE)
 add_executable(software_renderer EXCLUDE_FROM_ALL
     "src/Entry.cpp"
     "src/Window.cpp"
+	"src/Input.cpp"
     "src/Utils.cpp"
     "src/Matrix.cpp"
     "src/Model.cpp"    
@@ -19,6 +20,25 @@ add_executable(software_renderer EXCLUDE_FROM_ALL
     "src/SceneManagement/Scenes/Scene_Suzanne.cpp"
     "src/SceneManagement/Scenes/Scene_AlphaBlending.cpp"
 )
+
+if(WIN32)
+	if(MSVC)
+		string(REGEX MATCH "xinput.lib" MATCHED_SUBSTRING "${CMAKE_CXX_STANDARD_LIBRARIES}")
+		if(NOT ${MATCHED_SUBSTRING} STREQUAL "")
+			message("XInput library already exists in cache!")
+		else()
+			set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} xinput.lib" CACHE STRING "Libraries linked by default with all C++ applications." FORCE)
+		endif()
+
+	else()
+		string(REGEX MATCH "-lxinput" MATCHED_SUBSTRING "${CMAKE_CXX_STANDARD_LIBRARIES}")
+		if(NOT ${MATCHED_SUBSTRING} STREQUAL "")
+			message("XInput library already exists in cache!")
+		else()
+			set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lxinput" CACHE STRING "Libraries linked by default with all C++ applications." FORCE)
+		endif()
+	endif()
+endif()
 
 # Copy the resources folder into the generated executable's folder
 add_custom_command(
