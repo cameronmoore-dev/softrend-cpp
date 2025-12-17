@@ -9,9 +9,9 @@ Scene_AlphaBlending::Scene_AlphaBlending(Window& window) :
 
 void Scene_AlphaBlending::start()
 {
-    m_grassShader.setAttribute<Image>(m_grassShader.texture, m_grassTexture);
-    m_cubeShader.setAttribute<Image>(m_cubeShader.texture, m_dirtTexture);
-    m_windowShader.setAttribute<Image>(m_windowShader.texture, m_windowTexture);
+    m_grassShader.setUniform<Image>(m_grassShader.texture, m_grassTexture);
+    m_cubeShader.setUniform<Image>(m_cubeShader.texture, m_dirtTexture);
+    m_windowShader.setUniform<Image>(m_windowShader.texture, m_windowTexture);
 
     m_rotation = Matrix::rotate(180, 1);
 
@@ -21,17 +21,17 @@ void Scene_AlphaBlending::start()
     m_grassModel = Matrix::multiply(Matrix::multiply(Matrix::identity(), m_rotation), m_scale);
     m_windowModel = Matrix::multiply(Matrix::multiply(m_windowTranslate, m_rotation), m_scale);
 
-    m_grassShader.setAttribute<Mat4>(m_grassShader.projection, m_camera.projection());
-    m_grassShader.setAttribute<Mat4>(m_grassShader.view, m_camera.view());
-    m_grassShader.setAttribute<Mat4>(m_grassShader.model, m_grassModel);
+    m_grassShader.setUniform<Mat4>(m_grassShader.projection, m_camera.projection());
+    m_grassShader.setUniform<Mat4>(m_grassShader.view, m_camera.view());
+    m_grassShader.setUniform<Mat4>(m_grassShader.model, m_grassModel);
 
-    m_cubeShader.setAttribute<Mat4>(m_cubeShader.projection, m_camera.projection());
-    m_cubeShader.setAttribute<Mat4>(m_cubeShader.view, m_camera.view());
-    m_cubeShader.setAttribute<Mat4>(m_cubeShader.model, m_cubeModel);
+    m_cubeShader.setUniform<Mat4>(m_cubeShader.projection, m_camera.projection());
+    m_cubeShader.setUniform<Mat4>(m_cubeShader.view, m_camera.view());
+    m_cubeShader.setUniform<Mat4>(m_cubeShader.model, m_cubeModel);
 
-    m_windowShader.setAttribute<Mat4>(m_windowShader.projection, m_camera.projection());
-    m_windowShader.setAttribute<Mat4>(m_windowShader.view, m_camera.view());
-    m_windowShader.setAttribute<Mat4>(m_windowShader.model, m_windowModel);
+    m_windowShader.setUniform<Mat4>(m_windowShader.projection, m_camera.projection());
+    m_windowShader.setUniform<Mat4>(m_windowShader.view, m_camera.view());
+    m_windowShader.setUniform<Mat4>(m_windowShader.model, m_windowModel);
 
     double previous = getTimeSeconds();
     while (m_window.isOpen())
@@ -61,81 +61,10 @@ void Scene_AlphaBlending::processInput()
                 {
                     m_window.close();
                 }
-
-                /* A */
-                if (e.keyCode == 0x41)
-                {
-                    m_camera.isMovingLeft = true;
-                }
-
-                /* D */
-                else if (e.keyCode == 0x44)
-                {
-                    m_camera.isMovingRight = true;
-                }
-
-                /* S */
-                if (e.keyCode == 0x53)
-                {
-                    m_camera.isMovingBackward = true;
-                }
-
-                /* W */
-                else if (e.keyCode == 0x57)
-                {
-                    m_camera.isMovingForward = true;
-                }
-
-                /* E */
-                if (e.keyCode == 0x45)
-                {
-                    m_camera.isMovingUp = true;
-                }
-
-                /* Q */
-                else if (e.keyCode == 0x51)
-                {
-                    m_camera.isMovingDown = true;
-                }
             } break;
 
             case Event::KeyReleased:
             {
-                /* A */
-                if (e.keyCode == 0x41)
-                {
-                    m_camera.isMovingLeft = false;
-                }
-
-                /* D */
-                else if (e.keyCode == 0x44)
-                {
-                    m_camera.isMovingRight = false;
-                }
-
-                /* S */
-                if (e.keyCode == 0x53)
-                {
-                    m_camera.isMovingBackward = false;
-                }
-
-                /* W */
-                else if (e.keyCode == 0x57)
-                {
-                    m_camera.isMovingForward = false;
-                }
-
-                /* E */
-                if (e.keyCode == 0x45)
-                {
-                    m_camera.isMovingUp = false;
-                }
-
-                /* Q */
-                else if (e.keyCode == 0x51)
-                {
-                    m_camera.isMovingDown = false;
-                }
             } break;
 
             case Event::MouseMove:

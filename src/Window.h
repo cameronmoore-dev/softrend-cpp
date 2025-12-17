@@ -4,6 +4,10 @@
 #define UNICODE 1
 #endif
 
+#define JAWL_CURSOR_HIDDEN  0x1
+#define JAWL_CURSOR_LOCKED  0x2
+#define JAWL_CURSOR_CLAMPED 0x4
+
 #include <stdint.h>
 
 #include <vector>
@@ -61,22 +65,34 @@ public:
     void close();
 
     void pollMessages();
-    bool pollEvents(Event& event);
+    bool pollEvents(Event &event);
     void clear(uint32_t clearColour);
     void display();
 
-    void setWindowTitle(const std::string& title);
-    Vec2f& windowSize() { m_windowSize = Vec2f{ (float)m_width, (float)m_height }; return m_windowSize; }
+    void setWindowTitle(const std::string &title);
+    void setFullscreen(bool fullscreen);
+    void setFlash(UINT count, DWORD timeout, bool sound);
 
-    void hideLockCursor(bool state);
+    bool isFocused() { return GetFocus() == m_hwnd; }
+
+    void getPos(int &outX, int &outY);
+    void getSize(int &outWidth, int & outHeight);
+    void setPos(int x, int y);
+    void setSize(int width, int height);
+
+    /* TODO: set to remove */
+    Vec2f& windowSize() { m_windowSize = Vec2f{ (float)m_width, (float)m_height }; return m_windowSize; }
+    /* -- */
+
+    void cursorEnableFlags(uint8_t flags);
+    void cursorDisableFlags(uint8_t flags);
 
     bool isOpen() { return m_isOpen; }
-    
 
-    //
+    /* TODO: move to renderer */
     std::vector<uint32_t>   m_backBuffer;
     std::vector<float>      m_depthBuffer;
-    //
+    /* -- */
     
 
 private:
@@ -86,19 +102,20 @@ private:
     HDC         m_deviceContext = 0;
     RECT        m_rect;
 
-    //
+    /* TODO: move to renderer */
     uint32_t*   m_frontBuffer = nullptr;
-    //
 
     Input m_input;
     std::queue<Event> m_events;
     
+    /* TODO: set to remove */
     uint32_t m_width = 0;
     uint32_t m_height = 0;
     Vec2f m_windowSize = { 0.f, 0.f };
+    /* -- */
 
     bool m_isOpen = false;
-    bool m_mouseLocked = false;
+    uint8_t m_cursorState = 0;
 
 private:
     LPCWSTR className() const { return L"WindowClassName"; }
@@ -106,6 +123,7 @@ private:
     
     void setup();
     void registerInputDevices();
+    void updateCursor();
 
     void onWindowResize(LPARAM lParam);
 };

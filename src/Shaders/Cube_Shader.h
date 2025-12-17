@@ -8,11 +8,11 @@
 class Cube_Shader : public IShader
 {
 public:
-    Attribute<Mat4> model;
-    Attribute<Mat4> view;
-    Attribute<Mat4> projection;
+    Uniform<Mat4> model;
+    Uniform<Mat4> view;
+    Uniform<Mat4> projection;
 
-    Attribute<Image> texture;
+    Uniform<Image> texture;
 
     void vertex(const Vertex& v, glVertex& copy) override
     {

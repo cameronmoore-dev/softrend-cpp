@@ -13,7 +13,7 @@ class IShader
 {
 protected:
     template<typename T>
-    using Attribute = std::unique_ptr<T>;
+    using Uniform = std::unique_ptr<T>;
 
     float offset = 0.f;
     double previous = getTimeSeconds();
@@ -22,9 +22,9 @@ public:
     // virtual ~IShader() = 0;
 
     template<typename T>
-    void setAttribute(Attribute<T> &attr, T &data)
+    void setUniform(Uniform<T> &uniform, T &data)
     {
-        attr.reset(&data);
+        uniform.reset(&data);
     }
 
     virtual void vertex(const Vertex& v, glVertex& copy) = 0;

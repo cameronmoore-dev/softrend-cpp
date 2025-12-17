@@ -9,10 +9,10 @@ Scene_Cube::Scene_Cube(Window& window) :
 
 void Scene_Cube::start()
 {
-    m_shader.setAttribute<Mat4>(m_shader.model, m_model);
-    m_shader.setAttribute<Mat4>(m_shader.view, m_camera.view());
-    m_shader.setAttribute<Mat4>(m_shader.projection, m_camera.projection());
-    m_shader.setAttribute<Image>(m_shader.texture, m_texture);
+    m_shader.setUniform<Mat4>(m_shader.model, m_model);
+    m_shader.setUniform<Mat4>(m_shader.view, m_camera.view());
+    m_shader.setUniform<Mat4>(m_shader.projection, m_camera.projection());
+    m_shader.setUniform<Image>(m_shader.texture, m_texture);
 
     m_fxaa.frameSize = m_window.windowSize();
 
@@ -44,81 +44,10 @@ void Scene_Cube::processInput()
                 {
                     m_window.close();
                 }
-
-                /* A */
-                if (e.keyCode == 0x41)
-                {
-                    m_camera.isMovingLeft = true;
-                }
-
-                /* D */
-                else if (e.keyCode == 0x44)
-                {
-                    m_camera.isMovingRight = true;
-                }
-
-                /* S */
-                if (e.keyCode == 0x53)
-                {
-                    m_camera.isMovingBackward = true;
-                }
-
-                /* W */
-                else if (e.keyCode == 0x57)
-                {
-                    m_camera.isMovingForward = true;
-                }
-
-                /* E */
-                if (e.keyCode == 0x45)
-                {
-                    m_camera.isMovingUp = true;
-                }
-
-                /* Q */
-                else if (e.keyCode == 0x51)
-                {
-                    m_camera.isMovingDown = true;
-                }
             } break;
 
             case Event::KeyReleased:
             {
-                /* A */
-                if (e.keyCode == 0x41)
-                {
-                    m_camera.isMovingLeft = false;
-                }
-
-                /* D */
-                else if (e.keyCode == 0x44)
-                {
-                    m_camera.isMovingRight = false;
-                }
-
-                /* S */
-                if (e.keyCode == 0x53)
-                {
-                    m_camera.isMovingBackward = false;
-                }
-
-                /* W */
-                else if (e.keyCode == 0x57)
-                {
-                    m_camera.isMovingForward = false;
-                }
-
-                /* E */
-                if (e.keyCode == 0x45)
-                {
-                    m_camera.isMovingUp = false;
-                }
-
-                /* Q */
-                else if (e.keyCode == 0x51)
-                {
-                    m_camera.isMovingDown = false;
-                }
             } break;
 
             case Event::MouseMove:

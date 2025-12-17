@@ -3,17 +3,21 @@
 Scene_Suzanne::Scene_Suzanne(Window& window) :
     m_window(window)
 {
+    int x = 0;
+    int y = 0;
+    m_window.getSize(x, y);
+    m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
 }
 
 void Scene_Suzanne::start()
 {
-    shader.setAttribute<Mat4>(shader.model, m_model);
-    shader.setAttribute<Mat4>(shader.view, m_camera.view());
-    shader.setAttribute<Mat4>(shader.projection, m_camera.projection());
+    shader.setUniform<Mat4>(shader.model, m_model);
+    shader.setUniform<Mat4>(shader.view, m_camera.view());
+    shader.setUniform<Mat4>(shader.projection, m_camera.projection());
 
-    shader.setAttribute<Image>(shader.diffuseMap, m_texture);
-    shader.setAttribute<Image>(shader.normalMap, m_normalMap);
-    shader.setAttribute<Image>(shader.specularMap, m_specularMap);
+    shader.setUniform<Image>(shader.diffuseMap, m_texture);
+    shader.setUniform<Image>(shader.normalMap, m_normalMap);
+    shader.setUniform<Image>(shader.specularMap, m_specularMap);
 
     m_ssao.fb = &m_window.m_backBuffer;
     m_ssao.zbuffer = &m_window.m_depthBuffer;

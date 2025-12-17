@@ -23,6 +23,7 @@ class Camera
     using Frustum = std::array<Plane, 6>;
 
 public:
+    Camera() = default;
     Camera(float fov, float aspect, float zNear, float zFar);
     Camera(int32_t left, int32_t top, int32_t right, int32_t bottom, float zNear, float zFar);
 

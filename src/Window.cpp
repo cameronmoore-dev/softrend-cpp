@@ -18,6 +18,8 @@ Window::~Window()
     {
         DeleteDC(m_deviceContext);
     }
+
+    ClipCursor(nullptr);
 }
 
 LRESULT Window::handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -178,8 +180,7 @@ void Window::setup()
     m_frameInfo.bmiHeader.biBitCount = 32;
     m_frameInfo.bmiHeader.biCompression = BI_RGB;
     m_deviceContext = CreateCompatibleDC(0);
-
-    hideLockCursor(true);
+    
     GetWindowRect(m_hwnd, &m_rect);
     ShowWindow(m_hwnd, 1);
     SetFocus(m_hwnd);
@@ -221,7 +222,7 @@ void Window::pollMessages()
     }
 }
 
-bool Window::pollEvents(Event& event)
+bool Window::pollEvents(Event &event)
 {
     if (m_events.empty())
     {
@@ -244,10 +245,7 @@ void Window::clear(uint32_t clearColour)
 
 void Window::display()
 {
-    if (m_mouseLocked)
-    {
-        SetCursorPos(m_rect.left + (m_width / 2), m_rect.bottom - (m_height / 2));
-    }
+    updateCursor();
     
     PAINTSTRUCT paint;
     HDC hdc = BeginPaint(m_hwnd, &paint);
@@ -265,24 +263,95 @@ void Window::display()
     EndPaint(m_hwnd, &paint);
 }
 
-void Window::setWindowTitle(const std::string& title)
+void Window::setFlash(UINT count, DWORD timeout, bool sound)
+{
+    FLASHWINFO info;
+    info.cbSize = sizeof(FLASHWINFO);
+    info.hwnd = m_hwnd;
+    info.dwFlags = FLASHW_ALL;
+    info.uCount = count;
+    info.dwTimeout = timeout;
+
+    ::FlashWindowEx(&info);
+    if (sound)
+    {
+        ::MessageBeep(MB_OK);
+    }
+}
+
+void Window::setWindowTitle(const std::string &title)
 {
     LPCWSTR str = std::wstring(title.begin(), title.end()).c_str();
     SetWindowTextW(m_hwnd, str);
 }
 
-void Window::hideLockCursor(bool state)
+void Window::getPos(int &outX, int &outY)
 {
-    if (state)
+    ::GetWindowRect(m_hwnd, &m_rect);
+    outX = m_rect.left;
+    outY = m_rect.top;
+}
+
+void Window::getSize(int &outWidth, int & outHeight)
+{
+    ::GetWindowRect(m_hwnd, &m_rect);
+    outWidth = m_rect.right - m_rect.left;
+    outHeight = m_rect.bottom - m_rect.top;
+}
+
+void Window::setPos(int x, int y)
+{
+    ::SetWindowPos(m_hwnd, NULL, x, y, m_rect.right - m_rect.left, m_rect.bottom - m_rect.top, SWP_FRAMECHANGED);
+}
+
+void Window::setSize(int width, int height)
+{
+    ::SetWindowPos(m_hwnd, NULL, m_rect.left, m_rect.top, m_rect.left + width, m_rect.top + height, SWP_FRAMECHANGED);
+}
+
+void Window::setFullscreen(bool fullscreen)
+{
+    if (!fullscreen)
     {
-        ShowCursor(false);
-        m_mouseLocked = true;
+        HMONITOR hMonitor = MonitorFromWindow(m_hwnd, MONITOR_DEFAULTTONEAREST);
+        MONITORINFOEX info;
+        info.cbSize = sizeof(MONITORINFOEX);
+        DWORD fsStyle = WS_POPUP | WS_VISIBLE;
+
+        GetMonitorInfo(hMonitor, &info);
+        SetWindowLongPtr(m_hwnd, GWL_STYLE, fsStyle);
+        SetWindowPos(m_hwnd, NULL, info.rcMonitor.left, info.rcMonitor.top, info.rcMonitor.right, info.rcMonitor.bottom, SWP_FRAMECHANGED);
         return;
     }
 
-    ClipCursor(nullptr);
-    ShowCursor(true);
-    m_mouseLocked = false;
+    /* TODO: add a way to keep a non-fullscreen window config to default back to */
+    SetWindowLongPtr(m_hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+    SetWindowPos(m_hwnd, NULL, m_rect.left, m_rect.top, m_rect.right, m_rect.bottom, SWP_FRAMECHANGED);
+}
+
+void Window::updateCursor()
+{
+    if (m_cursorState & JAWL_CURSOR_LOCKED)
+    {
+        SetCursorPos(m_rect.left + (m_width / 2), m_rect.bottom - (m_height / 2));
+    }
+
+    if (m_cursorState & JAWL_CURSOR_CLAMPED)
+    {
+        ClipCursor(&m_rect);
+    }
+
+    ShowCursor(!(m_cursorState & JAWL_CURSOR_HIDDEN));
+}
+
+void Window::cursorEnableFlags(uint8_t state)
+{
+    m_cursorState |= state;
+}
+
+void Window::cursorDisableFlags(uint8_t state)
+{
+    m_cursorState &= ~(state);
 }
 
 void Window::onWindowResize(LPARAM lParam)

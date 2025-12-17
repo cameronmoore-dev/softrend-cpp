@@ -11,7 +11,6 @@ struct Event
         MouseReleased,
         MouseMove,
         MouseScroll,
-
         GamepadButtonPressed,
         GamepadButtonReleased,
         GamepadAxisMoved,

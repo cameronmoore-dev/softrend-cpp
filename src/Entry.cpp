@@ -18,8 +18,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 1;
     }
 
+    window.cursorEnableFlags(JAWL_CURSOR_HIDDEN | JAWL_CURSOR_HIDDEN | JAWL_CURSOR_CLAMPED);
+
     SceneManager sceneManager;
     sceneManager.addScene<Scene_Suzanne>(window);
+
+    window.~Window();
 
     return 0;
 }
