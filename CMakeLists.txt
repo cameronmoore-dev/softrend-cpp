@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.28)
 
-project(software_renderer LANGUAGES CXX)
+project(software_renderer LANGUAGES C CXX)
 
 set(${CMAKE_CXX_STANDARD} 17)
 set(${CMAKE_CXX_STANDARD_REQUIRED} TRUE)
+
+set(SRC_PATH			"${CMAKE_SOURCE_DIR}/src")
+set(LIB_INCLUDE_PATH	"${CMAKE_SOURCE_DIR}/externals/includes")
 
 add_executable(software_renderer EXCLUDE_FROM_ALL
     "src/Entry.cpp"
@@ -15,11 +18,16 @@ add_executable(software_renderer EXCLUDE_FROM_ALL
     "src/Image.cpp"
     "src/Renderer.cpp"
     "src/Camera.cpp"
-    "src/SceneManagement/Scenes/Scene_Cube.cpp"
     "src/SceneManagement/Scenes/Scene_Triangle.cpp"
+    "src/SceneManagement/Scenes/Scene_Cube.cpp"
     "src/SceneManagement/Scenes/Scene_Suzanne.cpp"
     "src/SceneManagement/Scenes/Scene_AlphaBlending.cpp"
+	"src/SceneManagement/Scenes/Scene_OpenGL.cpp"
+
+	"src/glad.c"
 )
+
+target_include_directories(software_renderer PUBLIC "${SRC_PATH}" "${LIB_INCLUDE_PATH}")
 
 if(WIN32)
 	if(MSVC)

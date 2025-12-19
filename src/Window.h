@@ -61,13 +61,14 @@ class Window
 public:
     ~Window();
     
-    bool create(LPCWSTR lpWindowName, INT width, INT height);
+    bool create(LPCWSTR lpWindowName, INT width, INT height, bool isGL);
     void close();
 
     void pollMessages();
     bool pollEvents(Event &event);
     void clear(uint32_t clearColour);
     void display();
+    void swapBuffers();
 
     void setWindowTitle(const std::string &title);
     void setFullscreen(bool fullscreen);
@@ -79,10 +80,6 @@ public:
     void getSize(int &outWidth, int & outHeight);
     void setPos(int x, int y);
     void setSize(int width, int height);
-
-    /* TODO: set to remove */
-    Vec2f& windowSize() { m_windowSize = Vec2f{ (float)m_width, (float)m_height }; return m_windowSize; }
-    /* -- */
 
     void cursorEnableFlags(uint8_t flags);
     void cursorDisableFlags(uint8_t flags);
@@ -108,13 +105,11 @@ private:
     Input m_input;
     std::queue<Event> m_events;
     
-    /* TODO: set to remove */
     uint32_t m_width = 0;
     uint32_t m_height = 0;
-    Vec2f m_windowSize = { 0.f, 0.f };
-    /* -- */
 
     bool m_isOpen = false;
+    bool m_isGL = false;
     uint8_t m_cursorState = 0;
 
 private:
@@ -122,6 +117,7 @@ private:
     LRESULT handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam);
     
     void setup();
+    void glSetup();
     void registerInputDevices();
     void updateCursor();
 

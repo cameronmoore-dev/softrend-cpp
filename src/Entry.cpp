@@ -6,13 +6,14 @@
 #include "SceneManagement/Scenes/Scene_Triangle.h"
 #include "SceneManagement/Scenes/Scene_Suzanne.h"
 #include "SceneManagement/Scenes/Scene_AlphaBlending.h"
+#include "SceneManagement/Scenes/Scene_OpenGL.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
     srand(static_cast<UINT>(time(0)));
 
     Window window;
-    if (!window.create(L"Software Renderer", 640, 480))
+    if (!window.create(L"Software Renderer", 640, 480, true))
     {
         std::cerr << "ERROR::WINDOW::failed to create!" << std::endl;
         return 1;
@@ -21,7 +22,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     window.cursorEnableFlags(JAWL_CURSOR_HIDDEN | JAWL_CURSOR_HIDDEN | JAWL_CURSOR_CLAMPED);
 
     SceneManager sceneManager;
-    sceneManager.addScene<Scene_Suzanne>(window);
+    sceneManager.addScene<Scene_OpenGL>(window);
 
     window.~Window();
 

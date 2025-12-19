@@ -5,6 +5,10 @@
 Scene_AlphaBlending::Scene_AlphaBlending(Window& window) : 
     m_window(window)
 {
+    int x = 0;
+    int y = 0;
+    m_window.getSize(x, y);
+    m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
 }
 
 void Scene_AlphaBlending::start()

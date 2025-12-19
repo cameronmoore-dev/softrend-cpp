@@ -29,7 +29,7 @@ private:
     Renderer m_renderer = Renderer(m_window);
     Model m_cube = Model("./resources/model_cube.obj");
     Image m_texture = Image("./resources/texture_dirtcube.tga");
-    Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 20.f);
+    Camera m_camera;
 
     Cube_Shader m_shader;
     FXAA_Shader m_fxaa;

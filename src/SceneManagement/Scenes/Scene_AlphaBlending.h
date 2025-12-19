@@ -26,7 +26,7 @@ protected:
 private:
     Window& m_window;
     Renderer m_renderer = Renderer(m_window);
-    Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 20.f);
+    Camera m_camera;
 
     Grass_Shader m_grassShader;
     Cube_Shader m_cubeShader;

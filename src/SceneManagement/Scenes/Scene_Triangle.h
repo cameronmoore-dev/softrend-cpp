@@ -24,9 +24,9 @@ protected:
 private:
     Window& m_window;
     Renderer m_renderer = Renderer(m_window);
-    Camera m_camera = Camera(45.f, m_window.windowSize().x / m_window.windowSize().y, 0.5f, 100.f);
+    Camera m_camera;
 
-    Suzanne_Shader m_shader;
+    // Suzanne_Shader m_shader;
 
     Mat4 m_model = Matrix::identity();
 

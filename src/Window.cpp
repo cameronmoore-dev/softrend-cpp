@@ -7,6 +7,9 @@
 
 #include <iostream>
 
+#include <glad/glad.h>
+#include <GL/wglext.h>
+
 Window::~Window()
 {
     if (m_bitmapHandle)
@@ -133,7 +136,7 @@ LRESULT Window::handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
-bool Window::create(LPCWSTR lpWindowName, INT width, INT height)
+bool Window::create(LPCWSTR lpWindowName, INT width, INT height, bool isGL)
 {
     WNDCLASS wc = {};
     wc.lpfnWndProc = WndProc;
@@ -157,6 +160,7 @@ bool Window::create(LPCWSTR lpWindowName, INT width, INT height)
 
     if (m_hwnd)
     {
+        m_isGL = isGL;
         setup();
         registerInputDevices();
 
@@ -175,17 +179,83 @@ void Window::close()
 
 void Window::setup()
 {
-    m_frameInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    m_frameInfo.bmiHeader.biPlanes = 1;
-    m_frameInfo.bmiHeader.biBitCount = 32;
-    m_frameInfo.bmiHeader.biCompression = BI_RGB;
     m_deviceContext = CreateCompatibleDC(0);
-    
+    if (!m_isGL)
+    {
+        m_frameInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+        m_frameInfo.bmiHeader.biPlanes = 1;
+        m_frameInfo.bmiHeader.biBitCount = 32;
+        m_frameInfo.bmiHeader.biCompression = BI_RGB;
+    }
+    else 
+    {
+        glSetup();
+    }
+
     GetWindowRect(m_hwnd, &m_rect);
     ShowWindow(m_hwnd, 1);
     SetFocus(m_hwnd);
 
     m_input.storeGameControllers();
+}
+
+void Window::glSetup()
+{
+    m_deviceContext = GetDC(m_hwnd);
+
+    PIXELFORMATDESCRIPTOR pfd;
+    ZeroMemory(&pfd, sizeof(PIXELFORMATDESCRIPTOR));
+    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+    pfd.nVersion = 4;
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.cColorBits = 32;
+    pfd.cDepthBits = 16;
+    pfd.iLayerType = PFD_MAIN_PLANE;
+
+    int old_format = ChoosePixelFormat(m_deviceContext, &pfd);
+    SetPixelFormat(m_deviceContext, old_format, &pfd);
+
+    HGLRC hrc;
+    hrc = wglCreateContext(m_deviceContext);
+    wglMakeCurrent(m_deviceContext, hrc);
+
+    gladLoadGL();
+
+    PFNWGLSWAPINTERVALEXTPROC wglSwapInterval = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
+    PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
+
+    wglDeleteContext(hrc);
+
+    int formats = 0;
+    UINT numFormats = 0;
+    int formatAttribs[] =
+    {
+        WGL_DRAW_TO_WINDOW_ARB,     GL_TRUE,
+        WGL_SUPPORT_OPENGL_ARB,     GL_TRUE,
+        WGL_DOUBLE_BUFFER_ARB,      GL_TRUE,
+        WGL_ACCELERATION_ARB,       WGL_FULL_ACCELERATION_ARB,
+        WGL_PIXEL_TYPE_ARB,         WGL_TYPE_RGBA_ARB,
+        WGL_COLOR_BITS_ARB,         32,
+        WGL_DEPTH_BITS_ARB,         24,
+        WGL_STENCIL_BITS_ARB,       8,
+        0
+    };
+
+    int format = wglChoosePixelFormatARB(m_deviceContext, formatAttribs, 0, 1, &formats, &numFormats);
+    int attribList[] =
+    { 
+        WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+        WGL_CONTEXT_MINOR_VERSION_ARB, 1,
+        WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+        0
+    };
+    HGLRC hRenderContext = wglCreateContextAttribsARB(m_deviceContext, 0, attribList);
+
+    wglMakeCurrent(m_deviceContext, hRenderContext);
+
+    wglSwapInterval(1);
 }
 
 void Window::registerInputDevices()
@@ -261,6 +331,11 @@ void Window::display()
         SRCCOPY);
     
     EndPaint(m_hwnd, &paint);
+}
+
+void Window::swapBuffers()
+{
+    SwapBuffers(m_deviceContext);
 }
 
 void Window::setFlash(UINT count, DWORD timeout, bool sound)

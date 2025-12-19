@@ -5,6 +5,10 @@
 Scene_Cube::Scene_Cube(Window& window) :
     m_window(window)
 {
+    int x = 0;
+    int y = 0;
+    m_window.getSize(x, y);
+    m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
 }
 
 void Scene_Cube::start()
@@ -13,9 +17,7 @@ void Scene_Cube::start()
     m_shader.setUniform<Mat4>(m_shader.view, m_camera.view());
     m_shader.setUniform<Mat4>(m_shader.projection, m_camera.projection());
     m_shader.setUniform<Image>(m_shader.texture, m_texture);
-
-    m_fxaa.frameSize = m_window.windowSize();
-
+    
     double previous = getTimeSeconds();
     while (m_window.isOpen())
     {
@@ -75,9 +77,6 @@ void Scene_Cube::render()
     m_window.clear(0x111111);
 
     m_renderer.draw(m_cube.vertices, m_shader);
-
-    // m_fxaa.frameBuffer = &m_window.m_backBuffer;
-    // m_fxaa.apply();
 
     m_window.display();
 }

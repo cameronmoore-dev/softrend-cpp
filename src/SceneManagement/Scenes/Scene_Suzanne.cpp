@@ -21,9 +21,13 @@ void Scene_Suzanne::start()
 
     m_ssao.fb = &m_window.m_backBuffer;
     m_ssao.zbuffer = &m_window.m_depthBuffer;
-    m_ssao.width = (int)m_window.windowSize().x;
-    m_ssao.height = (int)m_window.windowSize().y;
 
+    int ox;
+    int oy;
+    m_window.getSize(ox, oy);
+    
+    m_ssao.width = ox;
+    m_ssao.height = oy;
     m_ssao.initAOBuffer();
 
     // Vec3f pos{ 0.f, 0.f, -5.f };
@@ -44,7 +48,7 @@ void Scene_Suzanne::start()
         update();
         render();
 
-        // printf("FPS: %.0f\n", 1.f/m_dt);
+        printf("FPS: %.0f\n", 1.f/m_dt);
     }
 }
 
