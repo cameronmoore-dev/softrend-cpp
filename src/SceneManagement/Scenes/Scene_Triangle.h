@@ -11,7 +11,7 @@
 class Scene_Triangle : public Scene
 {
 public:
-    Scene_Triangle(Window& window);
+    Scene_Triangle(Window &window, Renderer &renderer);
 
     void start() override;
     
@@ -22,8 +22,8 @@ protected:
     void shutdown() override;
 
 private:
-    Window& m_window;
-    Renderer m_renderer = Renderer(m_window);
+    Window &m_window;
+    Renderer &m_renderer;
     Camera m_camera;
 
     // Suzanne_Shader m_shader;

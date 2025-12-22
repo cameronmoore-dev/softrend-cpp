@@ -13,24 +13,46 @@
 #define FAR_PLANE       5
 #define NUM_PLANES      6
 
-Renderer::Renderer(Window& context) : 
-    m_context(context)
+Renderer::Renderer(void *bufferInfo)
 {
     input.reserve(6);
     output.reserve(6);
 
-    depthMap.resize(1024*1024, 1.f);
+    // depthMap.resize(1024*1024, 1.f);
     previous = getTimeSeconds();
+
+    /*  Navigating through the void, 
+        assigning values based on the known layout of the EchoBufferInfo structure
+    */
+    m_width = *((uint16_t**)bufferInfo);
+    m_height = *((uint16_t**)bufferInfo + 1);
+    m_backbuffer = *((uint32_t**)bufferInfo + 2);
+    m_depthbuffer = *((float**)bufferInfo + 3);
+
+    m_ppBackBuffer = ((uint32_t**)bufferInfo + 2);
+    m_ppDepthBuffer = ((float**)bufferInfo + 3);
+
+    m_viewportWidth = *m_width;
+    m_viewportHeight = *m_height;
 }
 
 void Renderer::draw(const std::vector<Vertex>& vertices, IShader& shader)
 {
+    /*  If the array that stores the backbuffer has reallocated its memory,
+        then set this pointer of the backbuffer to the new location.
+    */
+    if (m_backbuffer != *m_ppBackBuffer)
+    {
+        m_backbuffer = *m_ppBackBuffer;
+        m_depthbuffer = *m_ppDepthBuffer;
+    }
+
     double current = getTimeSeconds();
     dt += current - previous;
     previous = current;
 
-    viewportWidth   = renderMode == RenderMode::Shadow ? 1024 : m_context.m_width;
-    viewportHeight  = renderMode == RenderMode::Shadow ? 1024 : m_context.m_height;
+    // viewportWidth   = renderMode == RenderMode::Shadow ? 1024 : m_context.m_width;
+    // viewportHeight  = renderMode == RenderMode::Shadow ? 1024 : m_context.m_height;
     
     for (uint32_t i = 0; i < vertices.size(); i+=3)
     {
@@ -103,8 +125,8 @@ void Renderer::transformVertex(glVertex& vertex)
 
     /* To Screen Space Coordinates */
     Vec4f screenPos;
-    screenPos.x = (clip.x + 1.f) * 0.5f * viewportWidth;
-    screenPos.y = (clip.y + 1.f) * 0.5f * viewportHeight;
+    screenPos.x = (clip.x + 1.f) * 0.5f * m_viewportWidth;
+    screenPos.y = (clip.y + 1.f) * 0.5f * m_viewportHeight;
     screenPos.z = clip.z;
 
     /* The extra - 0.1f is to stop flickering along the left and bottom screen edges after polygon clipping, most likely due to floating-point precision issues */
@@ -121,7 +143,7 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
     {
         for (p.x = m_bbMin.x; p.x <= m_bbMax.x; p.x++)
         {
-            if (p.x < 0 || p.y < 0 || p.x >= viewportWidth|| p.y >= viewportHeight)
+            if (p.x < 0 || p.y < 0 || p.x >= m_viewportWidth || p.y >= m_viewportHeight)
             {
                 continue;
             }
@@ -130,7 +152,7 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
             if (point.x >= 0 && point.y >= 0 && point.z >= 0)
             {
                 float z = polygon.v0.position.z * point.x + polygon.v1.position.z * point.y + polygon.v2.position.z * point.z;
-                uint32_t idx = p.x + p.y * viewportWidth;
+                uint32_t idx = p.x + p.y * (*m_width);
                 
                 if (renderMode == RenderMode::Shadow)
                 {
@@ -142,9 +164,9 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
                 else if (renderMode == RenderMode::Final)
                 {
                     Vec4f linearColour;
-                    if (z < m_context.m_depthBuffer[idx] && shader.fragment(point, polygon, linearColour))
+                    if (z < m_depthbuffer[idx] && shader.fragment(point, polygon, linearColour))
                     {
-                        m_context.m_depthBuffer[idx] = z;
+                        m_depthbuffer[idx] = z;
                         // Vec4f src = { linearColour.x * linearColour.w, linearColour.y * linearColour.w, linearColour.z * linearColour.w, linearColour.w };
                         // Vec4f dest = Utils::hexToRGBA(m_context.m_backBuffer[idx]);
                         // Vec4f blendColour = src + dest * (1.f - src.w);
@@ -155,7 +177,7 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
                         uint8_t g = Utils::linearToSRGB(linearColour.y);
                         uint8_t b = Utils::linearToSRGB(linearColour.z);
 
-                        m_context.m_backBuffer[idx] = (r<<16) | (g<<8) | b;
+                        m_backbuffer[idx] = (r<<16) | (g<<8) | b;
 
                         // m_context.m_backBuffer[idx] = Utils::rgbaToHex(linearColour);
                     }

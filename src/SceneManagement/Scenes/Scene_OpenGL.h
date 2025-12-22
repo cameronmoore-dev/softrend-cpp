@@ -4,6 +4,7 @@
 
 #include "../Scene.h"
 #include "Window.h"
+#include "Renderer.h"
 #include "GLShader.h"
 
 struct POS
@@ -28,7 +29,7 @@ struct VERTEX
 class Scene_OpenGL : public Scene
 {
 public:
-    Scene_OpenGL(Window &window);
+    Scene_OpenGL(Window &window, Renderer&);
 
     void start() override;
     

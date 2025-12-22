@@ -2,8 +2,9 @@
 
 #include <chrono>
 
-Scene_Triangle::Scene_Triangle(Window& window) :
-    m_window(window)
+Scene_Triangle::Scene_Triangle(Window &window, Renderer &renderer) :
+    m_window(window),
+    m_renderer(renderer)
 {
     int x = 0;
     int y = 0;
@@ -81,7 +82,7 @@ void Scene_Triangle::render()
 
     // m_renderer.draw(m_triangle, m_shader);
 
-    m_window.display();
+    m_window.swapBuffers();
 }
 
 void Scene_Triangle::shutdown()

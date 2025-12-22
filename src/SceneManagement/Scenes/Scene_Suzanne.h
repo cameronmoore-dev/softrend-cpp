@@ -13,7 +13,7 @@
 class Scene_Suzanne : public Scene
 {
 public:
-    Scene_Suzanne(Window& window);
+    Scene_Suzanne(Window &window, Renderer &renderer);
 
     void start() override;
     
@@ -24,8 +24,8 @@ protected:
     void shutdown() override;
 
 private:
-    Window& m_window;
-    Renderer m_renderer = Renderer(m_window);
+    Window &m_window;
+    Renderer &m_renderer;
     Model m_suzanne = Model("./resources/model_suzanne.obj");
     Image m_texture = Image("./resources/texture_suzanne.tga");
     Image m_normalMap = Image("./resources/suzanne_normal.tga");

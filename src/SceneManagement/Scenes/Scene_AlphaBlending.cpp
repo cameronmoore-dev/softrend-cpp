@@ -2,8 +2,9 @@
 
 #include "../../Events.h"
 
-Scene_AlphaBlending::Scene_AlphaBlending(Window& window) : 
-    m_window(window)
+Scene_AlphaBlending::Scene_AlphaBlending(Window &window, Renderer &renderer) : 
+    m_window(window),
+    m_renderer(renderer)
 {
     int x = 0;
     int y = 0;
@@ -98,7 +99,7 @@ void Scene_AlphaBlending::render()
     m_renderer.draw(m_plane.vertices, m_grassShader);
     m_renderer.draw(m_plane.vertices, m_windowShader);
 
-    m_window.display();
+    m_window.swapBuffers();
 }
 
 void Scene_AlphaBlending::shutdown()

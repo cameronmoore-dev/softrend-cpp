@@ -1,6 +1,6 @@
 #include "Scene_OpenGL.h"
 
-Scene_OpenGL::Scene_OpenGL(Window &window) : 
+Scene_OpenGL::Scene_OpenGL(Window &window, Renderer&) : 
     m_window(window)
 {
     m_shader = GLShader("resources/shaders/default.vert", "resources/shaders/default.frag");
@@ -45,7 +45,7 @@ void Scene_OpenGL::start()
         update();
         render();
 
-        printf("FPS: %.0f\n", 1.f/m_dt);
+        // printf("FPS: %.0f\n", 1.f/m_dt);
     }
 
     glDeleteVertexArrays(1, &m_vao);
@@ -74,6 +74,11 @@ void Scene_OpenGL::processInput()
 
 void Scene_OpenGL::update()
 {
+    m_vertices[0].pos.x += 0.1f * m_dt;
+    m_vertices[1].pos.x -= 0.1f * m_dt;
+    m_vertices[2].pos.y += 0.1f * m_dt;
+
+    glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(VERTEX), &m_vertices[0], GL_DYNAMIC_DRAW);
 }
 
 void Scene_OpenGL::render()

@@ -1,7 +1,8 @@
 #include "Scene_Suzanne.h"
 
-Scene_Suzanne::Scene_Suzanne(Window& window) :
-    m_window(window)
+Scene_Suzanne::Scene_Suzanne(Window &window, Renderer &renderer) :
+    m_window(window),
+    m_renderer(renderer)
 {
     int x = 0;
     int y = 0;
@@ -19,16 +20,16 @@ void Scene_Suzanne::start()
     shader.setUniform<Image>(shader.normalMap, m_normalMap);
     shader.setUniform<Image>(shader.specularMap, m_specularMap);
 
-    m_ssao.fb = &m_window.m_backBuffer;
-    m_ssao.zbuffer = &m_window.m_depthBuffer;
+    // m_ssao.fb = &m_window.m_backBuffer;
+    // m_ssao.zbuffer = &m_window.m_depthBuffer;
 
-    int ox;
-    int oy;
-    m_window.getSize(ox, oy);
+    // int ox;
+    // int oy;
+    // m_window.getSize(ox, oy);
     
-    m_ssao.width = ox;
-    m_ssao.height = oy;
-    m_ssao.initAOBuffer();
+    // m_ssao.width = ox;
+    // m_ssao.height = oy;
+    // m_ssao.initAOBuffer();
 
     // Vec3f pos{ 0.f, 0.f, -5.f };
     // Vec3f forward{ 0.f, 0.f, -1.f };
@@ -50,6 +51,8 @@ void Scene_Suzanne::start()
 
         printf("FPS: %.0f\n", 1.f/m_dt);
     }
+
+    m_window.cleanup();
 }
 
 void Scene_Suzanne::processInput()
@@ -168,7 +171,7 @@ void Scene_Suzanne::render()
         }
     }
     
-    m_window.display();
+    m_window.swapBuffers();
 }
 
 void Scene_Suzanne::shutdown()

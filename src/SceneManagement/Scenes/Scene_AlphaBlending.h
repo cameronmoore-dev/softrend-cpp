@@ -13,7 +13,7 @@
 class Scene_AlphaBlending : public Scene
 {
 public:
-    Scene_AlphaBlending(Window& window);
+    Scene_AlphaBlending(Window &window, Renderer &renderer);
 
     void start() override;
     
@@ -24,8 +24,8 @@ protected:
     void shutdown() override;
 
 private:
-    Window& m_window;
-    Renderer m_renderer = Renderer(m_window);
+    Window &m_window;
+    Renderer &m_renderer;
     Camera m_camera;
 
     Grass_Shader m_grassShader;

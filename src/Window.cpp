@@ -10,19 +10,35 @@
 #include <glad/glad.h>
 #include <GL/wglext.h>
 
-Window::~Window()
+struct EchoBuffersInfo
 {
-    if (m_bitmapHandle)
-    {
-        DeleteObject(m_bitmapHandle);
-    }
-    
-    if (m_deviceContext)
-    {
-        DeleteDC(m_deviceContext);
-    }
+    uint16_t *width;
+    uint16_t *height;
+    uint32_t *backbuffer;
+    float    *depthbuffer;
+};
 
-    ClipCursor(nullptr);
+EchoBuffersInfo_t *Window::getEBI()
+{
+    m_ebi->width = &m_width;
+    m_ebi->height = &m_height;
+
+    return m_ebi;    
+}
+
+Window::Window()
+{
+    /* Set default values to window hints */
+    setHint(Renderer, (uint8_t)Software);
+    setHint(ColourBits, 32);
+    setHint(DepthBits, 24);
+    setHint(StencilBits, 8);
+    setHint(Samples, 0);
+    setHint(sRGBCapable, FALSE);
+    setHint(DoubleBuffer, TRUE);
+    setHint(ContextVerMajor, 3);
+    setHint(ContextVerMinor, 3);
+    setHint(ContextProfile, JAWL_CONTEXT_CORE_PROFILE);
 }
 
 LRESULT Window::handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -136,7 +152,37 @@ LRESULT Window::handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
-bool Window::create(LPCWSTR lpWindowName, INT width, INT height, bool isGL)
+void Window::setHint(Hints index, uint8_t value)
+{
+    m_hints[index] = (Hints)value;
+}
+
+bool Window::create(const std::string &title, uint16_t width, uint16_t height, uint32_t style)
+{
+    LPCWSTR cTitle = std::wstring(title.begin(), title.end()).c_str();
+    m_hwnd = win32CreateWindow(cTitle, width, height, style);
+    if (!m_hwnd)
+    {
+        return false;
+    }
+    
+    m_width = width;
+    m_height = height;
+    m_deviceContext = CreateCompatibleDC(0);
+    m_hints[Renderer] == (uint8_t)Software ? swSetup() : glSetup(cTitle, style);
+
+    GetWindowRect(m_hwnd, &m_rect);
+    ShowWindow(m_hwnd, SW_NORMAL);
+    SetFocus(m_hwnd);
+    registerInputDevices();
+    m_input.storeGameControllers();
+
+    m_isOpen = m_hwnd;
+
+    return true;
+}
+
+HWND Window::win32CreateWindow(const LPCWSTR lpWindowName, INT width, INT height, DWORD style)
 {
     WNDCLASS wc = {};
     wc.lpfnWndProc = WndProc;
@@ -145,11 +191,11 @@ bool Window::create(LPCWSTR lpWindowName, INT width, INT height, bool isGL)
 
     RegisterClass(&wc);
 
-    m_hwnd = CreateWindowEx(
+    return CreateWindowEx(
         0, 
         className(), 
         lpWindowName, 
-        WS_OVERLAPPEDWINDOW, 
+        style,
         CW_USEDEFAULT, CW_USEDEFAULT, 
         width, height, 
         0, 
@@ -157,76 +203,67 @@ bool Window::create(LPCWSTR lpWindowName, INT width, INT height, bool isGL)
         GetModuleHandle(nullptr), 
         this
     );
-
-    if (m_hwnd)
-    {
-        m_isGL = isGL;
-        setup();
-        registerInputDevices();
-
-        m_isOpen = m_hwnd;
-        return TRUE;
-    }
-    
-    return FALSE;
 }
 
 void Window::close()
 {
     m_isOpen = false;
+}
+
+void Window::cleanup()
+{
     DestroyWindow(m_hwnd);
-}
-
-void Window::setup()
-{
-    m_deviceContext = CreateCompatibleDC(0);
-    if (!m_isGL)
+    if (m_bitmapHandle)
     {
-        m_frameInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-        m_frameInfo.bmiHeader.biPlanes = 1;
-        m_frameInfo.bmiHeader.biBitCount = 32;
-        m_frameInfo.bmiHeader.biCompression = BI_RGB;
+        DeleteObject(m_bitmapHandle);
     }
-    else 
+    
+    if (m_deviceContext)
     {
-        glSetup();
+        DeleteDC(m_deviceContext);
     }
 
-    GetWindowRect(m_hwnd, &m_rect);
-    ShowWindow(m_hwnd, 1);
-    SetFocus(m_hwnd);
-
-    m_input.storeGameControllers();
+    ClipCursor(nullptr);
+    delete(m_ebi);
+    m_ebi = nullptr;
 }
 
-void Window::glSetup()
+void Window::swSetup()
 {
-    m_deviceContext = GetDC(m_hwnd);
+    m_frameInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    m_frameInfo.bmiHeader.biPlanes = 1;
+    m_frameInfo.bmiHeader.biBitCount = 32;
+    m_frameInfo.bmiHeader.biCompression = BI_RGB;
+    m_ebi = new EchoBuffersInfo_t {};
+}
 
-    PIXELFORMATDESCRIPTOR pfd;
-    ZeroMemory(&pfd, sizeof(PIXELFORMATDESCRIPTOR));
-    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-    pfd.nVersion = 4;
-    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL;
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.cColorBits = 32;
-    pfd.cDepthBits = 16;
-    pfd.iLayerType = PFD_MAIN_PLANE;
+void Window::glSetup(const LPCWSTR title, const DWORD style)
+{
+    HDC dummyDC;
+    dummyDC = GetDC(m_hwnd);
 
-    int old_format = ChoosePixelFormat(m_deviceContext, &pfd);
-    SetPixelFormat(m_deviceContext, old_format, &pfd);
+    PIXELFORMATDESCRIPTOR pfd = { .nSize = sizeof(pfd) };
+    SetPixelFormat(dummyDC, ChoosePixelFormat(dummyDC, &pfd), &pfd);
 
-    HGLRC hrc;
-    hrc = wglCreateContext(m_deviceContext);
-    wglMakeCurrent(m_deviceContext, hrc);
+    HGLRC dummyRC;
+    dummyRC = wglCreateContext(dummyDC);
+    wglMakeCurrent(dummyDC, dummyRC);
 
     gladLoadGL();
-
-    PFNWGLSWAPINTERVALEXTPROC wglSwapInterval = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+    
     PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
     PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
 
-    wglDeleteContext(hrc);
+    wglMakeCurrent(NULL, NULL);
+    wglDeleteContext(dummyRC);
+    ReleaseDC(m_hwnd, dummyDC);
+    DestroyWindow(m_hwnd);
+
+    m_hwnd = win32CreateWindow(title, m_width, m_height, style);
+    m_deviceContext = CreateCompatibleDC(0);
+    m_deviceContext = GetDC(m_hwnd);
+
+    m_isOpen = m_hwnd;
 
     int formats = 0;
     UINT numFormats = 0;
@@ -234,28 +271,31 @@ void Window::glSetup()
     {
         WGL_DRAW_TO_WINDOW_ARB,     GL_TRUE,
         WGL_SUPPORT_OPENGL_ARB,     GL_TRUE,
-        WGL_DOUBLE_BUFFER_ARB,      GL_TRUE,
+        WGL_DOUBLE_BUFFER_ARB,      m_hints[DoubleBuffer],
+        WGL_SAMPLES_ARB,            m_hints[Samples],
         WGL_ACCELERATION_ARB,       WGL_FULL_ACCELERATION_ARB,
         WGL_PIXEL_TYPE_ARB,         WGL_TYPE_RGBA_ARB,
-        WGL_COLOR_BITS_ARB,         32,
-        WGL_DEPTH_BITS_ARB,         24,
-        WGL_STENCIL_BITS_ARB,       8,
+        WGL_COLOR_BITS_ARB,         m_hints[ColourBits],
+        WGL_DEPTH_BITS_ARB,         m_hints[DepthBits],
+        WGL_STENCIL_BITS_ARB,       m_hints[StencilBits],
         0
     };
 
-    int format = wglChoosePixelFormatARB(m_deviceContext, formatAttribs, 0, 1, &formats, &numFormats);
+    wglChoosePixelFormatARB(m_deviceContext, formatAttribs, 0, 1, &formats, &numFormats);
+
+    PIXELFORMATDESCRIPTOR desc = { .nSize = sizeof(desc) };
+    SetPixelFormat(m_deviceContext, formats, &desc);
+
     int attribList[] =
     { 
-        WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
-        WGL_CONTEXT_MINOR_VERSION_ARB, 1,
-        WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+        WGL_CONTEXT_MAJOR_VERSION_ARB, m_hints[ContextVerMajor],
+        WGL_CONTEXT_MINOR_VERSION_ARB, m_hints[ContextVerMinor],
+        WGL_CONTEXT_PROFILE_MASK_ARB,  m_hints[ContextProfile],
         0
     };
     HGLRC hRenderContext = wglCreateContextAttribsARB(m_deviceContext, 0, attribList);
 
     wglMakeCurrent(m_deviceContext, hRenderContext);
-
-    wglSwapInterval(1);
 }
 
 void Window::registerInputDevices()
@@ -313,29 +353,39 @@ void Window::clear(uint32_t clearColour)
     std::fill(m_depthBuffer.begin(), m_depthBuffer.end(), INFINITY);
 }
 
-void Window::display()
-{
-    updateCursor();
-    
-    PAINTSTRUCT paint;
-    HDC hdc = BeginPaint(m_hwnd, &paint);
-
-    m_backBuffer[m_width / 2 + m_height / 2 * m_width] = 0xff00ff;
-
-    std::memcpy(m_frontBuffer, m_backBuffer.data(), m_width*m_height*sizeof(uint32_t));
-    BitBlt(hdc, 
-        paint.rcPaint.left, paint.rcPaint.top, 
-        m_width, m_height, 
-        m_deviceContext, 
-        paint.rcPaint.left, paint.rcPaint.top, 
-        SRCCOPY);
-    
-    EndPaint(m_hwnd, &paint);
-}
-
 void Window::swapBuffers()
 {
+    updateCursor();
+
+    if (m_hints[Renderer] == (int)Software)
+    {
+        PAINTSTRUCT paint;
+        HDC hdc = BeginPaint(m_hwnd, &paint);
+    
+        m_backBuffer[m_width / 2 + m_height / 2 * m_width] = 0xff00ff;
+    
+        std::memcpy(m_frontBuffer, m_backBuffer.data(), m_width*m_height*sizeof(uint32_t));
+        BitBlt(hdc, 
+            paint.rcPaint.left, paint.rcPaint.top, 
+            m_width, m_height, 
+            m_deviceContext, 
+            paint.rcPaint.left, paint.rcPaint.top, 
+            SRCCOPY);
+        
+        EndPaint(m_hwnd, &paint);
+        return;
+    }
+
     SwapBuffers(m_deviceContext);
+}
+
+void Window::swapInterval(uint8_t interval)
+{
+    if (m_hints[Renderer] == (uint8_t)Hardware)
+    {
+        PFNWGLSWAPINTERVALEXTPROC wglSwapInterval = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+        wglSwapInterval(interval);
+    }
 }
 
 void Window::setFlash(UINT count, DWORD timeout, bool sound)
@@ -386,7 +436,7 @@ void Window::setSize(int width, int height)
 
 void Window::setFullscreen(bool fullscreen)
 {
-    if (!fullscreen)
+    if (fullscreen)
     {
         HMONITOR hMonitor = MonitorFromWindow(m_hwnd, MONITOR_DEFAULTTONEAREST);
         MONITORINFOEX info;
@@ -431,20 +481,27 @@ void Window::cursorDisableFlags(uint8_t state)
 
 void Window::onWindowResize(LPARAM lParam)
 {
-    m_width = LOWORD(lParam);
-    m_height = HIWORD(lParam);
-
-    m_frameInfo.bmiHeader.biWidth = m_width;
-    m_frameInfo.bmiHeader.biHeight = m_height;
+    if (m_hints[Renderer] == (uint8_t)Hardware)
+    {
+        return;
+    }
 
     if (m_bitmapHandle)
     {
         DeleteObject(m_bitmapHandle);
     }
 
+    m_width  = LOWORD(lParam);
+    m_height = HIWORD(lParam);
+
+    m_frameInfo.bmiHeader.biWidth  = m_width;
+    m_frameInfo.bmiHeader.biHeight = m_height;
+
     m_bitmapHandle = CreateDIBSection(nullptr, &m_frameInfo, DIB_RGB_COLORS, (void**)&m_frontBuffer, nullptr, 0);
     SelectObject(m_deviceContext, m_bitmapHandle);
 
     m_backBuffer.resize(m_width*m_height);
     m_depthBuffer.resize(m_width*m_height, INFINITY);
+    m_ebi->backbuffer = m_backBuffer.data();
+    m_ebi->depthbuffer = m_depthBuffer.data();
 }

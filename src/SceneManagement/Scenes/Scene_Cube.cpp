@@ -2,8 +2,9 @@
 
 #include <chrono>
 
-Scene_Cube::Scene_Cube(Window& window) :
-    m_window(window)
+Scene_Cube::Scene_Cube(Window &window, Renderer &renderer) :
+    m_window(window),
+    m_renderer(renderer)
 {
     int x = 0;
     int y = 0;
@@ -78,7 +79,7 @@ void Scene_Cube::render()
 
     m_renderer.draw(m_cube.vertices, m_shader);
 
-    m_window.display();
+    m_window.swapBuffers();
 }
 
 void Scene_Cube::shutdown()

@@ -14,7 +14,7 @@
 class Scene_Cube : public Scene
 {
 public:
-    Scene_Cube(Window& window);
+    Scene_Cube(Window &window, Renderer &renderer);
 
     void start() override;
     
@@ -25,8 +25,8 @@ protected:
     void shutdown() override;
 
 private:
-    Window& m_window;
-    Renderer m_renderer = Renderer(m_window);
+    Window &m_window;
+    Renderer &m_renderer;
     Model m_cube = Model("./resources/model_cube.obj");
     Image m_texture = Image("./resources/texture_dirtcube.tga");
     Camera m_camera;

@@ -16,22 +16,28 @@ public:
         Final
     };
 
-    Renderer(Window& context);
+    Renderer(void *bufferInfo);
     void draw(const std::vector<Vertex>& vertices, IShader& shader);
 
     inline static std::vector<float> depthMap;
     
     RenderMode renderMode = RenderMode::Final;
 private:
-    Window& m_context;
+    /* Pointers to shared data between the Window and the Renderer through the EchoBufferInfo structure */
+    uint32_t *m_backbuffer = nullptr;
+    uint32_t **m_ppBackBuffer = nullptr;
+    float *m_depthbuffer = nullptr;
+    float **m_ppDepthBuffer = nullptr;
+
+    uint16_t *m_width = nullptr;
+    uint16_t *m_height = nullptr;
 
     Vec2f m_bbMin;
     Vec2f m_bbMax;
     bool a = true;
 
-    uint32_t viewportWidth;
-    uint32_t viewportHeight;
-
+    uint16_t m_viewportWidth = 0;
+    uint16_t m_viewportHeight = 0;
 private:
     void transformVertex(glVertex& vertex);
     
