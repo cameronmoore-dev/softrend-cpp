@@ -1,13 +1,14 @@
 #include "Scene_Suzanne.h"
 
-Scene_Suzanne::Scene_Suzanne(Window &window, Renderer &renderer) :
-    m_window(window),
-    m_renderer(renderer)
+Scene_Suzanne::Scene_Suzanne(jawl::Window &window) :
+    m_window(window)
 {
     int x = 0;
     int y = 0;
     m_window.getSize(x, y);
     m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
+
+    m_renderer = Renderer(m_window.getEBI());
 }
 
 void Scene_Suzanne::start()
@@ -57,61 +58,72 @@ void Scene_Suzanne::start()
 
 void Scene_Suzanne::processInput()
 {
-    Event e;
+    jawl::Event e;
     while (m_window.pollEvents(e))
     {
         switch(e.type)
         {
-            case Event::KeyPressed:
+            case jawl::Event::WindowResize:
             {
-                if (e.keyCode == Input::getKey(Input::JAWL_KEY::Escape))
+                onWindowResize(e.wndResizeInfo.width, e.wndResizeInfo.height);
+            } break;
+
+            case jawl::Event::KeyPressed:
+            {
+                if (e.keyCode == jawl::getKey(jawl::Key::Escape))
                 {
                     m_window.close();
                 }
 
-                else if (e.keyCode == Input::getKey(Input::JAWL_KEY::Backspace))
+                else if (e.keyCode == jawl::getKey(jawl::Key::F5))
+                {
+                    fs = !fs;
+                    m_window.setFullscreen(fs);
+                }
+
+                else if (e.keyCode == jawl::getKey(jawl::Key::Backspace))
                 {
                     ssao = !ssao;
                 }
 
-                else if (e.keyCode == Input::getKey(Input::JAWL_KEY::Enter))
+                else if (e.keyCode == jawl::getKey(jawl::Key::Enter))
                 {
                     m_ssao.doBlur = !m_ssao.doBlur;
                 }
             } break;
 
-            case Event::KeyReleased:
+            case jawl::Event::KeyReleased:
             {
             } break;
 
-            case Event::MouseMove:
+            case jawl::Event::MouseMove:
             {
                 m_camera.updateRotation(e.mousePos.x, e.mousePos.y, m_dt);
             } break;
 
-            case Event::GamepadButtonPressed:
+            case jawl::Event::GamepadButtonPressed:
             {
-                if (e.gamepadButton == Input::JAWL_GAMEPAD_BUTTONS::A)
+                if (e.gamepadButton ==jawl::getKey(jawl::Key::A))
                 {
                     printf("A pressed\n");
                 }
             } break;
 
-            case Event::GamepadButtonReleased:
+            case jawl::Event::GamepadButtonReleased:
             {
-                if (e.gamepadButton == Input::JAWL_GAMEPAD_BUTTONS::A)
+                if (e.gamepadButton == jawl::getKey(jawl::Key::A))
                 {
                     printf("A released\n");
                 }
             } break;
 
-            case Event::GamepadAxisMoved:
+            case jawl::Event::GamepadAxisMoved:
             {
             } break;
 
-            case Event::GamepadTrigger:
+            case jawl::Event::GamepadTrigger:
             {
-                if (e.triggerInfo.value < JAWL_TRIGGER_DEADZONE)
+                if (e.triggerInfo.value < jawl::GamepadDeadzone::Trigger)
                 {
                     break;
                 }
@@ -133,9 +145,12 @@ void Scene_Suzanne::processInput()
 void Scene_Suzanne::update()
 {
     m_camera.updateMovement(m_dt);
-    if (Input::isGamepadConnected(0))
+    if (jawl::isGamepadConnected(0))
     {
-        m_camera.updateRotation(Input::controllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::RX), -Input::controllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::RY), m_dt);
+        m_camera.updateRotation(
+             jawl::controllerAxisValue(0, jawl::GamepadAxis::RX), 
+            -jawl::controllerAxisValue(0, jawl::GamepadAxis::RY), 
+            m_dt);
     }
     m_camera.updateView();
 
@@ -148,7 +163,7 @@ void Scene_Suzanne::update()
 
 void Scene_Suzanne::render()
 {
-    m_window.clear(0x111111);
+    m_renderer.clear(0x111111);
 
     Vec3f centre{ 0, 0, 0 };
     float radius = 1.f;
@@ -177,4 +192,9 @@ void Scene_Suzanne::render()
 void Scene_Suzanne::shutdown()
 {
 
+}
+
+void Scene_Suzanne::onWindowResize(int w, int h)
+{
+    m_renderer.viewport(0, 0, w, h);
 }

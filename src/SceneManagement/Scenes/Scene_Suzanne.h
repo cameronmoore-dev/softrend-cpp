@@ -1,19 +1,19 @@
 #pragma once
 
+#include "jawl/base_window.h"
 #include "../Scene.h"
-#include "../../Window.h"
-#include "../../Renderer.h"
-#include "../../Matrix.h"
-#include "../../Model.h"
-#include "../../Camera.h"
+#include "Renderer.h"
+#include "Matrix.h"
+#include "Model.h"
+#include "Camera.h"
 
-#include "../../Shaders/Suzanne_Shader.h"
-#include "../../Shaders/SSAO_Shader.h"
+#include "Shaders/Suzanne_Shader.h"
+#include "Shaders/SSAO_Shader.h"
 
 class Scene_Suzanne : public Scene
 {
 public:
-    Scene_Suzanne(Window &window, Renderer &renderer);
+    Scene_Suzanne(jawl::Window &window);
 
     void start() override;
     
@@ -24,8 +24,11 @@ protected:
     void shutdown() override;
 
 private:
-    Window &m_window;
-    Renderer &m_renderer;
+    void onWindowResize(int w, int h);    
+
+private:
+    jawl::Window &m_window;
+    Renderer m_renderer;
     Model m_suzanne = Model("./resources/model_suzanne.obj");
     Image m_texture = Image("./resources/texture_suzanne.tga");
     Image m_normalMap = Image("./resources/suzanne_normal.tga");
@@ -50,4 +53,6 @@ private:
 
     bool a = true;
     bool ssao = false;
+
+    bool fs = false;
 };

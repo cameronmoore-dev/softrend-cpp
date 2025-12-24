@@ -10,8 +10,10 @@ set(LIB_INCLUDE_PATH	"${CMAKE_SOURCE_DIR}/externals/includes")
 
 add_executable(software_renderer EXCLUDE_FROM_ALL
     "src/Entry.cpp"
-    "src/Window.cpp"
-	"src/Input.cpp"
+    "src/jawl/base_window.cpp"
+	"src/jawl/input.cpp"
+	"src/jawl/win32/win32_window.cpp"
+	"src/jawl/win32/win32_input.cpp"
     "src/Utils.cpp"
     "src/Matrix.cpp"
     "src/Model.cpp"    

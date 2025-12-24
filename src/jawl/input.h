@@ -1,21 +1,17 @@
-#include <windows.h>
-#include <stdint.h>
-#include <xinput.h>
+#pragma once
 
 #include <vector>
 #include <queue>
+#include <cstdint>
 
-#include "Events.h"
+#include "event.h"
 
-#define JAWL_JOYSTICK_DEADZONE_PERCENT 20
-#define JAWL_TRIGGER_DEADZONE 30
-
-class Input
+/* https://www.psdevwiki.com/ps4/DS4-USB#Data_Format */
+namespace jawl
 {
-public:
-    enum class JAWL_KEY
+    enum class Key
     {
-        Unknown = -1, //!< Unhandled key
+        Invalid = -1, //!< Unhandled key
         A       = 0,  //!< The A key
         B,            //!< The B key
         C,            //!< The C key
@@ -119,7 +115,48 @@ public:
         Pause,        //!< The Pause key
     };
 
-    struct JAWL_Gamepad
+    enum GamepadButtons
+    {
+        DpadUp = 0,
+        DpadDown,
+        DpadLeft,
+        DpadRight,
+        Start,
+        Back,
+        LeftStick,
+        RightStick,
+        LeftShoulder,
+        RightShoulder,
+        A = 12,
+        B,
+        X,
+        Y,
+        ButtonCount
+    };
+
+    enum GamepadAxis
+    {
+        LX = 0,
+        LY,
+        RX,
+        RY,
+        AxesCount,
+    };
+
+    enum GamepadVendorID
+    {
+        Xbox = 0x45E,
+        Dualshock4 = 0X54C,
+        SwitchPro = 0x57E
+    };
+
+    enum GamepadDeadzone
+    {
+        JoystickPercent = 20,
+        Trigger = 30
+    };
+
+    struct Gamepad
     {
         uint16_t vid;
         uint16_t buttons;
@@ -128,55 +165,18 @@ public:
         uint16_t maxAxisValue = INT16_MAX;
     };
 
-    enum JAWL_GAMEPAD_BUTTONS
+    bool isKeyPressed(Key key);
+    uint16_t getKey(Key key);
+
+    bool isGamepadConnected(uint8_t slot);
+    bool isGamepadButtonPressed(uint8_t slot, GamepadButtons button);
+    float controllerAxisValue(uint8_t slot, GamepadAxis axis);
+    void compareGamepadStates(Gamepad &current, Gamepad &previous, std::queue<Event> &events);
+    void storeGamepads();
+
+    namespace _priv
     {
-        DPAD_UP = 0,
-        DPAD_DOWN,
-        DPAD_LEFT,
-        DPAD_RIGHT,
-        START,
-        BACK,
-        LEFT_STICK,
-        RIGHT_STICK,
-        LEFT_SHOULDER,
-        RIGHT_SHOULDER,
-        A = 12,
-        B,
-        X,
-        Y,
-        TOTAL_BUTTONS
-    };
-
-    enum JAWL_GAMEPAD_AXIS
-    {
-        LX = 0,
-        LY,
-        RX,
-        RY,
-        TOTAL_AXES,
-    };
-
-    static bool isGamepadConnected(uint8_t slot);
-    static bool isGamepadButtonPressed(uint8_t slot, JAWL_GAMEPAD_BUTTONS button);
-    static float controllerAxisValue(uint8_t slot, JAWL_GAMEPAD_AXIS axis);
-
-    // void pollHIDRawBuffer();
-
-    void pollGamepads(RAWHID &hidData, std::queue<Event> &events);
-
-    static bool isKeyPressed(JAWL_KEY key);
-    static uint16_t getKey(JAWL_KEY key);
-
-    void storeGameControllers();
-
-private:
-    inline static std::vector<JAWL_Gamepad> gamepads;
-    inline static std::vector<JAWL_Gamepad> previousGamepadStates;
-
-private:
-    void compareGamepadStates(JAWL_Gamepad &current, JAWL_Gamepad &previous, std::queue<Event> &events);
-    void xboxToJAWL(JAWL_Gamepad &gamepad, XINPUT_STATE &state);
-    void dualshockToJAWL(JAWL_Gamepad &gamepad, BYTE *rawData);
-
-    static uint16_t jawlToVK(JAWL_KEY key);
-};
+        inline std::vector<Gamepad> g_gamepads;
+        inline std::vector<Gamepad> g_previousGamepadStates;
+    }
+}

@@ -1,20 +1,21 @@
 #pragma once
 
-#include "../Scene.h"
-#include "../../IShader.h"
-#include "../../Window.h"
-#include "../../Renderer.h"
-#include "../../Matrix.h"
-#include "../../Model.h"
-#include "../../Camera.h"
+#include "jawl/base_window.h"
 
-#include "../../Shaders/Cube_Shader.h"
-#include "../../Shaders/FXAA_Shader.h"
+#include "../Scene.h"
+#include "IShader.h"
+#include "Renderer.h"
+#include "Matrix.h"
+#include "Model.h"
+#include "Camera.h"
+
+#include "Shaders/Cube_Shader.h"
+#include "Shaders/FXAA_Shader.h"
 
 class Scene_Cube : public Scene
 {
 public:
-    Scene_Cube(Window &window, Renderer &renderer);
+    Scene_Cube(jawl::Window &window);
 
     void start() override;
     
@@ -25,8 +26,8 @@ protected:
     void shutdown() override;
 
 private:
-    Window &m_window;
-    Renderer &m_renderer;
+    jawl::Window &m_window;
+    Renderer m_renderer;
     Model m_cube = Model("./resources/model_cube.obj");
     Image m_texture = Image("./resources/texture_dirtcube.tga");
     Camera m_camera;

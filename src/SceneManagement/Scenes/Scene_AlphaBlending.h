@@ -1,19 +1,19 @@
 #pragma once
 
+#include "jawl/base_window.h"
 #include "../Scene.h"
-#include "../../Window.h"
-#include "../../Renderer.h"
-#include "../../Model.h"
-#include "../../Camera.h"
+#include "Renderer.h"
+#include "Model.h"
+#include "Camera.h"
 
-#include "../../Shaders/Grass_Shader.h"
-#include "../../Shaders/Cube_Shader.h"
-#include "../../Shaders/Window_Shader.h"
+#include "Shaders/Grass_Shader.h"
+#include "Shaders/Cube_Shader.h"
+#include "Shaders/Window_Shader.h"
 
 class Scene_AlphaBlending : public Scene
 {
 public:
-    Scene_AlphaBlending(Window &window, Renderer &renderer);
+    Scene_AlphaBlending(jawl::Window &window);
 
     void start() override;
     
@@ -24,8 +24,8 @@ protected:
     void shutdown() override;
 
 private:
-    Window &m_window;
-    Renderer &m_renderer;
+    jawl::Window &m_window;
+    Renderer m_renderer;
     Camera m_camera;
 
     Grass_Shader m_grassShader;

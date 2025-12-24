@@ -1,15 +1,16 @@
 #include "Scene_AlphaBlending.h"
 
-#include "../../Events.h"
+#include "jawl/win32/win32_window.h"
 
-Scene_AlphaBlending::Scene_AlphaBlending(Window &window, Renderer &renderer) : 
-    m_window(window),
-    m_renderer(renderer)
+Scene_AlphaBlending::Scene_AlphaBlending(jawl::Window &window) : 
+    m_window(window)
 {
     int x = 0;
     int y = 0;
     m_window.getSize(x, y);
     m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
+
+    m_renderer = Renderer(m_window.getEBI());
 }
 
 void Scene_AlphaBlending::start()
@@ -55,24 +56,24 @@ void Scene_AlphaBlending::start()
 
 void Scene_AlphaBlending::processInput()
 {
-    Event e;
+    jawl::Event e;
     while (m_window.pollEvents(e))
     {
         switch(e.type)
         {
-            case Event::KeyPressed:
+            case jawl::Event::KeyPressed:
             {
-                if (e.keyCode == VK_ESCAPE)
+                if (e.keyCode == jawl::getKey(jawl::Key::Escape))
                 {
                     m_window.close();
                 }
             } break;
 
-            case Event::KeyReleased:
+            case jawl::Event::KeyReleased:
             {
             } break;
 
-            case Event::MouseMove:
+            case jawl::Event::MouseMove:
             {
                 m_camera.updateRotation(e.mousePos.x, e.mousePos.y, m_dt);
             } break;
@@ -93,7 +94,7 @@ void Scene_AlphaBlending::update()
 
 void Scene_AlphaBlending::render()
 {
-    m_window.clear(0x111111);
+    m_renderer.clear(0x111111);
 
     m_renderer.draw(m_cube.vertices, m_cubeShader);
     m_renderer.draw(m_plane.vertices, m_grassShader);

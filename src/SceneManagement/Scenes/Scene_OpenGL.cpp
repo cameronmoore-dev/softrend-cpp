@@ -1,6 +1,6 @@
 #include "Scene_OpenGL.h"
 
-Scene_OpenGL::Scene_OpenGL(Window &window, Renderer&) : 
+Scene_OpenGL::Scene_OpenGL(jawl::Window &window) : 
     m_window(window)
 {
     m_shader = GLShader("resources/shaders/default.vert", "resources/shaders/default.frag");
@@ -45,7 +45,7 @@ void Scene_OpenGL::start()
         update();
         render();
 
-        // printf("FPS: %.0f\n", 1.f/m_dt);
+        printf("FPS: %.0f\n", 1.f/m_dt);
     }
 
     glDeleteVertexArrays(1, &m_vao);
@@ -54,17 +54,22 @@ void Scene_OpenGL::start()
 
 void Scene_OpenGL::processInput()
 {
-    Event e;
+    jawl::Event e;
     while (m_window.pollEvents(e))
     {
         switch (e.type)
         {
-            case Event::KeyPressed:
+            case jawl::Event::KeyPressed:
             {
-                if (e.keyCode == Input::getKey(Input::JAWL_KEY::Escape))
+                if (e.keyCode == jawl::getKey(jawl::Key::Escape))
                 {
                     m_window.close();
                 }
+            } break;
+
+            case jawl::Event::WindowResize:
+            {
+                onWindowResize(e.wndResizeInfo.width, e.wndResizeInfo.height);
             } break;
 
             default: break;
@@ -97,4 +102,9 @@ void Scene_OpenGL::render()
 void Scene_OpenGL::shutdown()
 {
     
+}
+
+void Scene_OpenGL::onWindowResize(int w, int h)
+{
+    glViewport(0, 0, w, h);
 }

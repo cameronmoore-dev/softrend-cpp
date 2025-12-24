@@ -1,6 +1,7 @@
 #include "Renderer.h"
 
 #include <algorithm>
+#include <iterator>
 #include <cmath>
 
 #include <iostream>
@@ -21,24 +22,23 @@ Renderer::Renderer(void *bufferInfo)
     // depthMap.resize(1024*1024, 1.f);
     previous = getTimeSeconds();
 
-    /*  Navigating through the void, 
+    /*  
+        Navigating through the void, 
         assigning values based on the known layout of the EchoBufferInfo structure
     */
-    m_width = *((uint16_t**)bufferInfo);
-    m_height = *((uint16_t**)bufferInfo + 1);
+    m_viewportWidth = **((uint16_t**)bufferInfo);
+    m_viewportHeight = **((uint16_t**)bufferInfo + 1);
     m_backbuffer = *((uint32_t**)bufferInfo + 2);
     m_depthbuffer = *((float**)bufferInfo + 3);
 
     m_ppBackBuffer = ((uint32_t**)bufferInfo + 2);
     m_ppDepthBuffer = ((float**)bufferInfo + 3);
-
-    m_viewportWidth = *m_width;
-    m_viewportHeight = *m_height;
 }
 
-void Renderer::draw(const std::vector<Vertex>& vertices, IShader& shader)
+void Renderer::clear(uint32_t colour)
 {
-    /*  If the array that stores the backbuffer has reallocated its memory,
+    /*  
+        If the array that stores the backbuffer has reallocated its memory,
         then set this pointer of the backbuffer to the new location.
     */
     if (m_backbuffer != *m_ppBackBuffer)
@@ -47,6 +47,18 @@ void Renderer::draw(const std::vector<Vertex>& vertices, IShader& shader)
         m_depthbuffer = *m_ppDepthBuffer;
     }
 
+    std::fill(m_backbuffer, m_backbuffer + (m_viewportWidth * m_viewportHeight), colour);
+    std::fill(m_depthbuffer, m_depthbuffer + (m_viewportWidth * m_viewportHeight), std::numeric_limits<float>::infinity());
+}
+
+void Renderer::viewport(int x, int y, int w, int h)
+{
+    m_viewportWidth = w;
+    m_viewportHeight = h;
+}
+
+void Renderer::draw(const std::vector<Vertex>& vertices, IShader& shader)
+{
     double current = getTimeSeconds();
     dt += current - previous;
     previous = current;
@@ -152,7 +164,7 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
             if (point.x >= 0 && point.y >= 0 && point.z >= 0)
             {
                 float z = polygon.v0.position.z * point.x + polygon.v1.position.z * point.y + polygon.v2.position.z * point.z;
-                uint32_t idx = p.x + p.y * (*m_width);
+                uint32_t idx = p.x + p.y * (m_viewportWidth);
                 
                 if (renderMode == RenderMode::Shadow)
                 {

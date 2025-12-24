@@ -132,21 +132,21 @@ void Camera::updateMovement(double dt)
     Vec3f worldUp{ 0, 1, 0 };
     Vec3f right = Utils::normalise(Utils::cross(m_forward, worldUp));
 
-    if (Input::isGamepadConnected(0))
+    if (jawl::isGamepadConnected(0))
     {
-        Vec3f f = (m_forward * Input::controllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::LY));
-        Vec3f r = (right     * Input::controllerAxisValue(0, Input::JAWL_GAMEPAD_AXIS::LX));
+        Vec3f f = (m_forward * jawl::controllerAxisValue(0, jawl::GamepadAxis::LY));
+        Vec3f r = (right     * jawl::controllerAxisValue(0, jawl::GamepadAxis::LX));
         m_position -= f * m_cameraSpeed * dt;
         m_position -= r * m_cameraSpeed * dt;
-        m_position.y += Input::isGamepadButtonPressed(0, Input::JAWL_GAMEPAD_BUTTONS::LEFT_SHOULDER)  * m_cameraSpeed * dt;
-        m_position.y -= Input::isGamepadButtonPressed(0, Input::JAWL_GAMEPAD_BUTTONS::RIGHT_SHOULDER) * m_cameraSpeed * dt;
+        m_position.y += jawl::isGamepadButtonPressed(0, jawl::GamepadButtons::LeftShoulder)  * m_cameraSpeed * dt;
+        m_position.y -= jawl::isGamepadButtonPressed(0, jawl::GamepadButtons::RightShoulder) * m_cameraSpeed * dt;
 
         return;
     }
 
-    Vec3f f = m_forward * ((int)Input::isKeyPressed(Input::JAWL_KEY::W) - (int)Input::isKeyPressed(Input::JAWL_KEY::S));
-    Vec3f r = right     * ((int)Input::isKeyPressed(Input::JAWL_KEY::D) - (int)Input::isKeyPressed(Input::JAWL_KEY::A));
-    Vec3f u = worldUp   * ((int)Input::isKeyPressed(Input::JAWL_KEY::Q) - (int)Input::isKeyPressed(Input::JAWL_KEY::E));
+    Vec3f f = m_forward * ((int)jawl::isKeyPressed(jawl::Key::W) - (int)jawl::isKeyPressed(jawl::Key::S));
+    Vec3f r = right     * ((int)jawl::isKeyPressed(jawl::Key::D) - (int)jawl::isKeyPressed(jawl::Key::A));
+    Vec3f u = worldUp   * ((int)jawl::isKeyPressed(jawl::Key::Q) - (int)jawl::isKeyPressed(jawl::Key::E));
 
     m_position -= f * m_cameraSpeed * dt;
     m_position -= r * m_cameraSpeed * dt;

@@ -5,7 +5,7 @@
 
 #include "Matrix.h"
 #include "Utils.h"
-#include "Window.h"
+#include "jawl/base_window.h"
 
 class Camera
 {

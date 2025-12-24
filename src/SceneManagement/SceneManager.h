@@ -3,21 +3,21 @@
 #include <memory>
 #include <stack>
 
+#include "jawl/base_window.h"
 #include "Scene.h"
-#include "Window.h"
 #include "Renderer.h"
 
 class SceneManager
 {
 public:
 	template<typename T>
-	void addScene(Window& window, Renderer &renderer)
+	void addScene(jawl::Window& window)
 	{
 		if (!m_scenes.empty())
 		{
 			m_scenes.pop();
 		}
-		m_scenes.push(std::make_unique<T>(window, renderer));
+		m_scenes.push(std::make_unique<T>(window));
 		m_scenes.top()->start();
 	}
 

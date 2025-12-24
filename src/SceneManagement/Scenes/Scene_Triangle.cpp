@@ -2,9 +2,8 @@
 
 #include <chrono>
 
-Scene_Triangle::Scene_Triangle(Window &window, Renderer &renderer) :
-    m_window(window),
-    m_renderer(renderer)
+Scene_Triangle::Scene_Triangle(jawl::Window &window) :
+    m_window(window)
 {
     int x = 0;
     int y = 0;
@@ -39,24 +38,24 @@ void Scene_Triangle::start()
 
 void Scene_Triangle::processInput()
 {
-    Event e;
+    jawl::Event e;
     while (m_window.pollEvents(e))
     {
         switch(e.type)
         {
-            case Event::KeyPressed:
+            case jawl::Event::KeyPressed:
             {
-                if (e.keyCode == VK_ESCAPE)
+                if (e.keyCode == jawl::getKey(jawl::Key::Escape))
                 {
                     m_window.close();
                 }
             } break;
 
-            case Event::KeyReleased:
+            case jawl::Event::KeyReleased:
             {
             } break;
 
-            case Event::MouseMove:
+            case jawl::Event::MouseMove:
             {
                 m_camera.updateRotation(e.mousePos.x, e.mousePos.y, m_dt);
             } break;
@@ -78,7 +77,7 @@ void Scene_Triangle::update()
 
 void Scene_Triangle::render()
 {
-    m_window.clear(0x111111);
+    m_renderer.clear(0x111111);
 
     // m_renderer.draw(m_triangle, m_shader);
 

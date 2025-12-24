@@ -1,5 +1,5 @@
-#include <windows.h>
-#include <iostream>
+#include <glad/glad.h>
+#include "jawl/jawl.hpp"
 
 #include "SceneManagement/SceneManager.h"
 #include "SceneManagement/Scenes/Scene_Cube.h"
@@ -8,31 +8,35 @@
 #include "SceneManagement/Scenes/Scene_AlphaBlending.h"
 #include "SceneManagement/Scenes/Scene_OpenGL.h"
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+int main()
 {
     srand(static_cast<UINT>(time(0)));
 
-    Window window;
-    window.setHint(Window::Renderer, Window::RendererType::Software);
-    window.setHint(Window::ContextVerMajor, 4);
-    window.setHint(Window::ContextVerMinor, 1);
-    window.setHint(Window::ContextProfile, JAWL_CONTEXT_CORE_PROFILE);
-    window.setHint(Window::Samples, 4);
-    int style = JAWL_STYLE_DEFAULT;
-
-    if (!window.create("JAWL", 640, 480, style))
+    jawl::Window *window = jawl::init();
+    if (!window)
     {
-        std::cerr << "ERROR::WINDOW::failed to create!" << std::endl;
-        return 1;
+        return -1;
     }
 
-    Renderer renderer = Renderer(window.getEBI());
+    window->setHint(jawl::ContextVerMajor, 4);
+    window->setHint(jawl::ContextVerMinor, 1);
+    window->setHint(jawl::ContextProfile, jawl::GLContextProfile::Core);
+    window->setHint(jawl::Samples, 4);
 
-    window.swapInterval(1);
-    window.cursorEnableFlags(JAWL_CURSOR_HIDDEN | JAWL_CURSOR_HIDDEN | JAWL_CURSOR_CLAMPED);
+    window->create("JAWL Window", 640, 480, jawl::Style::Default, jawl::RendererType::Hardware);
+    if (!gladLoadGL())
+    {
+        printf("Failed to load glad\n");
+        return -1;
+    }
+
+    window->swapInterval(1);
+    window->cursorEnableFlags(jawl::CursorFlags::Locked | jawl::CursorFlags::Hidden | jawl::CursorFlags::Clamped);
 
     SceneManager sceneManager;
-    sceneManager.addScene<Scene_Suzanne>(window, renderer);
+    sceneManager.addScene<Scene_OpenGL>(*window);
+
+    delete(window);
 
     return 0;
 }

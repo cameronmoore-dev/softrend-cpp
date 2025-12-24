@@ -7,7 +7,7 @@
 #include "Utils.h"
 #include "Image.h"
 
-#include "Window.h"
+#include "jawl/base_window.h"
 
 class IShader
 {

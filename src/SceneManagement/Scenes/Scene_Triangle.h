@@ -1,17 +1,17 @@
 #pragma once
 
 #include "../Scene.h"
-#include "../../IShader.h"
-#include "../../Renderer.h"
-#include "../../Camera.h"
-#include "../../Matrix.h"
+#include "IShader.h"
+#include "Renderer.h"
+#include "Camera.h"
+#include "Matrix.h"
 
-#include "../../Shaders/Suzanne_Shader.h"
+#include "Shaders/Suzanne_Shader.h"
 
 class Scene_Triangle : public Scene
 {
 public:
-    Scene_Triangle(Window &window, Renderer &renderer);
+    Scene_Triangle(jawl::Window &window);
 
     void start() override;
     
@@ -22,8 +22,8 @@ protected:
     void shutdown() override;
 
 private:
-    Window &m_window;
-    Renderer &m_renderer;
+    jawl::Window &m_window;
+    Renderer m_renderer;
     Camera m_camera;
 
     // Suzanne_Shader m_shader;

@@ -2,8 +2,8 @@
 
 #include <vector>
 
+#include "jawl/base_window.h"
 #include "../Scene.h"
-#include "Window.h"
 #include "Renderer.h"
 #include "GLShader.h"
 
@@ -29,7 +29,7 @@ struct VERTEX
 class Scene_OpenGL : public Scene
 {
 public:
-    Scene_OpenGL(Window &window, Renderer&);
+    Scene_OpenGL(jawl::Window &window);
 
     void start() override;
     
@@ -40,7 +40,10 @@ protected:
     void shutdown() override;
 
 private:
-    Window &m_window;
+    void onWindowResize(int w, int h);
+
+private:
+    jawl::Window &m_window;
     GLShader m_shader;
 
     std::vector<VERTEX> m_vertices;

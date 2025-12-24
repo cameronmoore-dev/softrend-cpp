@@ -2,7 +2,6 @@
 
 #include <vector>
 
-#include "Window.h"
 #include "IShader.h"
 #include "Structs.h"
 #include "Utils.h"
@@ -16,8 +15,12 @@ public:
         Final
     };
 
+    Renderer() = default;
     Renderer(void *bufferInfo);
+
+    void clear(uint32_t colour);
     void draw(const std::vector<Vertex>& vertices, IShader& shader);
+    void viewport(int x, int y, int w, int h);
 
     inline static std::vector<float> depthMap;
     
@@ -29,15 +32,13 @@ private:
     float *m_depthbuffer = nullptr;
     float **m_ppDepthBuffer = nullptr;
 
-    uint16_t *m_width = nullptr;
-    uint16_t *m_height = nullptr;
+    uint16_t m_viewportWidth = 0;
+    uint16_t m_viewportHeight = 0;
 
     Vec2f m_bbMin;
     Vec2f m_bbMax;
     bool a = true;
-
-    uint16_t m_viewportWidth = 0;
-    uint16_t m_viewportHeight = 0;
+    
 private:
     void transformVertex(glVertex& vertex);
     
