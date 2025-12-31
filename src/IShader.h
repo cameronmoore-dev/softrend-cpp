@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <memory>
 
+#include "math.h"
 #include "Structs.h"
-#include "Utils.h"
 #include "Image.h"
 
 #include "jawl/base_window.h"
@@ -28,7 +28,7 @@ public:
     }
 
     virtual void vertex(const Vertex& v, glVertex& copy) = 0;
-    virtual bool fragment(const Vec3f& barycentric, const glTriangle& polygon, Vec4f& finalColour) = 0;
+    virtual bool fragment(const Vec3f &barycentric, const glTriangle &polygon, Vec4f &fragColour) = 0;
 
 private:
     Vec2f perspectiveCorrectedUV(const glTriangle& polygon, const Image& image, const Vec3f& barycentric)
@@ -48,6 +48,15 @@ private:
     }
 
 protected:
+    float dot(const Vec3f& a, const Vec3f& b);
+    float length(const Vec3f& normal);
+    Vec3f cross(const Vec3f& a, const Vec3f& b);
+    Vec3f reflect(const Vec3f& i, const Vec3f& n);
+    Vec3f normalise(const Vec3f& vec);
+    Vec4f vec4(const Vec3f &vec, const float w);
+    Vec4f vec4(const Vec2f &vec, const float z, const float w);
+
+
     Vec3f sampleDiffuseMap(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
     {
         float dudx, dudy, dvdx, dvdy;
@@ -96,11 +105,11 @@ protected:
         normal.x = (texel.x / 255.f) * 2.f - 1.f;
         normal.y = (texel.y / 255.f) * 2.f - 1.f;
         normal.z = (texel.z / 255.f) * 2.f - 1.f;
-        normal = Utils::normalise(normal);
+        normal = normalise(normal);
 
         Mat3 tbn = Matrix::constructTBN(T, B, N);
 
-        return Utils::normalise(Matrix::multiplyVec3(tbn, normal));
+        return normalise(Matrix::multiplyVec3(tbn, normal));
     }
 
     Vec3f sampleSpecularMap(const glTriangle& polygon, Image& image, const Vec3f& barycentric)

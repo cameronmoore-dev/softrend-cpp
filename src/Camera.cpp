@@ -20,7 +20,7 @@ Camera::Camera(int32_t left, int32_t top, int32_t right, int32_t bottom, float z
 
 void Camera::updateView()
 {
-    m_view = Matrix::lookAt(m_position, m_position + m_forward, {0, 1, 0});
+    m_view = Matrix::lookAt(m_position, m_position + m_forward, { 0, 1, 0 });  
 }
 
 Camera::Frustum Camera::extractFrustumPlanes(const Mat4& modelView)
@@ -68,7 +68,7 @@ Camera::Frustum Camera::extractFrustumPlanes(const Mat4& modelView)
 
     for (Plane& p : planes)
     {
-        float length = Utils::length(p.normal);
+        float length = math::length(p.normal);
         p.normal /= length;
         p.distance /= length;
     }
@@ -99,15 +99,15 @@ void Camera::updateRotation(int xOffset, int yOffset, double dt)
 
     m_pitch = std::clamp(m_pitch, -89.f, 89.f);
 
-    float rad_yaw = Utils::degToRad(m_yaw);
-    float rad_pitch = Utils::degToRad(m_pitch);
+    float rad_yaw = math::degToRad(m_yaw);
+    float rad_pitch = math::degToRad(m_pitch);
 
     Vec3f dir;
     dir.x = std::cos(rad_yaw) * std::cos(rad_pitch);
     dir.y = std::sin(rad_pitch);
     dir.z = std::sin(rad_yaw) * std::cos(rad_pitch);
 
-    m_forward = Utils::normalise(dir);
+    m_forward = math::normalise(dir);
 }
 
 void Camera::updateRotation(float xOffset, float yOffset, double dt)
@@ -116,39 +116,39 @@ void Camera::updateRotation(float xOffset, float yOffset, double dt)
     m_pitch += yOffset * 100.f * dt;
     m_pitch = std::clamp(m_pitch, -89.f, 89.f);
 
-    float rad_yaw = Utils::degToRad(m_yaw);
-    float rad_pitch = Utils::degToRad(m_pitch);
+    float rad_yaw = math::degToRad(m_yaw);
+    float rad_pitch = math::degToRad(m_pitch);
 
     Vec3f dir;
     dir.x = std::cos(rad_yaw) * std::cos(rad_pitch);
     dir.y = std::sin(rad_pitch);
     dir.z = std::sin(rad_yaw) * std::cos(rad_pitch);
 
-    m_forward = Utils::normalise(dir);
+    m_forward = math::normalise(dir);
 }
 
 void Camera::updateMovement(double dt)
 {
-    Vec3f worldUp{ 0, 1, 0 };
-    Vec3f right = Utils::normalise(Utils::cross(m_forward, worldUp));
+    Vec3f worldUp = { 0, 1, 0 };
+    Vec3f right = math::normalise(math::cross(m_forward, worldUp));
 
     if (jawl::isGamepadConnected(0))
     {
         Vec3f f = (m_forward * jawl::controllerAxisValue(0, jawl::GamepadAxis::LY));
         Vec3f r = (right     * jawl::controllerAxisValue(0, jawl::GamepadAxis::LX));
-        m_position -= f * m_cameraSpeed * dt;
-        m_position -= r * m_cameraSpeed * dt;
+        m_position -= f * m_cameraSpeed * (float)dt;
+        m_position -= r * m_cameraSpeed * (float)dt;
         m_position.y += jawl::isGamepadButtonPressed(0, jawl::GamepadButtons::LeftShoulder)  * m_cameraSpeed * dt;
         m_position.y -= jawl::isGamepadButtonPressed(0, jawl::GamepadButtons::RightShoulder) * m_cameraSpeed * dt;
 
         return;
     }
 
-    Vec3f f = m_forward * ((int)jawl::isKeyPressed(jawl::Key::W) - (int)jawl::isKeyPressed(jawl::Key::S));
-    Vec3f r = right     * ((int)jawl::isKeyPressed(jawl::Key::D) - (int)jawl::isKeyPressed(jawl::Key::A));
-    Vec3f u = worldUp   * ((int)jawl::isKeyPressed(jawl::Key::Q) - (int)jawl::isKeyPressed(jawl::Key::E));
+    Vec3f f = m_forward * (float)((int)jawl::isKeyPressed(jawl::Key::W) - (int)jawl::isKeyPressed(jawl::Key::S));
+    Vec3f r = right     * (float)((int)jawl::isKeyPressed(jawl::Key::D) - (int)jawl::isKeyPressed(jawl::Key::A));
+    Vec3f u = worldUp   * (float)((int)jawl::isKeyPressed(jawl::Key::Q) - (int)jawl::isKeyPressed(jawl::Key::E));
 
-    m_position -= f * m_cameraSpeed * dt;
-    m_position -= r * m_cameraSpeed * dt;
-    m_position -= u * m_cameraSpeed * dt;
+    m_position -= f * m_cameraSpeed * (float)dt;
+    m_position -= r * m_cameraSpeed * (float)dt;
+    m_position -= u * m_cameraSpeed * (float)dt;
 }

@@ -1,5 +1,5 @@
 #include "Matrix.h"
-#include "Utils.h"
+#include "math.h"
 
 #include <cmath>
 #include <iostream>
@@ -8,10 +8,9 @@ Mat4 Matrix::multiply(const Mat4& matA, const Mat4& matB)
 {
     uint32_t ar = matA.size();
     uint32_t ac = matA[0].size();
-
     uint32_t bc = matB[0].size();
 
-    Mat4 result= {};
+    Mat4 result = {};
     for (uint32_t row = 0; row < ar; row++)
     {
         for (uint32_t col = 0; col < bc; col++)
@@ -27,7 +26,7 @@ Mat4 Matrix::multiply(const Mat4& matA, const Mat4& matB)
 
 Vec4f Matrix::multiply(const Mat4& mat, const Vec3f& _vec)
 {
-    Vec4f vec = Utils::toVec4(_vec, 1.f);
+    Vec4f vec = toVec4(_vec, 1.f);
 
     Vec4f result = {};
     result.x = mat[0][0] * vec.x + mat[0][1] * vec.y + mat[0][2] * vec.z + mat[0][3] * vec.w;
@@ -114,25 +113,25 @@ Mat4 Matrix::orthographic(int32_t left, int32_t right, int32_t bottom, int32_t t
 
 Mat4 Matrix::lookAt(const Vec3f& pos, const Vec3f& forward, const Vec3f& up)
 {
-    const Vec3f f = Utils::normalise(pos - forward);        /* Local Forward */
-    const Vec3f s = Utils::normalise(Utils::cross(f, up));  /* Local Side */
-    const Vec3f u = Utils::cross(s, f);                     /* Local Up */
+    const Vec3f f = math::normalise(pos - forward);        /* Local Forward */
+    const Vec3f s = math::normalise(math::cross(f, up));  /* Local Side */
+    const Vec3f u = math::cross(s, f);                     /* Local Up */
 
     Mat4 result = {};
     result[0][0] = s.x;
     result[0][1] = s.y;
     result[0][2] = s.z;
-    result[0][3] = -Utils::dot(s, pos);
+    result[0][3] = -math::dot(s, pos);
 
     result[1][0] = u.x;
     result[1][1] = u.y;
     result[1][2] = u.z;
-    result[1][3] = -Utils::dot(u, pos);
+    result[1][3] = -math::dot(u, pos);
 
     result[2][0] = -f.x;
     result[2][1] = -f.y;
     result[2][2] = -f.z;
-    result[2][3] = Utils::dot(f, pos);
+    result[2][3] = math::dot(f, pos);
 
     result[3][3] = 1.f;
 
@@ -153,36 +152,39 @@ Mat4 Matrix::rotate(float angle, uint32_t axis)
 {
     Mat4 result = identity();
     
-    angle = Utils::degToRad(angle);
+    angle = math::degToRad(angle);
 
-    //x
-    if(axis == 0)
+    switch (axis)
     {
-        result[0][0] = 1.f;
-        result[1][1] = std::cos(angle);
-        result[1][2] = -std::sin(angle);
-        result[2][1] = std::sin(angle);
-        result[2][2] = std::cos(angle);
-    }
+        /* X */
+        case 0:
+        {
+            result[0][0] = 1.f;
+            result[1][1] = std::cos(angle);
+            result[1][2] = -std::sin(angle);
+            result[2][1] = std::sin(angle);
+            result[2][2] = std::cos(angle);
+        } break;
 
-    //y
-    else if(axis == 1)
-    {
-        result[0][0] = std::cos(angle);
-        result[0][2] = std::sin(angle);
-        result[2][0] = -std::sin(angle);
-        result[1][1] = 1;
-        result[2][2] = std::cos(angle);
-    }
+        /* Y */
+        case 1:
+        {
+            result[0][0] = std::cos(angle);
+            result[0][2] = std::sin(angle);
+            result[2][0] = -std::sin(angle);
+            result[1][1] = 1;
+            result[2][2] = std::cos(angle);
+        } break;
 
-    //z
-    else
-    {
-        result[0][0] = std::cos(angle);
-        result[0][1] = -std::sin(angle);
-        result[1][0] = std::sin(angle);
-        result[1][1] = std::cos(angle);
-        result[2][2] = 1;
+        /* Z */
+        default:
+        {
+            result[0][0] = std::cos(angle);
+            result[0][1] = -std::sin(angle);
+            result[1][0] = std::sin(angle);
+            result[1][1] = std::cos(angle);
+            result[2][2] = 1;
+        } break;
     }
 
     return result;
@@ -208,4 +210,9 @@ Mat4 Matrix::identity()
     result[3][3] = 1.f;
 
     return result;
+}
+
+const Vec4f Matrix::toVec4(const Vec3f& vec, float w)
+{
+    return { vec.x, vec.y, vec.z, w };
 }

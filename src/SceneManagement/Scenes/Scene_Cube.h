@@ -33,8 +33,7 @@ private:
     Camera m_camera;
 
     Cube_Shader m_shader;
-    FXAA_Shader m_fxaa;
-    
+    FXAA_Shader m_fxaa;    
     Mat4 m_model = Matrix::identity();
 
     Mat4 m_translate = Matrix::identity();

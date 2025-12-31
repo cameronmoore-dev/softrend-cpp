@@ -7,20 +7,19 @@
 
 #include "../Matrix.h"
 #include "../Structs.h"
-#include "../Utils.h"
+#include "../math.h"
 
 class SSAO_Shader
 {
-public:
-    std::vector<uint32_t>* fb;
-    std::vector<float>* zbuffer;
-    int width;
-    int height;
+private:
+    uint32_t *framebuffer = nullptr;
+    float *depthbuffer = nullptr;
+    uint32_t size;
+    uint16_t width;
+    uint16_t height;
 
     float aoRadius = 8.f;
     int samples = 32;
-
-    bool doBlur = false;
 
     std::vector<std::pair<float, float>> kernel;
 
@@ -28,9 +27,19 @@ public:
     std::vector<float> blurTemp;
 
 public:
-    SSAO_Shader()
+    bool doBlur = false;
+
+public:
+    SSAO_Shader() = default;
+    SSAO_Shader(uint32_t *framebuffer, float *depthbuffer, uint16_t width, uint16_t height) :
+        framebuffer(framebuffer),
+        depthbuffer(depthbuffer),
+        size(width*height),
+        width(width),
+        height(height)
     {
         initKernel();
+        initAOBuffers();
     }
 
     void initKernel()
@@ -55,7 +64,7 @@ public:
         }
     }
 
-    void initAOBuffer()
+    void initAOBuffers()
     {
         aoBuffer.resize(width*height, 0.f);
         blurTemp.resize(width*height, 0.f);
@@ -72,9 +81,9 @@ public:
             return t * t * (3.f - 2.f * t);
         };
 
-        for (int i = 0; i < zbuffer->size(); i++)
+        for (int i = 0; i < size; i++)
         {
-            float z = zbuffer->at(i);
+            float z = depthbuffer[i];
             if (z > 1.0f)
             {
                 continue;
@@ -96,7 +105,7 @@ public:
                     continue;
                 }
 
-                float sampleDepth = zbuffer->at(sx + sy * width);
+                float sampleDepth = depthbuffer[sx + sy * width];
                 float diff = sampleDepth - z;
                 
                 if (diff > 0.02f * z)
@@ -129,11 +138,11 @@ public:
                 continue;
             }
 
-            Vec3f fragColour = Utils::hexToRGB(fb->at(i));
+            Vec3f fragColour = math::hexToRGB(framebuffer[i]);
             fragColour.x *= ao;
             fragColour.y *= ao;
             fragColour.z *= ao;
-            fb->at(i) = Utils::rgbToHex(fragColour);
+            framebuffer[i] = math::rgbToHex(fragColour);
         }
     }
 
@@ -155,7 +164,7 @@ public:
             {
                 int idx = x + y * width;
 
-                float centerDepth = zbuffer->at(idx);
+                float centerDepth = depthbuffer[idx];
                 float centerAO = aoBuffer[idx];
                 if (centerDepth > 1.0f || centerAO == 0.f)
                 {
@@ -171,7 +180,7 @@ public:
                     int sx = std::clamp(x + dx, 0, width - 1);
                     int sidx = sx + y * width;
                     float sampleAO = aoBuffer[sidx];
-                    float sampleDepth = zbuffer->at(sidx);
+                    float sampleDepth = depthbuffer[sidx];
 
                     if (sampleAO == 0.f || sampleDepth > 1.0f)
                     {
@@ -198,7 +207,7 @@ public:
             {
                 int idx = x + y * width;
 
-                float centerDepth = zbuffer->at(idx);
+                float centerDepth = depthbuffer[idx];
                 float centerAO = blurTemp[idx];
                 if (centerDepth > 1.0f || centerAO == 0.f)
                 {
@@ -215,7 +224,7 @@ public:
                     int sidx = x + sy * width;
 
                     float sampleAO = blurTemp[sidx];
-                    float sampleDepth = zbuffer->at(sidx);
+                    float sampleDepth = depthbuffer[sidx];
 
                     if (sampleAO == 0.f || sampleDepth > 1.0f)
                     {

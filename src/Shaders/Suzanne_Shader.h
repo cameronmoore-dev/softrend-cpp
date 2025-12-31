@@ -5,9 +5,6 @@
 
 #include "../IShader.h"
 #include "../Matrix.h"
-#include "../Utils.h"
-#include "../Image.h"
-
 #include "../Renderer.h"
 
 class Suzanne_Shader : public IShader
@@ -25,8 +22,8 @@ public:
     // Mat4 lightView;
 
     Vec3f lightDir{ 0, 0, -1 };
-    Vec3f colour = Utils::hexToRGB(0xffffff);
-    Vec3f ambient = Utils::hexToRGB(0x111111);
+    Vec3f colour = { 1, 1, 1 };
+    Vec3f ambient = { 0.17f, 0.17f, 0.17f };
 
     bool isShadowPass = false;
 
@@ -40,12 +37,12 @@ private:
         // }
 
         copy.uv = v.uv;
-        copy.colour = v.colour;
+        // copy.colour = v.colour;
         copy.normal = Matrix::multiplyVec3(*model, v.normal);
         copy.tangent = Matrix::multiplyVec3(*model, v.tangent);
         copy.bitangent = Matrix::multiplyVec3(*model, v.bitangent);
 
-        copy.fragPos = Matrix::multiply(*model, v.position);
+        // copy.fragPos = Matrix::multiply(*model, v.position);
         copy.position = Matrix::multiply(*projection, Matrix::multiply(*view, Matrix::multiply(*model, v.position)));
     }
 
@@ -69,24 +66,23 @@ private:
         // float shadowDepth = Renderer::depthMap[sx + sy * 1024];
         // float currentDepth = fragPos.z;
 
-        // float bias = std::max(0.05f * (1.0f - Utils::dot(normal, lightDir)), 0.005f);
+        // float bias = std::max(0.05f * (1.0f - dot(normal, lightDir)), 0.005f);
         // float shadow = currentDepth - bias > shadowDepth ? 1.f : 0.f;
 
         Vec3f normal = sampleNormalMap(polygon, *normalMap, barycentric);
         // Vec3f normal = polygon.v0.normal * barycentric.x + polygon.v1.normal * barycentric.y + polygon.v2.normal * barycentric.z;
-        normal = Utils::normalise(normal);
+        normal = normalise(normal);
 
-        float diff = std::max(0.f, Utils::dot(normal, lightDir));
+        float diff = std::max(0.f, math::dot(normal, lightDir));
         Vec3f diffuse = colour * diff;
 
-        Vec3f halfwayDir = Utils::normalise(lightDir + lightDir);
-        float spec = std::pow(std::max(Utils::dot(normal, halfwayDir), 0.f), 128);
+        Vec3f halfwayDir = normalise(lightDir + lightDir);
+        float spec = std::pow(std::max(dot(normal, halfwayDir), 0.f), 128);
         Vec3f specular = sampleSpecularMap(polygon, *specularMap, barycentric) * spec;
 
         Vec3f final_light = (ambient + (diffuse + specular) /* * (1.0f - shadow) */) * sampleDiffuseMap(polygon, *diffuseMap, barycentric);
 
-        finalColour = Utils::toVec4(final_light);
-        // finalColour = Utils::hexToRGBA(0xFFFFFFFF);
+        finalColour = vec4(final_light, 1.f);
         return true;
     }
 };

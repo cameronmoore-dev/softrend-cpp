@@ -1,11 +1,11 @@
 #pragma once
 
 #include <array>
-#include <stdint.h>
+#include <cstdint>
 
 #include "Matrix.h"
-#include "Utils.h"
-#include "jawl/base_window.h"
+#include "math.h"
+#include "jawl/jawl.hpp"
 
 class Camera
 {
@@ -16,7 +16,7 @@ class Camera
 
         float distanceToPoint(const Vec3f& point) const
         {
-            return (Utils::dot(normal, point)) - distance;
+            return (math::dot(normal, point)) - distance;
         }
     };
 
@@ -42,19 +42,12 @@ public:
     const float farPlane()   const { return m_farPlane; }
     const float nearPlane()  const { return m_nearPlane; }
 
-    bool isMovingForward    = false;
-    bool isMovingLeft       = false;
-    bool isMovingRight      = false;
-    bool isMovingBackward   = false;
-    bool isMovingDown       = false;
-    bool isMovingUp         = false;
-
 private:
     Mat4 m_projection = Matrix::identity();
     Mat4 m_view       = Matrix::identity();
 
-    Vec3f m_position  { 0, 0, -10 };
-    Vec3f m_forward   { 0, 0, -1 };
+    Vec3f m_position  = { 0.f, 0.f, -10.f };
+    Vec3f m_forward   = { 0.f, 0.f, -1.f };
 
     float m_farPlane    = 0.f;
     float m_nearPlane   = 0.f;

@@ -10,21 +10,24 @@ set(LIB_INCLUDE_PATH	"${CMAKE_SOURCE_DIR}/externals/includes")
 
 add_executable(software_renderer EXCLUDE_FROM_ALL
     "src/Entry.cpp"
+	"src/jawl/jawl.cpp"
     "src/jawl/base_window.cpp"
 	"src/jawl/input.cpp"
 	"src/jawl/win32/win32_window.cpp"
 	"src/jawl/win32/win32_input.cpp"
-    "src/Utils.cpp"
+	"src/IShader.cpp"
+    "src/math.cpp"
     "src/Matrix.cpp"
     "src/Model.cpp"    
     "src/Image.cpp"
     "src/Renderer.cpp"
     "src/Camera.cpp"
-    "src/SceneManagement/Scenes/Scene_Triangle.cpp"
-    "src/SceneManagement/Scenes/Scene_Cube.cpp"
+    # "src/SceneManagement/Scenes/Scene_Triangle.cpp"
+    # "src/SceneManagement/Scenes/Scene_Cube.cpp"
     "src/SceneManagement/Scenes/Scene_Suzanne.cpp"
-    "src/SceneManagement/Scenes/Scene_AlphaBlending.cpp"
-	"src/SceneManagement/Scenes/Scene_OpenGL.cpp"
+    # "src/SceneManagement/Scenes/Scene_AlphaBlending.cpp"
+	# "src/SceneManagement/Scenes/Scene_OpenGL.cpp"
+
 
 	"src/glad.c"
 )

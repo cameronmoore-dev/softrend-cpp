@@ -61,20 +61,28 @@
 
 class FXAA_Shader
 {
+private:
+    uint32_t *framebuffer;
+    uint32_t size;
+    uint32_t width;
+
 public:
-    std::vector<uint32_t>* frameBuffer = nullptr;
-    Vec2f frameSize;
+    FXAA_Shader() = default;
+    FXAA_Shader(uint32_t *framebuffer, uint32_t size, uint32_t width) : 
+        framebuffer(framebuffer), 
+        size(size), 
+        width(width) { }
 
     void apply()
     {
-        for (uint32_t i = 0; i < frameBuffer->size(); i++)
+        for (uint32_t i = 0; i < size; i++)
         {
             /* Find contrast between pixel neighbours / Local Contrast Check */
-            uint32_t rgbN = fxaaTextureOffset(i, -frameSize.x);
-            uint32_t rgbW = fxaaTextureOffset(i, -1);
-            uint32_t rgbM = fxaaTextureOffset(i, 0);
-            uint32_t rgbE = fxaaTextureOffset(i, 1);
-            uint32_t rgbS = fxaaTextureOffset(i, frameSize.x);
+            Vec3f rgbN = fxaaTextureOffset(i, -width);
+            Vec3f rgbW = fxaaTextureOffset(i, -1);
+            Vec3f rgbM = fxaaTextureOffset(i, 0);
+            Vec3f rgbE = fxaaTextureOffset(i, 1);
+            Vec3f rgbS = fxaaTextureOffset(i, width);
 
             float lumaN = fxaaLuma(rgbN);
             float lumaW = fxaaLuma(rgbW);
@@ -89,7 +97,7 @@ public:
 
             if (range < std::max(EDGE_THRESHOLD_MIN, rangeMax * EDGE_THRESHOLD))
             {
-                frameBuffer->at(i) = fxaaTextureOffset(i, 0);
+                framebuffer[i] = math::rgbToHex(fxaaTextureOffset(i, 0));
                 continue;
             }
 
@@ -101,13 +109,13 @@ public:
             blendL = std::min(SUBPIXEL_CAP, blendL);
 
             /* Box filter around current pixel */
-            Vec3f rgbL = Utils::hexToRGB(rgbN) + Utils::hexToRGB(rgbW) + Utils::hexToRGB(rgbM) + Utils::hexToRGB(rgbE) + Utils::hexToRGB(rgbS);
-            uint32_t rgbNW = fxaaTextureOffset(i, -frameSize.x - 1);
-            uint32_t rgbNE = fxaaTextureOffset(i, -frameSize.x + 1);
-            uint32_t rgbSW = fxaaTextureOffset(i, frameSize.x - 1);
-            uint32_t rgbSE = fxaaTextureOffset(i, frameSize.x + 1);
+            Vec3f rgbL = rgbN + rgbW + rgbM + rgbE + rgbS;
+            Vec3f rgbNW = fxaaTextureOffset(i, -width - 1);
+            Vec3f rgbNE = fxaaTextureOffset(i, -width + 1);
+            Vec3f rgbSW = fxaaTextureOffset(i, width - 1);
+            Vec3f rgbSE = fxaaTextureOffset(i, width + 1);
 
-            rgbL += (Utils::hexToRGB(rgbNW) + Utils::hexToRGB(rgbNE) + Utils::hexToRGB(rgbSW) + Utils::hexToRGB(rgbSE));
+            rgbL += rgbNW + rgbNE + rgbSW + rgbSE;
             rgbL *= Vec3f{ 1.f / 9.f, 0, 0 };
 
             float lumaNW = fxaaLuma(rgbNW);
@@ -137,8 +145,8 @@ public:
 
             for (uint32_t s = 0; s < SEARCH_STEPS; s++)
             {
-                offsetNeg -= (horzSpan ? frameSize.x : 1);
-                offsetPos += (horzSpan ? frameSize.x : 1);
+                offsetNeg -= (horzSpan ? width : 1);
+                offsetPos += (horzSpan ? width : 1);
 
                 float lumaA = fxaaLuma(fxaaTextureOffset(i, offsetNeg));
                 float lumaB = fxaaLuma(fxaaTextureOffset(i, offsetPos));
@@ -160,27 +168,26 @@ public:
                 
             }
 
-            Vec3f rgbMVec = Utils::hexToRGB(rgbM);
-            Vec3f rgbLVec =  Utils::hexToRGB(fxaaTextureOffset(i, horzSpan ? (int)frameSize.x : 1));
-            Vec3f rgbRVec =  Utils::hexToRGB(fxaaTextureOffset(i, horzSpan ? -(int)frameSize.x : -1));
+            Vec3f rgbMVec = rgbM;
+            Vec3f rgbLVec = fxaaTextureOffset(i, horzSpan ? (int)width : 1);
+            Vec3f rgbRVec = fxaaTextureOffset(i, horzSpan ? -(int)width : -1);
 
             float dirLumaDiff = lumaNeg - lumaPos;
             Vec3f targetColour = dirLumaDiff > 0 ? rgbRVec : rgbLVec;
             Vec3f blended = rgbMVec * (1.f - blendL) + targetColour * blendL;
             
-            frameBuffer->at(i) = Utils::rgbToHex(blended);
+            framebuffer[i] = math::rgbToHex(blended);
         }
     }
 
 private:
-    float fxaaLuma(const uint32_t& colour)
+    float fxaaLuma(const Vec3f& colour)
     {
-        Vec3f rgb = Utils::hexToRGB(colour);
-        return rgb.y * (0.587f/0.299f) * rgb.x;
+        return colour.y * (0.587f/0.299f) * colour.x;
         // return 0.299f * rgb.x + 0.587f * rgb.y + 0.114f * rgb.z;
     }
 
-    uint32_t fxaaTextureOffset(int current, int offset)
+    Vec3f fxaaTextureOffset(int current, int offset)
     {
         int index = current + offset;
         if (index < 0) 
@@ -188,11 +195,15 @@ private:
             index = 0;
         }
 
-        else if (index >= frameBuffer->size())
+        else if (index >= size)
         {
-            index = (frameBuffer->size()) - 1;
+            index = size - 1;
         }
 
-        return frameBuffer->at(index);
+        uint32_t fragColour = framebuffer[index];
+        float r = float((fragColour >> 16) & 0xFF) / 255.f;
+        float g = float((fragColour >> 8) & 0xFF) / 255.f;
+        float b = float(fragColour & 0xFF) / 255.f;
+        return  { r, g, b };
     }
 };

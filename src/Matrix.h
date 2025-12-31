@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Structs.h"
-
 #include <array>
-#include <stdint.h>
+#include <cstdint>
+
+#include "Structs.h"
 
 using Mat4 = std::array<std::array<float, 4>, 4>;
 using Mat3 = std::array<std::array<float, 3>, 3>;
@@ -27,4 +27,7 @@ public:
     static Mat4 scale(const Vec3f& vec);
 
     static Mat4 identity();
+
+private:
+    static const Vec4f toVec4(const Vec3f& vec, float w = 1.f);
 };

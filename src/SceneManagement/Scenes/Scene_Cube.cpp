@@ -15,6 +15,10 @@ Scene_Cube::Scene_Cube(jawl::Window &window) :
 
 void Scene_Cube::start()
 {
+    uint16_t w, h;
+    m_renderer.size(w, h);
+    m_fxaa = FXAA_Shader(m_renderer.framebuffer(), w*h, w);
+
     m_shader.setUniform<Mat4>(m_shader.model, m_model);
     m_shader.setUniform<Mat4>(m_shader.view, m_camera.view());
     m_shader.setUniform<Mat4>(m_shader.projection, m_camera.projection());
@@ -80,6 +84,8 @@ void Scene_Cube::render()
 
     m_renderer.draw(m_cube.vertices, m_shader);
 
+    m_fxaa.apply();
+    
     m_window.swapBuffers();
 }
 

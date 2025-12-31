@@ -14,7 +14,7 @@ public:
     void vertex(const Vertex& v, glVertex& copy) override
     {
         copy.uv = v.uv;
-        copy.position = Matrix::multiply(*projection, Matrix::multiply(*view, Matrix::multiply(*model, v.position)));
+        // copy.position = Matrix::multiply(*projection, Matrix::multiply(*view, Matrix::multiply(*model, v.position)));
     }
 
     bool fragment(const Vec3f& barycentric, const glTriangle& polygon, Vec4f& finalColour) override

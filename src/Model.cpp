@@ -6,7 +6,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "Utils.h"
+#include "math.h"
 
 Model::Model(const std::string& dir)
 {
@@ -147,7 +147,7 @@ void Model::computeTangents()
 
     for (Vertex& vertex : vertices)
     {
-        vertex.tangent = Utils::normalise(vertex.tangent);
-        vertex.bitangent = Utils::normalise(vertex.bitangent);
+        vertex.tangent = math::normalise(vertex.tangent);
+        vertex.bitangent = math::normalise(vertex.bitangent);
     }
 }

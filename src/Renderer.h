@@ -4,7 +4,7 @@
 
 #include "IShader.h"
 #include "Structs.h"
-#include "Utils.h"
+#include "math.h"
 
 class Renderer
 {
@@ -21,6 +21,14 @@ public:
     void clear(uint32_t colour);
     void draw(const std::vector<Vertex>& vertices, IShader& shader);
     void viewport(int x, int y, int w, int h);
+
+    uint32_t *framebuffer() { return m_backbuffer; }
+    float    *depthbuffer() { return m_depthbuffer; }
+    void size(uint16_t &outWidth, uint16_t &outHeight)
+    {
+        outWidth  = m_viewportWidth;
+        outHeight = m_viewportHeight;
+    }
 
     inline static std::vector<float> depthMap;
     

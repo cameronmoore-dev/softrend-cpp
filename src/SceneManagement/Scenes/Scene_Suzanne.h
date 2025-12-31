@@ -24,7 +24,7 @@ protected:
     void shutdown() override;
 
 private:
-    void onWindowResize(int w, int h);    
+    void onWindowResize(int w, int h);
 
 private:
     jawl::Window &m_window;
@@ -41,7 +41,7 @@ private:
 
     // Mat4 m_lightProj = Matrix::orthographic(-2.f, 2.f, -2.f, 2.f, 1.f, 10.f);
     // Mat4 m_lightView = Matrix::identity();
-    
+
     Mat4 m_model = Matrix::identity();
 
     Mat4 m_translate = Matrix::identity();

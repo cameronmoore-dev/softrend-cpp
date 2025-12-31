@@ -21,16 +21,9 @@ void Scene_Suzanne::start()
     shader.setUniform<Image>(shader.normalMap, m_normalMap);
     shader.setUniform<Image>(shader.specularMap, m_specularMap);
 
-    // m_ssao.fb = &m_window.m_backBuffer;
-    // m_ssao.zbuffer = &m_window.m_depthBuffer;
-
-    // int ox;
-    // int oy;
-    // m_window.getSize(ox, oy);
-    
-    // m_ssao.width = ox;
-    // m_ssao.height = oy;
-    // m_ssao.initAOBuffer();
+    uint16_t w, h;
+    m_renderer.size(w, h);
+    m_ssao = SSAO_Shader(m_renderer.framebuffer(), m_renderer.depthbuffer(), w, h);
 
     // Vec3f pos{ 0.f, 0.f, -5.f };
     // Vec3f forward{ 0.f, 0.f, -1.f };
@@ -144,17 +137,17 @@ void Scene_Suzanne::processInput()
 
 void Scene_Suzanne::update()
 {
-    m_camera.updateMovement(m_dt);
     if (jawl::isGamepadConnected(0))
     {
         m_camera.updateRotation(
              jawl::controllerAxisValue(0, jawl::GamepadAxis::RX), 
-            -jawl::controllerAxisValue(0, jawl::GamepadAxis::RY), 
+            -jawl::controllerAxisValue(0, jawl::GamepadAxis::RY),
             m_dt);
     }
+    m_camera.updateMovement(m_dt);
     m_camera.updateView();
 
-    m_angle+=20.f * m_dt;
+    m_angle += 20.f * m_dt;
     m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
     m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
     

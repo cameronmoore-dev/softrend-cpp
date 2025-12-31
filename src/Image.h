@@ -1,10 +1,10 @@
 #pragma once
 
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 
 #include "Structs.h"
-#include "Utils.h"
+#include "math.h"
 
 #pragma pack(push, 1)
 struct TGAHeader

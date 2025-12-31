@@ -89,13 +89,14 @@ void Renderer::draw(const std::vector<Vertex>& vertices, IShader& shader)
             input.swap(output);
         }
 
+        
         for (uint32_t j = 1; j + 1 < input.size(); j++)
         {
             /* Copy the vertices so transforming doesn’t corrupt shared data */
             glVertex v0 = input[0];
             glVertex v1 = input[j];
             glVertex v2 = input[j + 1];
-
+            
             transformVertex(v0);
             transformVertex(v1);
             transformVertex(v2);
@@ -128,7 +129,7 @@ void Renderer::transformVertex(glVertex& vertex)
 
     /* For Perspective Corrected Texture Mapping */
     vertex.inverseW = 1.0f / clip.w;
-    vertex.uv *= vertex.inverseW;
+    vertex.uv *= 1.0f / clip.w;
 
     /* Perspective Division */
     clip.x /= clip.w;
@@ -141,8 +142,11 @@ void Renderer::transformVertex(glVertex& vertex)
     screenPos.y = (clip.y + 1.f) * 0.5f * m_viewportHeight;
     screenPos.z = clip.z;
 
-    /* The extra - 0.1f is to stop flickering along the left and bottom screen edges after polygon clipping, most likely due to floating-point precision issues */
-    /* Might not be scalable with different screen resolutions. Test this later */
+    /*  
+        The extra '- 0.1f' is to stop flickering along the left and bottom screen edges after polygon clipping, 
+        most likely due to floating-point precision issues.
+        Might not be scalable with different screen resolutions. Test this later
+    */
     vertex.position = screenPos - 0.1f;
 }
 
@@ -180,18 +184,18 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
                     {
                         m_depthbuffer[idx] = z;
                         // Vec4f src = { linearColour.x * linearColour.w, linearColour.y * linearColour.w, linearColour.z * linearColour.w, linearColour.w };
-                        // Vec4f dest = Utils::hexToRGBA(m_context.m_backBuffer[idx]);
+                        // Vec4f dest = Utils::hexToRGBA(m_backBuffer[idx]);
                         // Vec4f blendColour = src + dest * (1.f - src.w);
 
-                        // m_context.m_backBuffer[idx] = Utils::rgbaToHex(blendColour);
+                        // m_backBuffer[idx] = Utils::rgbaToHex(blendColour);
 
-                        uint8_t r = Utils::linearToSRGB(linearColour.x);
-                        uint8_t g = Utils::linearToSRGB(linearColour.y);
-                        uint8_t b = Utils::linearToSRGB(linearColour.z);
+                        uint8_t r = math::linearToSRGB(linearColour.x);
+                        uint8_t g = math::linearToSRGB(linearColour.y);
+                        uint8_t b = math::linearToSRGB(linearColour.z);
 
                         m_backbuffer[idx] = (r<<16) | (g<<8) | b;
 
-                        // m_context.m_backBuffer[idx] = Utils::rgbaToHex(linearColour);
+                        // m_backBuffer[idx] = Utils::rgbaToHex(linearColour);
                     }
                 }
             }

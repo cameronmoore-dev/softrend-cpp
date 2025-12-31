@@ -23,18 +23,18 @@ int main()
     window->setHint(jawl::ContextProfile, jawl::GLContextProfile::Core);
     window->setHint(jawl::Samples, 4);
 
-    window->create("JAWL Window", 640, 480, jawl::Style::Default, jawl::RendererType::Hardware);
-    if (!gladLoadGL())
-    {
-        printf("Failed to load glad\n");
-        return -1;
-    }
+    window->create("JAWL Window", 640, 480, jawl::Style::Default, jawl::RendererType::Software);
+    // if (!gladLoadGL())
+    // {
+    //     printf("Failed to load glad\n");
+    //     return -1;
+    // }
 
     window->swapInterval(1);
     window->cursorEnableFlags(jawl::CursorFlags::Locked | jawl::CursorFlags::Hidden | jawl::CursorFlags::Clamped);
 
     SceneManager sceneManager;
-    sceneManager.addScene<Scene_OpenGL>(*window);
+    sceneManager.addScene<Scene_Suzanne>(*window);
 
     delete(window);
 
