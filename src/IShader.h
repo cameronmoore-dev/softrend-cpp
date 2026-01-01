@@ -9,6 +9,18 @@
 
 #include "jawl/base_window.h"
 
+struct MipMap
+{
+    std::vector<uint32_t> data;
+    uint16_t width;
+    uint16_t height;
+};
+
+struct Texture
+{
+    std::vector<MipMap> mipLevels;
+};
+
 class IShader
 {
 protected:
@@ -31,21 +43,9 @@ public:
     virtual bool fragment(const Vec3f &barycentric, const glTriangle &polygon, Vec4f &fragColour) = 0;
 
 private:
-    Vec2f perspectiveCorrectedUV(const glTriangle& polygon, const Image& image, const Vec3f& barycentric)
-    {
-        /* Perspective-correct interpolation */
-        float invInterp =       polygon.v0.inverseW * barycentric.x +
-                                polygon.v1.inverseW * barycentric.y +
-                                polygon.v2.inverseW * barycentric.z;
-
-        Vec2f uvOverZInterp =   polygon.v0.uv * barycentric.x +
-                                polygon.v1.uv * barycentric.y +
-                                polygon.v2.uv * barycentric.z;
-
-        Vec2f finalUV = uvOverZInterp / invInterp;
-
-        return { finalUV.x, finalUV.y };
-    }
+    void derivatives(const glTriangle& polygon, Texture &texture, float& dudx, float& dudy, float& dvdx, float& dvdy);
+    float lod(float dudx, float dudy, float dvdx, float dvdy);
+    Vec2f perspectiveCorrectedUV(const glTriangle& polygon, const Vec3f& barycentric);
 
 protected:
     float dot(const Vec3f& a, const Vec3f& b);
@@ -56,70 +56,31 @@ protected:
     Vec4f vec4(const Vec3f &vec, const float w);
     Vec4f vec4(const Vec2f &vec, const float z, const float w);
 
+    const float srgbToLinear(const uint8_t channel);
+    const uint32_t bilinear(float u, float v, const MipMap &mip) const;
+    Vec4f pixelRGBA(const Texture &texture, float u, float v, float lod);
+    Vec3f pixelRGB(const Texture &texture, float u, float v, float lod);
+    Vec4f sampleDiffuseMap(const glTriangle& polygon, Texture &texture, const Vec3f& barycentric);
+    Vec3f sampleNormalMap(const glTriangle& polygon, Texture &texture, const Vec3f& barycentric);
+    Vec3f sampleSpecularMap(const glTriangle& polygon, Texture &texture, const Vec3f& barycentric);
 
-    Vec3f sampleDiffuseMap(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
-    {
-        float dudx, dudy, dvdx, dvdy;
-        image.derivatives(polygon, dudx, dudy, dvdx, dvdy);
-
-        float lod = image.lod(dudx, dudy, dvdx, dvdy);
-
-        Vec2f uv = perspectiveCorrectedUV(polygon, image, barycentric);
-        return image.pixel(uv.x, uv.y, lod);
-    }
-
-    Vec4i sampleRGBA(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
-    {
-        double current = getTimeSeconds();
-        double dt = current - previous;
-        previous = current;
+    // Vec4i sampleRGBA(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
+    // {
+    //     double current = getTimeSeconds();
+    //     double dt = current - previous;
+    //     previous = current;
 
 
-        float dudx, dudy, dvdx, dvdy;
-        image.derivatives(polygon, dudx, dudy, dvdx, dvdy);
+    //     float dudx, dudy, dvdx, dvdy;
+    //     image.derivatives(polygon, dudx, dudy, dvdx, dvdy);
 
-        float lod = image.lod(dudx, dudy, dvdx, dvdy);
+    //     float lod = image.lod(dudx, dudy, dvdx, dvdy);
 
-        Vec2f uv = perspectiveCorrectedUV(polygon, image, barycentric);
+    //     Vec2f uv = perspectiveCorrectedUV(polygon, barycentric);
 
-        offset += dt;
-        uv += offset;
+    //     offset += dt;
+    //     uv += offset;
 
-        return image.pixelRGBA(uv.x, uv.y, lod);
-    }
-
-    Vec3f sampleNormalMap(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
-    {
-        // Perspective-correct TBN
-        Vec3f T = polygon.v0.tangent * barycentric.x + polygon.v1.tangent * barycentric.y + polygon.v2.tangent * barycentric.z;
-        Vec3f B = polygon.v0.bitangent * barycentric.x + polygon.v1.bitangent * barycentric.y + polygon.v2.bitangent * barycentric.z;
-        Vec3f N = polygon.v0.normal * barycentric.x + polygon.v1.normal * barycentric.y + polygon.v2.normal * barycentric.z;
-
-        float dudx, dudy, dvdx, dvdy;
-        image.derivatives(polygon, dudx, dudy, dvdx, dvdy);
-        float lod = image.lod(dudx, dudy, dvdx, dvdy);
-
-        Vec2f uv = perspectiveCorrectedUV(polygon, image, barycentric);
-        Vec4i texel = image.pixelRGBA(uv.x, uv.y, lod);
-        Vec3f normal;
-        normal.x = (texel.x / 255.f) * 2.f - 1.f;
-        normal.y = (texel.y / 255.f) * 2.f - 1.f;
-        normal.z = (texel.z / 255.f) * 2.f - 1.f;
-        normal = normalise(normal);
-
-        Mat3 tbn = Matrix::constructTBN(T, B, N);
-
-        return normalise(Matrix::multiplyVec3(tbn, normal));
-    }
-
-    Vec3f sampleSpecularMap(const glTriangle& polygon, Image& image, const Vec3f& barycentric)
-    {
-        float dudx, dudy, dvdx, dvdy;
-        image.derivatives(polygon, dudx, dudy, dvdx, dvdy);
-
-        float lod = image.lod(dudx, dudy, dvdx, dvdy);
-
-        Vec2f uv = perspectiveCorrectedUV(polygon, image, barycentric);
-        return image.pixel(uv.x, uv.y, lod);
-    }
+    //     return image.pixelRGBA(uv.x, uv.y, lod);
+    // }
 };

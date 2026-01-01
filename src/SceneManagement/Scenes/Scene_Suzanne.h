@@ -30,9 +30,10 @@ private:
     jawl::Window &m_window;
     Renderer m_renderer;
     Model m_suzanne = Model("./resources/model_suzanne.obj");
-    Image m_texture = Image("./resources/texture_suzanne.tga");
-    Image m_normalMap = Image("./resources/suzanne_normal.tga");
-    Image m_specularMap = Image("./resources/suzanne_specular.tga");
+
+    Texture m_texture;
+    Texture m_normalMap;
+    Texture m_specularMap;
 
     Camera m_camera;
 

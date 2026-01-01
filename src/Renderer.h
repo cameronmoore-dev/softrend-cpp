@@ -22,6 +22,9 @@ public:
     void draw(const std::vector<Vertex>& vertices, IShader& shader);
     void viewport(int x, int y, int w, int h);
 
+    Texture createTexture(uint8_t *data, int width, int height, int channels);
+    void generateMipMaps(Texture &texture);
+
     uint32_t *framebuffer() { return m_backbuffer; }
     float    *depthbuffer() { return m_depthbuffer; }
     void size(uint16_t &outWidth, uint16_t &outHeight)

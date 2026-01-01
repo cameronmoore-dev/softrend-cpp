@@ -11,7 +11,7 @@ public:
     Uniform<Mat4> view;
     Uniform<Mat4> projection;
 
-    Uniform<Image> texture;
+    Uniform<Texture> texture;
 
     void vertex(const Vertex& v, glVertex& copy) override
     {
@@ -21,9 +21,7 @@ public:
 
     bool fragment(const Vec3f& barycentric, const glTriangle& polygon, Vec4f& finalColour) override
     {
-        Vec4i texel = sampleRGBA(polygon, *texture, barycentric);
-
-        finalColour = Vec4f{ (float)texel.x / 255.f, (float)texel.y / 255.f, (float)texel.z / 255.f, (float)texel.w / 255.f };
+        finalColour = sampleDiffuseMap(polygon, *texture, barycentric);
         return true;
     }
 };

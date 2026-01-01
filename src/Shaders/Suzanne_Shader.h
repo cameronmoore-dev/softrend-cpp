@@ -14,9 +14,9 @@ public:
     Uniform<Mat4> view;
     Uniform<Mat4> projection;
 
-    Uniform<Image> diffuseMap;
-    Uniform<Image> normalMap;
-    Uniform<Image> specularMap;
+    Uniform<Texture> diffuseMap;
+    Uniform<Texture> normalMap;
+    Uniform<Texture> specularMap;
 
     // Mat4 lightProj;
     // Mat4 lightView;
@@ -69,20 +69,18 @@ private:
         // float bias = std::max(0.05f * (1.0f - dot(normal, lightDir)), 0.005f);
         // float shadow = currentDepth - bias > shadowDepth ? 1.f : 0.f;
 
-        Vec3f normal = sampleNormalMap(polygon, *normalMap, barycentric);
-        // Vec3f normal = polygon.v0.normal * barycentric.x + polygon.v1.normal * barycentric.y + polygon.v2.normal * barycentric.z;
+        // Vec3f normal = sampleNormalMap(polygon, *normalMap, barycentric);
+        Vec3f normal = polygon.v0.normal * barycentric.x + polygon.v1.normal * barycentric.y + polygon.v2.normal * barycentric.z;
         normal = normalise(normal);
 
         float diff = std::max(0.f, math::dot(normal, lightDir));
         Vec3f diffuse = colour * diff;
 
-        Vec3f halfwayDir = normalise(lightDir + lightDir);
-        float spec = std::pow(std::max(dot(normal, halfwayDir), 0.f), 128);
-        Vec3f specular = sampleSpecularMap(polygon, *specularMap, barycentric) * spec;
+        // Vec3f halfwayDir = normalise(lightDir + lightDir);
+        // float spec = std::pow(std::max(dot(normal, halfwayDir), 0.f), 128);
+        // Vec3f specular = sampleSpecularMap(polygon, *specularMap, barycentric) * spec;
 
-        Vec3f final_light = (ambient + (diffuse + specular) /* * (1.0f - shadow) */) * sampleDiffuseMap(polygon, *diffuseMap, barycentric);
-
-        finalColour = vec4(final_light, 1.f);
+        finalColour = vec4((ambient + (diffuse) /* * (1.0f - shadow) */), 1.f) * sampleDiffuseMap(polygon, *diffuseMap, barycentric);
         return true;
     }
 };

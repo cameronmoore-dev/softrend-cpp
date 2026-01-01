@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <initializer_list>
 #include <cmath>
 
 #include <iostream>
@@ -192,10 +193,16 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
                         uint8_t r = math::linearToSRGB(linearColour.x);
                         uint8_t g = math::linearToSRGB(linearColour.y);
                         uint8_t b = math::linearToSRGB(linearColour.z);
+                        uint8_t a = math::linearToSRGB(linearColour.w);
 
-                        m_backbuffer[idx] = (r<<16) | (g<<8) | b;
+                        m_backbuffer[idx] = (r<<16) | (g<<8) | b | (a<<24);
 
-                        // m_backBuffer[idx] = Utils::rgbaToHex(linearColour);
+                        // int R = std::clamp(int(linearColour.x * 255.f), 0, 255);
+                        // int G = std::clamp(int(linearColour.y * 255.f), 0, 255);
+                        // int B = std::clamp(int(linearColour.z * 255.f), 0, 255);
+                        // int A = std::clamp(int(linearColour.w * 255.f), 0, 255);
+
+                        // m_backbuffer[idx] = (R<<16|G<<8|B|A<<24);
                     }
                 }
             }
@@ -295,6 +302,89 @@ void Renderer::clipTriangle(std::vector<glVertex>& polygon, std::vector<glVertex
             out.emplace_back(interpolate(curr, next, plane));
             out.emplace_back(next);
         }
+    }
+}
+
+Texture Renderer::createTexture(uint8_t *data, int width, int height, int channels)
+{
+    MipMap mip =
+    {
+        .width = (uint16_t)width,
+        .height = (uint16_t)height,
+    };
+
+    int size = (width * height) * channels;
+    for (int i = 0; i < size; i += channels)
+    {
+        uint32_t pixel = (data[i] << 16 | data[i + 1] << 8 | data[i + 2]);
+        if (channels == 4)
+        {
+            pixel |= data[i + 3] << 24;
+        }
+        
+        mip.data.emplace_back(pixel);
+    }
+
+    Texture texture;
+    texture.mipLevels.emplace_back(mip);
+
+    return texture;
+}
+
+void Renderer::generateMipMaps(Texture &texture)
+{
+    uint8_t totalMipLevels = log2f(texture.mipLevels[0].width);
+    texture.mipLevels.reserve(totalMipLevels + 1);
+
+    auto blend = [](const std::initializer_list<uint32_t> colours)
+    {
+        uint32_t r = 0;
+        uint32_t g = 0;
+        uint32_t b = 0;
+        uint32_t a = 0;
+
+        for (const uint32_t &c : colours)
+        {
+            r += (c >> 16) & 0xff;
+            g += (c >> 8)  & 0xff;
+            b += (c >> 0)  & 0xff;
+            a += (c >> 24) & 0xff;
+        }
+
+        uint8_t total = colours.size();
+        uint32_t blended =  (r / total) << 16 | 
+                            (g / total) << 8  | 
+                            (b / total) << 0  | 
+                            (a / total) << 24;
+        return blended;
+    };
+
+    MipMap current = texture.mipLevels[0];
+    while (current.width > 1 && current.height > 1)
+    {
+        uint16_t newWidth  = std::max(1, current.width  / 2);
+        uint16_t newHeight = std::max(1, current.height / 2);
+
+        MipMap next;
+        next.width  = newWidth;
+        next.height = newHeight;
+        next.data.resize(newWidth * newHeight);
+
+        for (int y = 0; y < newHeight; y++)
+        {
+            for (int x = 0; x < newWidth; x++)
+            {
+                uint32_t a = current.data[(x * 2) + (y * 2) * current.width];
+                uint32_t b = current.data[(x * 2 + 1) + (y * 2) * current.width];
+                uint32_t c = current.data[(x * 2) + (y * 2 + 1) * current.width];
+                uint32_t d = current.data[(x * 2 + 1) + (y * 2 + 1) * current.width];
+
+                next.data[x + y * newWidth] = blend({ a, b, c, d });
+            }
+        }
+
+        texture.mipLevels.emplace_back(next);
+        current = std::move(next);
     }
 }
 

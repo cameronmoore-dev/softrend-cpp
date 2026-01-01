@@ -1,5 +1,8 @@
 #include "Scene_Suzanne.h"
 
+#include <stb_image/stb_image.h>
+#include <iostream>
+
 Scene_Suzanne::Scene_Suzanne(jawl::Window &window) :
     m_window(window)
 {
@@ -17,9 +20,29 @@ void Scene_Suzanne::start()
     shader.setUniform<Mat4>(shader.view, m_camera.view());
     shader.setUniform<Mat4>(shader.projection, m_camera.projection());
 
-    shader.setUniform<Image>(shader.diffuseMap, m_texture);
-    shader.setUniform<Image>(shader.normalMap, m_normalMap);
-    shader.setUniform<Image>(shader.specularMap, m_specularMap);
+    stbi_set_flip_vertically_on_load(true);
+
+    int iw, ih, ic;
+    uint8_t *t = stbi_load("./resources/suzanne_diffuse.tga", &iw, &ih, &ic, 0);
+    m_texture = m_renderer.createTexture(t, iw, ih, ic);
+
+    uint8_t *n = stbi_load("./resources/suzanne_normal.tga", &iw, &ih, &ic, 0);
+    m_normalMap = m_renderer.createTexture(n, iw, ih, ic);
+
+    uint8_t *s = stbi_load("./resources/suzanne_specular.tga", &iw, &ih, &ic, 0);
+    m_specularMap = m_renderer.createTexture(s, iw, ih, ic);
+
+    m_renderer.generateMipMaps(m_texture);
+    m_renderer.generateMipMaps(m_normalMap);
+    m_renderer.generateMipMaps(m_specularMap);
+
+    stbi_image_free(t);
+    stbi_image_free(n);
+    stbi_image_free(s);
+
+    shader.setUniform<Texture>(shader.diffuseMap, m_texture);
+    shader.setUniform<Texture>(shader.normalMap, m_normalMap);
+    shader.setUniform<Texture>(shader.specularMap, m_specularMap);
 
     uint16_t w, h;
     m_renderer.size(w, h);

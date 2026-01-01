@@ -30,6 +30,11 @@ struct Vec4f
     const Vec4f operator*(const Vec4f& rhs) const { return { x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w }; }
     const Vec4f operator/(const Vec4f& rhs) const { return { x / rhs.x, y / rhs.y, z / rhs.z, w / rhs.w }; }
 
+    // const Vec4f operator+(const Vec3f& rhs) const { return { x + rhs.x, y + rhs.y, z + rhs.z }; }
+    // const Vec4f operator-(const Vec3f& rhs) const { return { x - rhs.x, y - rhs.y, z - rhs.z }; }
+    // const Vec4f operator*(const Vec3f& rhs) const { return { x * rhs.x, y * rhs.y, z * rhs.z }; }
+    // const Vec4f operator/(const Vec3f& rhs) const { return { x / rhs.x, y / rhs.y, z / rhs.z }; }
+
     const Vec4f operator+(const float& value) const { return { x + value, y + value, z + value, w + value }; }
     const Vec4f operator-(const float& value) const { return { x - value, y - value, z - value, w - value }; }
     const Vec4f operator*(const float& value) const { return { x * value, y * value, z * value, w * value }; }
@@ -78,6 +83,11 @@ struct Vec3f
     const Vec3f operator-(const Vec3f& rhs) const { return { x - rhs.x, y - rhs.y, z - rhs.z }; }
     const Vec3f operator*(const Vec3f& rhs) const { return { x * rhs.x, y * rhs.y, z * rhs.z }; }
     const Vec3f operator/(const Vec3f& rhs) const { return { x / rhs.x, y / rhs.y, z / rhs.z }; }
+
+    const Vec3f operator+(const Vec4f& rhs) const { return { x + rhs.x, y + rhs.y, z + rhs.z }; }
+    const Vec3f operator-(const Vec4f& rhs) const { return { x - rhs.x, y - rhs.y, z - rhs.z }; }
+    const Vec3f operator*(const Vec4f& rhs) const { return { x * rhs.x, y * rhs.y, z * rhs.z }; }
+    const Vec3f operator/(const Vec4f& rhs) const { return { x / rhs.x, y / rhs.y, z / rhs.z }; }
 
     const Vec3f operator+(const float& value) const { return { x + value, y + value, z + value }; }
     const Vec3f operator-(const float& value) const { return { x - value, y - value, z - value }; }
