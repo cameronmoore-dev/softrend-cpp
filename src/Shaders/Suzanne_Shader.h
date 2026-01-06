@@ -27,27 +27,31 @@ public:
 
     bool isShadowPass = false;
 
+    Vec3f vertColour = {};
+
 private:
-    void vertex(const Vertex& v, glVertex& copy) override
+    void vertex(float *vertex) override
     {
+        Vec3f position = getVertexAttribData3(vertex, 0);
+        Vec3f normals = getVertexAttribData3(vertex, 1);
+
         // if (isShadowPass)
         // {
         //     copy.position = Matrix::multiply(lightProj, Matrix::multiply(lightView, Matrix::multiply(model, v.position)));
         //     return;
         // }
-
-        copy.uv = v.uv;
-        // copy.colour = v.colour;
-        copy.normal = Matrix::multiplyVec3(*model, v.normal);
-        copy.tangent = Matrix::multiplyVec3(*model, v.tangent);
-        copy.bitangent = Matrix::multiplyVec3(*model, v.bitangent);
-
-        // copy.fragPos = Matrix::multiply(*model, v.position);
-        copy.position = Matrix::multiply(*projection, Matrix::multiply(*view, Matrix::multiply(*model, v.position)));
+        
+        Vec3f normal = normalise(Matrix::multiplyVec3(*model, normals));
+        vertex[4] = normal.x;
+        vertex[5] = normal.y;
+        vertex[6] = normal.z;
+        glPosition(0, vertex, Matrix::multiply(*projection, Matrix::multiply(*view, Matrix::multiply(*model, position))));
     }
 
-    bool fragment(const Vec3f& barycentric, const glTriangle& polygon, Vec4f& finalColour) override
+    bool fragment(const Vec3f& barycentric, const face_t &face, Vec4f& fragColour) override
     {
+        std::array<Vec3f, 3> normals = getFaceAttrib(face, 1);
+
         // Vec4f fragWorldPos = polygon.v0.fragPos * barycentric.x + polygon.v1.fragPos * barycentric.y + polygon.v2.fragPos * barycentric.z;
         // Vec4f fragPos = Matrix::multiply(lightProj, Matrix::multiply(lightView, fragWorldPos));
 
@@ -69,18 +73,18 @@ private:
         // float bias = std::max(0.05f * (1.0f - dot(normal, lightDir)), 0.005f);
         // float shadow = currentDepth - bias > shadowDepth ? 1.f : 0.f;
 
-        // Vec3f normal = sampleNormalMap(polygon, *normalMap, barycentric);
-        Vec3f normal = polygon.v0.normal * barycentric.x + polygon.v1.normal * barycentric.y + polygon.v2.normal * barycentric.z;
+        Vec3f normal = sampleNormalMap(face, *normalMap, barycentric);
+        // Vec3f normal = normals[0] * barycentric.x + normals[1] * barycentric.y + normals[2] * barycentric.z;
         normal = normalise(normal);
 
         float diff = std::max(0.f, math::dot(normal, lightDir));
         Vec3f diffuse = colour * diff;
 
-        // Vec3f halfwayDir = normalise(lightDir + lightDir);
-        // float spec = std::pow(std::max(dot(normal, halfwayDir), 0.f), 128);
-        // Vec3f specular = sampleSpecularMap(polygon, *specularMap, barycentric) * spec;
+        Vec3f halfwayDir = normalise(lightDir + lightDir);
+        float spec = std::pow(std::max(dot(normal, halfwayDir), 0.f), 64);
+        Vec3f specular = sampleSpecularMap(face, *specularMap, barycentric) * spec;
 
-        finalColour = vec4((ambient + (diffuse) /* * (1.0f - shadow) */), 1.f) * sampleDiffuseMap(polygon, *diffuseMap, barycentric);
+        fragColour = vec4((ambient + (diffuse + specular) /* * (1.0f - shadow) */), 1.f) * sampleDiffuseMap(2, face, *diffuseMap, barycentric);
         return true;
     }
 };

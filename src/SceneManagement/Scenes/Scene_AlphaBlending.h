@@ -35,9 +35,9 @@ private:
     Model m_cube = Model("./resources/model_cube.obj");
     Model m_plane = Model("./resources/model_plane.obj");
     
-    Image m_grassTexture = Image("./resources/texture_grass.tga");
-    Image m_dirtTexture = Image("./resources/texture_dirtcube.tga");
-    Image m_windowTexture = Image("./resources/texture_window.tga");
+    // Image m_grassTexture = Image("./resources/texture_grass.tga");
+    // Image m_dirtTexture = Image("./resources/texture_dirtcube.tga");
+    // Image m_windowTexture = Image("./resources/texture_window.tga");
 
     Mat4 m_grassModel = Matrix::identity();
     Mat4 m_cubeModel = Matrix::identity();

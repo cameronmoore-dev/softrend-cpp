@@ -4,6 +4,7 @@
 #include <iterator>
 #include <initializer_list>
 #include <cmath>
+#include <cstring>
 
 #include <iostream>
 
@@ -17,8 +18,10 @@
 
 Renderer::Renderer(void *bufferInfo)
 {
-    input.reserve(6);
-    output.reserve(6);
+    m_input.reserve(6);
+    m_output.reserve(6);
+
+    // vbo.reserve(17'000);
 
     // depthMap.resize(1024*1024, 1.f);
     previous = getTimeSeconds();
@@ -54,12 +57,20 @@ void Renderer::clear(uint32_t colour)
 
 void Renderer::viewport(int x, int y, int w, int h)
 {
-    m_viewportWidth = w;
+    m_viewportWidth  = w;
     m_viewportHeight = h;
 }
 
-void Renderer::draw(const std::vector<Vertex>& vertices, IShader& shader)
+void Renderer::draw(const void* vertices, int size, IShader& shader)
 {
+    m_vbo.resize(_priv::vertexdef.stride * size);
+    std::memcpy(m_vbo.data(), vertices, _priv::vertexdef.size * size);
+
+    m_clipped.clear();
+    m_clipped.reserve(_priv::vertexdef.stride * NUM_PLANES);
+
+    shader.reset();
+
     double current = getTimeSeconds();
     dt += current - previous;
     previous = current;
@@ -67,49 +78,60 @@ void Renderer::draw(const std::vector<Vertex>& vertices, IShader& shader)
     // viewportWidth   = renderMode == RenderMode::Shadow ? 1024 : m_context.m_width;
     // viewportHeight  = renderMode == RenderMode::Shadow ? 1024 : m_context.m_height;
     
-    for (uint32_t i = 0; i < vertices.size(); i+=3)
+    for (uint32_t i = 0; i < size; i+=3)
     {
-        glTriangle polygon;
-        shader.vertex(vertices[i],   polygon.v0);
-        shader.vertex(vertices[i+1], polygon.v1);
-        shader.vertex(vertices[i+2], polygon.v2);
+        int index = i * _priv::vertexdef.stride;
+        int v0 = index;
+        int v1 = index +  _priv::vertexdef.stride;
+        int v2 = index + (_priv::vertexdef.stride * 2);
 
-        input = { polygon.v0, polygon.v1, polygon.v2 };
+        shader.vertex(&m_vbo[v0]);
+        shader.vertex(&m_vbo[v1]);
+        shader.vertex(&m_vbo[v2]);
+        vertex_t _v0 = &m_vbo[v0];
+        vertex_t _v1 = &m_vbo[v1];
+        vertex_t _v2 = &m_vbo[v2];
+        
+        m_input = { _v0, _v1, _v2 };
         for (size_t p = 0; p < NUM_PLANES; p++)
         {
-            output.clear();
+            m_output.clear();
 
-            clipTriangle(input, output, p);
+            clipTriangle(m_input, m_output, p);
 
-            if (output.empty())
+            if (m_output.empty())
             {
-                input.clear();
+                m_input.clear();
                 break;
             }
 
-            input.swap(output);
+            m_input.swap(m_output);
         }
-
         
-        for (uint32_t j = 1; j + 1 < input.size(); j++)
+        for (uint32_t j = 1; j + 1 < m_input.size(); j++)
         {
             /* Copy the vertices so transforming doesn’t corrupt shared data */
-            glVertex v0 = input[0];
-            glVertex v1 = input[j];
-            glVertex v2 = input[j + 1];
-            
+            float v0[_priv::vertexdef.stride] = {};
+            float v1[_priv::vertexdef.stride] = {};
+            float v2[_priv::vertexdef.stride] = {};
+            std::memcpy(v0, m_input[0],   _priv::vertexdef.size);
+            std::memcpy(v1, m_input[j],   _priv::vertexdef.size);
+            std::memcpy(v2, m_input[j+1], _priv::vertexdef.size);
+
             transformVertex(v0);
             transformVertex(v1);
             transformVertex(v2);
 
-            float winding = edgeFunction(v0.position, v1.position, v2.position);
+            std::array<Vec4f, 3> positions = shader.getFaceAttrib4({ v0, v1, v2 }, 0);
+
+            float winding = edgeFunction(positions[0], positions[1], positions[2]);
             if (winding <= 0.f)
             {
                 continue;
             }
 
-            glTriangle clippedPoly { v0, v1, v2 };
-            rasterise(shader, clippedPoly);
+            face_t face = { v0, v1, v2 };
+            rasterise(shader, face);
         }
     }
 
@@ -117,43 +139,43 @@ void Renderer::draw(const std::vector<Vertex>& vertices, IShader& shader)
     // {
     //     Image dm;
     //     dm.fromDepthMap(depthMap, 1024, 1024);
-    //     dm.write("output.tga");
+    //     dm.write("m_output.tga");
     //     a=false;
     // }
 }
 
-void Renderer::transformVertex(glVertex& vertex)
+void Renderer::transformVertex(vertex_t vertex)
 {
-    Vec4f clip = vertex.position;
-
-    vertex.orig_uv = vertex.uv;
-
-    /* For Perspective Corrected Texture Mapping */
-    vertex.inverseW = 1.0f / clip.w;
-    vertex.uv *= 1.0f / clip.w;
+    float &vx = vertex[0];
+    float &vy = vertex[1];
+    float &vz = vertex[2];
+    float &vw = vertex[3];
 
     /* Perspective Division */
-    clip.x /= clip.w;
-    clip.y /= clip.w;
-    clip.z /= clip.w;
+    vx /= vw;
+    vy /= vw;
+    vz /= vw;
 
     /* To Screen Space Coordinates */
     Vec4f screenPos;
-    screenPos.x = (clip.x + 1.f) * 0.5f * m_viewportWidth;
-    screenPos.y = (clip.y + 1.f) * 0.5f * m_viewportHeight;
-    screenPos.z = clip.z;
+    screenPos.x = (vx + 1.f) * 0.5f * m_viewportWidth;
+    screenPos.y = (vy + 1.f) * 0.5f * m_viewportHeight;
+    screenPos.z = vz;
 
     /*  
         The extra '- 0.1f' is to stop flickering along the left and bottom screen edges after polygon clipping, 
         most likely due to floating-point precision issues.
         Might not be scalable with different screen resolutions. Test this later
     */
-    vertex.position = screenPos - 0.1f;
+    vx = screenPos.x - 0.1f;
+    vy = screenPos.y - 0.1f;
 }
 
-void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
+void Renderer::rasterise(IShader& shader, const face_t &face)
 {
-    boundingBox(polygon.v0.position, polygon.v1.position, polygon.v2.position);
+    std::array<Vec4f, 3> positions = shader.getFaceAttrib4(face, 0);
+
+    boundingBox(positions[0], positions[1], positions[2]);
 
     Vec2i p;
     for (p.y = m_bbMin.y; p.y <= m_bbMax.y; p.y++)
@@ -165,10 +187,10 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
                 continue;
             }
 
-            Vec3f point = barycentric(p, polygon.v0.position, polygon.v1.position, polygon.v2.position);
+            Vec3f point = barycentric(p, positions[0], positions[1], positions[2]);
             if (point.x >= 0 && point.y >= 0 && point.z >= 0)
             {
-                float z = polygon.v0.position.z * point.x + polygon.v1.position.z * point.y + polygon.v2.position.z * point.z;
+                float z = positions[0].z * point.x + positions[1].z * point.y + positions[2].z * point.z;
                 uint32_t idx = p.x + p.y * (m_viewportWidth);
                 
                 if (renderMode == RenderMode::Shadow)
@@ -180,27 +202,27 @@ void Renderer::rasterise(IShader& shader, const glTriangle& polygon)
                 }
                 else if (renderMode == RenderMode::Final)
                 {
-                    Vec4f linearColour;
-                    if (z < m_depthbuffer[idx] && shader.fragment(point, polygon, linearColour))
+                    Vec4f fragColour;
+                    if (z < m_depthbuffer[idx] && shader.fragment(point, face, fragColour))
                     {
                         m_depthbuffer[idx] = z;
-                        // Vec4f src = { linearColour.x * linearColour.w, linearColour.y * linearColour.w, linearColour.z * linearColour.w, linearColour.w };
+                        // Vec4f src = { fragColour.x * fragColour.w, fragColour.y * fragColour.w, fragColour.z * fragColour.w, fragColour.w };
                         // Vec4f dest = Utils::hexToRGBA(m_backBuffer[idx]);
                         // Vec4f blendColour = src + dest * (1.f - src.w);
 
                         // m_backBuffer[idx] = Utils::rgbaToHex(blendColour);
 
-                        uint8_t r = math::linearToSRGB(linearColour.x);
-                        uint8_t g = math::linearToSRGB(linearColour.y);
-                        uint8_t b = math::linearToSRGB(linearColour.z);
-                        uint8_t a = math::linearToSRGB(linearColour.w);
+                        uint8_t r = math::linearToSRGB(fragColour.x);
+                        uint8_t g = math::linearToSRGB(fragColour.y);
+                        uint8_t b = math::linearToSRGB(fragColour.z);
+                        uint8_t a = math::linearToSRGB(fragColour.w);
 
                         m_backbuffer[idx] = (r<<16) | (g<<8) | b | (a<<24);
 
-                        // int R = std::clamp(int(linearColour.x * 255.f), 0, 255);
-                        // int G = std::clamp(int(linearColour.y * 255.f), 0, 255);
-                        // int B = std::clamp(int(linearColour.z * 255.f), 0, 255);
-                        // int A = std::clamp(int(linearColour.w * 255.f), 0, 255);
+                        // int R = std::clamp(int(fragColour.x * 255.f), 0, 255);
+                        // int G = std::clamp(int(fragColour.y * 255.f), 0, 255);
+                        // int B = std::clamp(int(fragColour.z * 255.f), 0, 255);
+                        // int A = std::clamp(int(fragColour.w * 255.f), 0, 255);
 
                         // m_backbuffer[idx] = (R<<16|G<<8|B|A<<24);
                     }
@@ -236,53 +258,66 @@ float Renderer::edgeFunction(const Vec4f& a, const Vec4f& b, const Vec4f& c)
     return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
-glVertex Renderer::interpolate(const glVertex& a, const glVertex& b, const int plane)
+vertex_t Renderer::interpolate(const vertex_t a, const vertex_t b, const int plane)
 {
     float t = 1.f;
 
+    std::array<float, 4> aPos;
+    std::array<float, 4> bPos;
+    std::memcpy(aPos.data(), &a[0], sizeof(float) * aPos.size());
+    std::memcpy(bPos.data(), &b[0], sizeof(float) * bPos.size());
+
     switch (plane)
     {
-        case LEFT_PLANE:    t = (-a.position.x - a.position.w) / ((b.position.x - a.position.x) + (b.position.w - a.position.w)); break;
-        case RIGHT_PLANE:   t =  (a.position.w - a.position.x) / ((b.position.x - a.position.x) - (b.position.w - a.position.w)); break;
-        case BOTTOM_PLANE:  t = (-a.position.y - a.position.w) / ((b.position.y - a.position.y) + (b.position.w - a.position.w)); break;
-        case TOP_PLANE:     t =  (a.position.w - a.position.y) / ((b.position.y - a.position.y) - (b.position.w - a.position.w)); break;
-        case NEAR_PLANE:    t = (-a.position.z - a.position.w) / ((b.position.z - a.position.z) + (b.position.w - a.position.w)); break;
-        case FAR_PLANE:     t =  (a.position.w - a.position.z) / ((b.position.z - a.position.z) - (b.position.w - a.position.w)); break;
+        case LEFT_PLANE:    t = (-aPos[0] - aPos[3]) / ((bPos[0] - aPos[0]) + (bPos[3] - aPos[3])); break;
+        case RIGHT_PLANE:   t =  (aPos[3] - aPos[0]) / ((bPos[0] - aPos[0]) - (bPos[3] - aPos[3])); break;
+        case BOTTOM_PLANE:  t = (-aPos[1] - aPos[3]) / ((bPos[1] - aPos[1]) + (bPos[3] - aPos[3])); break;
+        case TOP_PLANE:     t =  (aPos[3] - aPos[1]) / ((bPos[1] - aPos[1]) - (bPos[3] - aPos[3])); break;
+        case NEAR_PLANE:    t = (-aPos[2] - aPos[3]) / ((bPos[2] - aPos[2]) + (bPos[3] - aPos[3])); break;
+        case FAR_PLANE:     t =  (aPos[3] - aPos[2]) / ((bPos[2] - aPos[2]) - (bPos[3] - aPos[3])); break;
         default:            break;
     }
 
-    glVertex out;
-    out.position = a.position + (b.position - a.position) * t;
-    out.uv = a.uv + (b.uv - a.uv) * t;
-    out.normal = a.normal + (b.normal - a.normal) * t;
-    out.tangent = a.tangent + (b.tangent - a.tangent) * t;
-    out.bitangent = a.bitangent + (b.bitangent - a.bitangent) * t;
-    out.colour = a.colour + (b.colour - a.colour) * t;
+    for (int i = 0; i < _priv::vertexdef.stride; i++)
+    {
+        m_clipped.emplace_back(a[i] + (b[i] - a[i]) * t);
+    }
 
-    return out;
+    int index = m_clipped.size() - _priv::vertexdef.stride;
+    return &m_clipped[index];
+
+    // glVertex out;
+    // out.position = a.position + (b.position - a.position) * t;
+    // out.normal = a.normal + (b.normal - a.normal) * t;
+    // out.uv = a.uv + (b.uv - a.uv) * t;
+    // out.tangent = a.tangent + (b.tangent - a.tangent) * t;
+    // out.bitangent = a.bitangent + (b.bitangent - a.bitangent) * t;
+    // out.colour = a.colour + (b.colour - a.colour) * t;
+
+    // return out;
 }
 
-void Renderer::clipTriangle(std::vector<glVertex>& polygon, std::vector<glVertex>& out, const int plane)
+void Renderer::clipTriangle(std::vector<vertex_t> &face, std::vector<vertex_t> &out, const int plane)
 {
-    auto isInside = [](const glVertex& v, const int plane)
+    auto isInside = [](const vertex_t v, const int plane)
     {
-        const Vec4f& p = v.position;
+        Vec4f pos = { v[0], v[1], v[2], v[3] };
         switch (plane)
         {
-            case LEFT_PLANE:    return p.x >= -p.w;
-            case RIGHT_PLANE:   return p.x <= p.w;
-            case BOTTOM_PLANE:  return p.y >= -p.w;
-            case TOP_PLANE:     return p.y <= p.w;
-            case NEAR_PLANE:    return p.z >= -p.w;
-            case FAR_PLANE:     return p.z <= p.w;
+            case LEFT_PLANE:    return pos.x >= -pos.w;
+            case RIGHT_PLANE:   return pos.x <= pos.w;
+            case BOTTOM_PLANE:  return pos.y >= -pos.w;
+            case TOP_PLANE:     return pos.y <= pos.w;
+            case NEAR_PLANE:    return pos.z >= -pos.w;
+            case FAR_PLANE:     return pos.z <= pos.w;
             default:            return false;
         }
     };
 
-    for (size_t v = 0; v < polygon.size(); v++)
+    for (size_t v = 0; v < face.size(); v++)
     {
-        const glVertex& curr = polygon[v];
-        const glVertex& next = polygon[(v + 1) % polygon.size()];
+        vertex_t curr = face[v];
+        vertex_t next = face[(v + 1) % face.size()];
 
         bool currInside = isInside(curr, plane);
         bool nextInside = isInside(next, plane);

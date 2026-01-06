@@ -19,8 +19,21 @@ public:
     Renderer(void *bufferInfo);
 
     void clear(uint32_t colour);
-    void draw(const std::vector<Vertex>& vertices, IShader& shader);
+    void draw(const void* vertices, int size, IShader& shader);
     void viewport(int x, int y, int w, int h);
+
+    void setVertexAttrib(uint16_t size, uint8_t index, uint8_t count)
+    {
+        _priv::attrib_t attrib =
+        {
+            .index = index,
+            .count = count
+        };
+
+        _priv::vertexdef.attribs.emplace_back(attrib);
+        _priv::vertexdef.size = size;
+        _priv::vertexdef.stride = size / sizeof(float);
+    }
 
     Texture createTexture(uint8_t *data, int width, int height, int channels);
     void generateMipMaps(Texture &texture);
@@ -36,6 +49,7 @@ public:
     inline static std::vector<float> depthMap;
     
     RenderMode renderMode = RenderMode::Final;
+
 private:
     /* Pointers to shared data between the Window and the Renderer through the EchoBufferInfo structure */
     uint32_t *m_backbuffer = nullptr;
@@ -46,23 +60,28 @@ private:
     uint16_t m_viewportWidth = 0;
     uint16_t m_viewportHeight = 0;
 
+    std::vector<float> m_vbo;
+
     Vec2f m_bbMin;
     Vec2f m_bbMax;
     bool a = true;
+
+    bool b = false;
     
 private:
-    void transformVertex(glVertex& vertex);
+    void transformVertex(vertex_t vertex);
     
-    void rasterise(IShader& shader, const glTriangle& polygon);
+    void rasterise(IShader &shader, const face_t &face);
     void boundingBox(const Vec4f& a, const Vec4f& b, const Vec4f& c);
     Vec3f barycentric(const Vec2i& p, const Vec4f& a, const Vec4f& b, const Vec4f& c);
     float edgeFunction(const Vec4f& a, const Vec4f& b, const Vec4f& c);
 
-    void clipTriangle(std::vector<glVertex>& polygon, std::vector<glVertex>& out, int plane);
-    glVertex interpolate(const glVertex& a, const glVertex& b, int plane);
+    void clipTriangle(std::vector<vertex_t> &face, std::vector<vertex_t> &out, int plane);
+    vertex_t interpolate(const vertex_t a, const vertex_t b, const int plane);
 
-    std::vector<glVertex> input;
-    std::vector<glVertex> output;
+    std::vector<vertex_t> m_input;
+    std::vector<vertex_t> m_output;
+    std::vector<float>    m_clipped;
 
     double dt = 0.0;
     double previous = 0.0;

@@ -23,8 +23,9 @@ public:
     static Mat4 lookAt(const Vec3f& pos, const Vec3f& forward, const Vec3f& up);
 
     static Mat4 translate(const Vec3f& vec);
-    static Mat4 rotate(float angle, uint32_t axis);
+    static Mat4 rotate(const float angle, const Vec3f &axis);
     static Mat4 scale(const Vec3f& vec);
+    static Mat4 transform(const Mat4 &t, const Mat4 &r, const Mat4 &s);
 
     static Mat4 identity();
 

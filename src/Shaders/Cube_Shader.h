@@ -14,16 +14,16 @@ public:
 
     Uniform<Texture> texture;
 
-    void vertex(const Vertex& v, glVertex& copy) override
+    void vertex(float *vertex) override
     {
-        copy.uv = v.uv;
-        copy.normal = v.normal;
-        copy.position = Matrix::multiply(*projection, Matrix::multiply(*view, Matrix::multiply(*model, v.position)));
+        // copy.uv = v.uv;
+        // copy.normal = v.normal;
+        // copy.position = Matrix::multiply(*projection, Matrix::multiply(*view, Matrix::multiply(*model, v.position)));
     }
 
-    bool fragment(const Vec3f& barycentric, const glTriangle& polygon, Vec4f& finalColour) override
+    bool fragment(const Vec3f& barycentric, const face_t &face, Vec4f& finalColour) override
     {
-        finalColour = sampleDiffuseMap(polygon, *texture, barycentric);
+        // finalColour = sampleDiffuseMap(polygon, *texture, barycentric);
         return true;
     }
 };

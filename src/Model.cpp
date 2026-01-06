@@ -25,7 +25,7 @@ void Model::loadModel(const std::string& dir)
         return;
     }
     
-    std::vector<Vec3f> positions;
+    std::vector<Vec4f> positions;
     std::vector<Vec2f> texCoords;
     std::vector<Vec3f> normals;
 
@@ -43,8 +43,8 @@ void Model::loadModel(const std::string& dir)
         /* Vertex */
         if (prefix == "v")
         {
-            Vec3f v;
-            s_stream >> v.x >> v.y >> v.z;
+            Vec4f v;
+            s_stream >> v.x >> v.y >> v.z >> v.w;
             positions.emplace_back(v);
         }
 
@@ -110,16 +110,16 @@ void Model::computeTangents()
 {
     for (uint32_t i = 0; i < vertices.size(); i+=3)
     {
-        Vec3f pos0 = vertices[i].position;
-        Vec3f pos1 = vertices[i+1].position;
-        Vec3f pos2 = vertices[i+2].position;
+        Vec4f pos0 = vertices[i].position;
+        Vec4f pos1 = vertices[i+1].position;
+        Vec4f pos2 = vertices[i+2].position;
 
         Vec2f uv0 = vertices[i].uv;
         Vec2f uv1 = vertices[i+1].uv;
         Vec2f uv2 = vertices[i+2].uv;
 
-        Vec3f edge1 = pos1 - pos0;
-        Vec3f edge2 = pos2 - pos0;
+        Vec4f edge1 = pos1 - pos0;
+        Vec4f edge2 = pos2 - pos0;
 
         Vec2f delta1 = uv1 - uv0;
         Vec2f delta2 = uv2 - uv0;

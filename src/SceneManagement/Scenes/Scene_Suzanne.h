@@ -45,11 +45,8 @@ private:
 
     Mat4 m_model = Matrix::identity();
 
-    Mat4 m_translate = Matrix::identity();
-    Mat4 m_rotation = Matrix::identity();
-    Mat4 m_scale = Matrix::identity();
-
-    float m_angle = 0.f;
+    Vec3f position = {};
+    float m_angle = 0;
     double m_dt = 0.f;
 
     bool a = true;

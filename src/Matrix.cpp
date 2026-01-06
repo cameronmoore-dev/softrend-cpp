@@ -114,7 +114,7 @@ Mat4 Matrix::orthographic(int32_t left, int32_t right, int32_t bottom, int32_t t
 Mat4 Matrix::lookAt(const Vec3f& pos, const Vec3f& forward, const Vec3f& up)
 {
     const Vec3f f = math::normalise(pos - forward);        /* Local Forward */
-    const Vec3f s = math::normalise(math::cross(f, up));  /* Local Side */
+    const Vec3f s = math::normalise(math::cross(f, up));   /* Local Side */
     const Vec3f u = math::cross(s, f);                     /* Local Up */
 
     Mat4 result = {};
@@ -140,65 +140,56 @@ Mat4 Matrix::lookAt(const Vec3f& pos, const Vec3f& forward, const Vec3f& up)
 
 Mat4 Matrix::translate(const Vec3f& vec)
 {
-    Mat4 result = identity();
-    result[0][3] = vec.x;
-    result[1][3] = vec.y;
-    result[2][3] = vec.z;
+    Mat4 t = identity();
 
-    return result;
+    t[0][3] = vec.x;
+    t[1][3] = vec.y;
+    t[2][3] = vec.z;
+
+    return t;
 }
 
-Mat4 Matrix::rotate(float angle, uint32_t axis)
+Mat4 Matrix::rotate(const float angle, const Vec3f &axis)
 {
-    Mat4 result = identity();
-    
-    angle = math::degToRad(angle);
+    const float _angle = math::degToRad(angle);
+    const Vec3f _axis = math::normalise(axis);
 
-    switch (axis)
-    {
-        /* X */
-        case 0:
-        {
-            result[0][0] = 1.f;
-            result[1][1] = std::cos(angle);
-            result[1][2] = -std::sin(angle);
-            result[2][1] = std::sin(angle);
-            result[2][2] = std::cos(angle);
-        } break;
+    float c = cos(angle);
+    float s = sin(angle);
+    float t = 1 - c;
 
-        /* Y */
-        case 1:
-        {
-            result[0][0] = std::cos(angle);
-            result[0][2] = std::sin(angle);
-            result[2][0] = -std::sin(angle);
-            result[1][1] = 1;
-            result[2][2] = std::cos(angle);
-        } break;
+    Mat4 r = identity();
 
-        /* Z */
-        default:
-        {
-            result[0][0] = std::cos(angle);
-            result[0][1] = -std::sin(angle);
-            result[1][0] = std::sin(angle);
-            result[1][1] = std::cos(angle);
-            result[2][2] = 1;
-        } break;
-    }
+    r[0][0] = t * _axis.x * _axis.x + c;
+    r[0][1] = t * _axis.x * _axis.y - s * _axis.z;
+    r[0][2] = t * _axis.x * _axis.z + s * _axis.y;
 
-    return result;
+    r[1][0] = t * _axis.x * _axis.y + s * _axis.z;
+    r[1][1] = t * _axis.y * _axis.y + c;
+    r[1][2] = t * _axis.y * _axis.z - s * _axis.x;
+
+    r[2][0] = t * _axis.x * _axis.z - s * _axis.y;
+    r[2][1] = t * _axis.y * _axis.z + s * _axis.x;
+    r[2][2] = t * _axis.z * _axis.z + c;
+
+    return r;
 }
 
 Mat4 Matrix::scale(const Vec3f& vec)
 {
-    Mat4 result = identity();
-    result[0][0] = vec.x;
-    result[1][1] = vec.y;
-    result[2][2] = vec.z;
-    result[3][3] = 1.f;
+    Mat4 s = identity();
 
-    return result;
+    s[0][0] = vec.x;
+    s[1][1] = vec.y;
+    s[2][2] = vec.z;
+    s[3][3] = 1.f;
+
+    return s;
+}
+
+Mat4 Matrix::transform(const Mat4 &t, const Mat4 &r, const Mat4 &s)
+{
+    return multiply(t, multiply(r, s));
 }
 
 Mat4 Matrix::identity()

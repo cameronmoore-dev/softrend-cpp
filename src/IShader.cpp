@@ -2,6 +2,11 @@
 
 #include <cmath>
 
+Vec3f IShader::vec3(const Vec4f &vec)
+{
+    return { vec.x, vec.y, vec.z };
+}
+
 Vec4f IShader::vec4(const Vec3f &vec, const float w)
 {
     return { vec.x, vec.y, vec.z, w };
@@ -43,23 +48,22 @@ Vec3f IShader::normalise(const Vec3f& vec)
     return { vec.x / mag, vec.y / mag, vec.z / mag };
 }
 
-void IShader::derivatives(const glTriangle& polygon, Texture &texture, float& dudx, float& dudy, float& dvdx, float& dvdy)
+void IShader::derivatives(const int uvIndex, const face_t &face, Texture &texture, float& dudx, float& dudy, float& dvdx, float& dvdy)
 {
-    const float texWidth = texture.mipLevels[0].width;
+    const float texWidth  = texture.mipLevels[0].width;
     const float texHeight = texture.mipLevels[0].height;
 
-    const auto& p0 = polygon.v0.position;
-    const auto& p1 = polygon.v1.position;
-    const auto& p2 = polygon.v2.position;
+    int stride = _priv::vertexdef.stride;
+    std::array<Vec4f, 3> positions = getFaceAttrib4(face, 0);
 
-    float x1 = p1.x - p0.x;
-    float y1 = p1.y - p0.y;
-    float x2 = p2.x - p0.x;
-    float y2 = p2.y - p0.y;
+    float x1 = positions[1].x - positions[0].x;
+    float y1 = positions[1].y - positions[0].y;
+    float x2 = positions[2].x - positions[0].x;
+    float y2 = positions[2].y - positions[0].y;
 
-    Vec2f uv0 = polygon.v0.orig_uv;
-    Vec2f uv1 = polygon.v1.orig_uv;
-    Vec2f uv2 = polygon.v2.orig_uv;
+    Vec2f uv0 = getVertexAttribData2(&face.v0[0], uvIndex);
+    Vec2f uv1 = getVertexAttribData2(&face.v1[0], uvIndex);
+    Vec2f uv2 = getVertexAttribData2(&face.v2[0], uvIndex);
 
     uv0.x *= texWidth;
     uv0.y *= texHeight;
@@ -91,24 +95,24 @@ float IShader::lod(float dudx, float dudy, float dvdx, float dvdy)
 {
     float dx = dudx * dudx + dvdx * dvdx;
     float dy = dudy * dudy + dvdy * dvdy;
-    float rho = sqrt(std::max(dx, dy));
-    float lod = std::log2(std::max(rho, 1e-5f));
-
-    return std::max(0.0f, lod);
+    float rho = std::max(dx, dy);
+    return 0.5f * std::log2(rho);
 }
 
-Vec2f IShader::perspectiveCorrectedUV(const glTriangle& polygon, const Vec3f& barycentric)
+Vec2f IShader::perspectiveCorrectedUV(const int uvIndex, const face_t &face, const Vec3f& barycentric)
 {
     /* Perspective-correct interpolation */
-    float invInterp =       polygon.v0.inverseW * barycentric.x +
-                            polygon.v1.inverseW * barycentric.y +
-                            polygon.v2.inverseW * barycentric.z;
+    // float invInterp = inverseWs[vertIndex - 3] * barycentric.x +
+    //                   inverseWs[vertIndex - 2] * barycentric.y +
+    //                   inverseWs[vertIndex - 1] * barycentric.z;
 
-    Vec2f uvOverZInterp =   polygon.v0.uv * barycentric.x +
-                            polygon.v1.uv * barycentric.y +
-                            polygon.v2.uv * barycentric.z;
-
-    Vec2f finalUV = uvOverZInterp / invInterp;
+    Vec2f uv0 = getVertexAttribData2(&face.v0[0], uvIndex);
+    Vec2f uv1 = getVertexAttribData2(&face.v1[0], uvIndex);
+    Vec2f uv2 = getVertexAttribData2(&face.v2[0], uvIndex);
+    
+    Vec2f finalUV = uv0 * barycentric.x +
+                    uv1 * barycentric.y +
+                    uv2 * barycentric.z;
 
     return { finalUV.x, finalUV.y };
 }
@@ -191,16 +195,41 @@ Vec4f IShader::pixelRGBA(const Texture &texture, float u, float v, float lod)
     return { r, g, b, a };
 }
 
+Vec4f IShader::pixelRGBA(const Texture &texture, float u, float v)
+{
+    // uint8_t level = std::clamp((int)(lod + 0.5f), 0, (int)texture.mipLevels.size() - 1);
+    // const MipMap &mip = texture.mipLevels[level];
+
+    // uint32_t result = bilinear(u, v, mip);
+
+    int x = u * (texture.mipLevels[0].width - 1);
+    int y = v * (texture.mipLevels[0].height - 1);
+
+    uint32_t result = texture.mipLevels[0].data[x + y * texture.mipLevels[0].width];
+
+    float r = srgbToLinear((result >> 16) & 0xFF);
+    float g = srgbToLinear((result >> 8) & 0xFF);
+    float b = srgbToLinear(result & 0xFF);
+    float a = srgbToLinear((result >> 24) & 0xFF);
+
+    // float r = ((result >> 16) & 0xFF) / 255.f;
+    // float g = ((result >> 8)  & 0xFF) / 255.f;
+    // float b = ((result >> 0)  & 0xFF) / 255.f;
+    // float a = ((result >> 24) & 0xFF) / 255.f;
+
+    return { r, g, b, a };
+}
+
 Vec3f IShader::pixelRGB(const Texture &texture, float u, float v, float lod)
 {
     uint8_t level = std::clamp((int)(lod + 0.5f), 0, (int)texture.mipLevels.size() - 1);
     const MipMap &mip = texture.mipLevels[level];
 
-    uint32_t result = bilinear(u, v, mip);
+    // uint32_t result = bilinear(u, v, mip);
 
-    // int x = u * (mip.width - 1);
-    // int y = v * (mip.height - 1);
-    // uint32_t result = mip.data[x + y * mip.width];
+    int x = u * (mip.width - 1);
+    int y = v * (mip.height - 1);
+    uint32_t result = mip.data[x + y * mip.width];
 
     float r = ((result >> 16) & 0xFF) / 255.f;
     float g = ((result >> 8)  & 0xFF) / 255.f;
@@ -209,47 +238,67 @@ Vec3f IShader::pixelRGB(const Texture &texture, float u, float v, float lod)
     return { r, g, b };
 }
 
-Vec4f IShader::sampleDiffuseMap(const glTriangle& polygon, Texture &texture, const Vec3f& barycentric)
+Vec3f IShader::pixelRGB(const Texture &texture, float u, float v)
 {
-    float dudx, dudy, dvdx, dvdy;
-    derivatives(polygon, texture, dudx, dudy, dvdx, dvdy);
+    // uint8_t level = std::clamp((int)(lod + 0.5f), 0, (int)texture.mipLevels.size() - 1);
+    // const MipMap &mip = texture.mipLevels[level];
 
-    Vec2f uv = perspectiveCorrectedUV(polygon, barycentric);
+    // uint32_t result = bilinear(u, v, mip);
 
-    return pixelRGBA(texture, uv.x, uv.y, lod(dudx, dudy, dvdx, dvdy));
+    const MipMap &mip = texture.mipLevels[0];
+
+    int x = u * (mip.width - 1);
+    int y = v * (mip.height - 1);
+    uint32_t result = mip.data[x + y * mip.width];
+
+    float r = ((result >> 16) & 0xFF) / 255.f;
+    float g = ((result >> 8)  & 0xFF) / 255.f;
+    float b = ((result >> 0)  & 0xFF) / 255.f;
+
+    return { r, g, b };
 }
 
-Vec3f IShader::sampleNormalMap(const glTriangle& polygon, Texture &texture, const Vec3f& barycentric)
+Vec4f IShader::sampleDiffuseMap(const int uvIndex, const face_t &face, Texture &texture, const Vec3f& barycentric)
 {
-    // Perspective-correct TBN
-    Vec3f T = polygon.v0.tangent * barycentric.x + polygon.v1.tangent * barycentric.y + polygon.v2.tangent * barycentric.z;
-    Vec3f B = polygon.v0.bitangent * barycentric.x + polygon.v1.bitangent * barycentric.y + polygon.v2.bitangent * barycentric.z;
-    Vec3f N = polygon.v0.normal * barycentric.x + polygon.v1.normal * barycentric.y + polygon.v2.normal * barycentric.z;
-
     float dudx, dudy, dvdx, dvdy;
-    derivatives(polygon, texture, dudx, dudy, dvdx, dvdy);
+    derivatives(uvIndex, face, texture, dudx, dudy, dvdx, dvdy);
     float _lod = lod(dudx, dudy, dvdx, dvdy);
 
-    Vec2f uv = perspectiveCorrectedUV(polygon, barycentric);
-    Vec3f texel = pixelRGB(texture, uv.x, uv.y, _lod);
-    Vec3f normal;
-    normal.x = texel.x * 2.f - 1.f;
-    normal.y = texel.y * 2.f - 1.f;
-    normal.z = texel.z * 2.f - 1.f;
-    normal = normalise(normal);
+    Vec2f uv = perspectiveCorrectedUV(uvIndex, face, barycentric);
+    return pixelRGBA(texture, uv.x, uv.y, _lod);
+}
 
+Vec3f IShader::sampleNormalMap(const face_t &face, Texture &texture, const Vec3f& barycentric)
+{
+    int stride = getVertexStride();
+    std::array<Vec3f, 3> normals = getFaceAttrib(face, 1);
+    std::array<Vec3f, 3> tangents = getFaceAttrib(face, 3);
+    std::array<Vec3f, 3> bitangents = getFaceAttrib(face, 4);
+
+    // Perspective-correct TBN
+    Vec3f T = tangents[0] * barycentric.x + tangents[1] * barycentric.y + tangents[2] * barycentric.z;
+    Vec3f B = bitangents[0] * barycentric.x + bitangents[1] * barycentric.y + bitangents[2] * barycentric.z;
+    Vec3f N = normals[0] * barycentric.x + normals[1] * barycentric.y + normals[2] * barycentric.z;
+
+    float dudx, dudy, dvdx, dvdy;
+    derivatives(2, face, texture, dudx, dudy, dvdx, dvdy);
+    float _lod = lod(dudx, dudy, dvdx, dvdy);
+
+    Vec2f uv = perspectiveCorrectedUV(2, face, barycentric);
+    Vec3f texel = pixelRGB(texture, uv.x, uv.y, _lod);
+    Vec3f normal = normalise(texel * 2.f - 1.f);
     Mat3 tbn = Matrix::constructTBN(T, B, N);
 
     return normalise(Matrix::multiplyVec3(tbn, normal));
 }
 
-Vec3f IShader::sampleSpecularMap(const glTriangle& polygon, Texture &texture, const Vec3f& barycentric)
+Vec3f IShader::sampleSpecularMap(const face_t &face, Texture &texture, const Vec3f& barycentric)
 {
-    float dudx, dudy, dvdx, dvdy;
-    derivatives(polygon, texture, dudx, dudy, dvdx, dvdy);
+    // float dudx, dudy, dvdx, dvdy;
+    // derivatives(polygon, texture, dudx, dudy, dvdx, dvdy);
 
-    float _lod = lod(dudx, dudy, dvdx, dvdy);
+    // float _lod = lod(dudx, dudy, dvdx, dvdy);
 
-    Vec2f uv = perspectiveCorrectedUV(polygon, barycentric);
-    return pixelRGB(texture, uv.x, uv.y, _lod);
+    Vec2f uv = perspectiveCorrectedUV(2, face, barycentric);
+    return pixelRGB(texture, uv.x, uv.y);
 }

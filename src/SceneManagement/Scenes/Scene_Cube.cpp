@@ -22,7 +22,7 @@ void Scene_Cube::start()
     m_shader.setUniform<Mat4>(m_shader.model, m_model);
     m_shader.setUniform<Mat4>(m_shader.view, m_camera.view());
     m_shader.setUniform<Mat4>(m_shader.projection, m_camera.projection());
-    m_shader.setUniform<Image>(m_shader.texture, m_texture);
+    // m_shader.setUniform<Image>(m_shader.texture, m_texture);
     
     double previous = getTimeSeconds();
     while (m_window.isOpen())
@@ -82,7 +82,7 @@ void Scene_Cube::render()
 {
     m_renderer.clear(0x111111);
 
-    m_renderer.draw(m_cube.vertices, m_shader);
+    // m_renderer.draw(m_cube.vertices, m_shader);
 
     m_fxaa.apply();
     

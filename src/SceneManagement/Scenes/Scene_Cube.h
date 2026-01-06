@@ -29,7 +29,7 @@ private:
     jawl::Window &m_window;
     Renderer m_renderer;
     Model m_cube = Model("./resources/model_cube.obj");
-    Image m_texture = Image("./resources/texture_dirtcube.tga");
+    // Image m_texture = Image("./resources/texture_dirtcube.tga");
     Camera m_camera;
 
     Cube_Shader m_shader;

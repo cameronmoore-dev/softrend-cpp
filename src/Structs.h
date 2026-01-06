@@ -30,18 +30,13 @@ struct Vec4f
     const Vec4f operator*(const Vec4f& rhs) const { return { x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w }; }
     const Vec4f operator/(const Vec4f& rhs) const { return { x / rhs.x, y / rhs.y, z / rhs.z, w / rhs.w }; }
 
-    // const Vec4f operator+(const Vec3f& rhs) const { return { x + rhs.x, y + rhs.y, z + rhs.z }; }
-    // const Vec4f operator-(const Vec3f& rhs) const { return { x - rhs.x, y - rhs.y, z - rhs.z }; }
-    // const Vec4f operator*(const Vec3f& rhs) const { return { x * rhs.x, y * rhs.y, z * rhs.z }; }
-    // const Vec4f operator/(const Vec3f& rhs) const { return { x / rhs.x, y / rhs.y, z / rhs.z }; }
-
     const Vec4f operator+(const float& value) const { return { x + value, y + value, z + value, w + value }; }
     const Vec4f operator-(const float& value) const { return { x - value, y - value, z - value, w - value }; }
     const Vec4f operator*(const float& value) const { return { x * value, y * value, z * value, w * value }; }
     const Vec4f operator/(const float& value) const { return { x / value, y / value, z / value, w / value }; }
 
-    const Vec4f operator+=(const Vec4f& rhs) { return { x += rhs.x, y += rhs.y, z += rhs.z }; }
-    const Vec4f operator-=(const Vec4f& rhs) { return { x -= rhs.x, y -= rhs.y, z -= rhs.z }; }
+    const Vec4f operator+=(const Vec4f& rhs) { return { x += rhs.x, y += rhs.y, z += rhs.z, w += rhs.w}; }
+    const Vec4f operator-=(const Vec4f& rhs) { return { x -= rhs.x, y -= rhs.y, z -= rhs.z, w -= rhs.w }; }
     
     const Vec4f operator/=(const float& rhs) { return { x /= rhs, y /= rhs, z /= rhs }; }
 
@@ -100,6 +95,8 @@ struct Vec3f
     
     const Vec3f operator*=(const float& value) { return { x *= value, y *= value, z *= value }; }
     const Vec3f operator/=(const float& value) { return { x /= value, y /= value, z /= value }; }
+    const Vec3f operator-=(const float& value) { return { x -= value, y -= value, z -= value }; }
+
 
     const Vec3f operator-() const
     {
@@ -107,36 +104,12 @@ struct Vec3f
     }
 };
 
-
-
 struct Vertex
-{
-    Vec3f position;
-    Vec3f normal;
-    Vec2f uv;
-    uint32_t colour;
-
-    Vec3f tangent;
-    Vec3f bitangent;
-};
-
-struct glVertex
 {
     Vec4f position;
     Vec3f normal;
     Vec2f uv;
-    uint32_t colour;
-
     Vec3f tangent;
     Vec3f bitangent;
-
-    float inverseW;
-    Vec4f fragPos;
-
-    Vec2f orig_uv;
-};
-
-struct glTriangle
-{
-    glVertex v0, v1, v2;
+    // uint32_t colour;
 };

@@ -12,6 +12,11 @@ Scene_Suzanne::Scene_Suzanne(jawl::Window &window) :
     m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
 
     m_renderer = Renderer(m_window.getEBI());
+    m_renderer.setVertexAttrib(sizeof(Vertex), 0, 4); /* Position */
+    m_renderer.setVertexAttrib(sizeof(Vertex), 1, 3); /* Normal */
+    m_renderer.setVertexAttrib(sizeof(Vertex), 2, 2); /* TexCoord */
+    m_renderer.setVertexAttrib(sizeof(Vertex), 3, 3); /* Tangent */
+    m_renderer.setVertexAttrib(sizeof(Vertex), 4, 3); /* Bitangent */
 }
 
 void Scene_Suzanne::start()
@@ -23,7 +28,7 @@ void Scene_Suzanne::start()
     stbi_set_flip_vertically_on_load(true);
 
     int iw, ih, ic;
-    uint8_t *t = stbi_load("./resources/suzanne_diffuse.tga", &iw, &ih, &ic, 0);
+    uint8_t *t = stbi_load("./resources/suzanne_diffuse.jpg", &iw, &ih, &ic, 0);
     m_texture = m_renderer.createTexture(t, iw, ih, ic);
 
     uint8_t *n = stbi_load("./resources/suzanne_normal.tga", &iw, &ih, &ic, 0);
@@ -34,7 +39,6 @@ void Scene_Suzanne::start()
 
     m_renderer.generateMipMaps(m_texture);
     m_renderer.generateMipMaps(m_normalMap);
-    m_renderer.generateMipMaps(m_specularMap);
 
     stbi_image_free(t);
     stbi_image_free(n);
@@ -170,11 +174,14 @@ void Scene_Suzanne::update()
     m_camera.updateMovement(m_dt);
     m_camera.updateView();
 
-    m_angle += 20.f * m_dt;
-    m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
-    m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
-    
-    m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
+    m_angle += 1.f * m_dt;
+
+    Vec3f t = { -1, 1, 1 };
+    position += t * m_dt;
+
+    m_model = Matrix::transform(Matrix::identity(), 
+                                Matrix::rotate(m_angle, { 0.5f, 1, 0 }), 
+                                Matrix::identity());
 }
 
 void Scene_Suzanne::render()
@@ -194,7 +201,8 @@ void Scene_Suzanne::render()
 
         // m_renderer.renderMode = Renderer::RenderMode::Final;
         // shader.isShadowPass = false;
-        m_renderer.draw(m_suzanne.vertices, shader);
+
+        m_renderer.draw(m_suzanne.vertices.data(), m_suzanne.vertices.size(), shader);
 
         if (ssao)
         {
