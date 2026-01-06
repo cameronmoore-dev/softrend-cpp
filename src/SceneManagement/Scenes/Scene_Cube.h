@@ -5,7 +5,6 @@
 #include "../Scene.h"
 #include "IShader.h"
 #include "Renderer.h"
-#include "Matrix.h"
 #include "Model.h"
 #include "Camera.h"
 
@@ -27,18 +26,19 @@ protected:
 
 private:
     jawl::Window &m_window;
-    Renderer m_renderer;
+    echo::Renderer m_renderer;
     Model m_cube = Model("./resources/model_cube.obj");
     // Image m_texture = Image("./resources/texture_dirtcube.tga");
     Camera m_camera;
 
     Cube_Shader m_shader;
     FXAA_Shader m_fxaa;    
-    Mat4 m_model = Matrix::identity();
+    
+    echo::mat4 m_model = echo::identity();
 
-    Mat4 m_translate = Matrix::identity();
-    Mat4 m_rotation = Matrix::identity();
-    Mat4 m_scale = Matrix::identity();
+    echo::mat4 m_translate = echo::identity();
+    echo::mat4 m_rotation = echo::identity();
+    echo::mat4 m_scale = echo::identity();
 
     float m_angle = 0.f;
 

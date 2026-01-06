@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "Structs.h"
+#include "vertex.h"
 
 class Model
 {

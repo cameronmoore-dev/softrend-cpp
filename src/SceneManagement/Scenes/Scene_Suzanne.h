@@ -3,7 +3,6 @@
 #include "jawl/base_window.h"
 #include "../Scene.h"
 #include "Renderer.h"
-#include "Matrix.h"
 #include "Model.h"
 #include "Camera.h"
 
@@ -28,12 +27,12 @@ private:
 
 private:
     jawl::Window &m_window;
-    Renderer m_renderer;
+    echo::Renderer m_renderer;
     Model m_suzanne = Model("./resources/model_suzanne.obj");
 
-    Texture m_texture;
-    Texture m_normalMap;
-    Texture m_specularMap;
+    echo::Texture m_texture;
+    echo::Texture m_normalMap;
+    echo::Texture m_specularMap;
 
     Camera m_camera;
 
@@ -43,11 +42,10 @@ private:
     // Mat4 m_lightProj = Matrix::orthographic(-2.f, 2.f, -2.f, 2.f, 1.f, 10.f);
     // Mat4 m_lightView = Matrix::identity();
 
-    Mat4 m_model = Matrix::identity();
+    echo::mat4 m_model = echo::identity();
 
-    Vec3f position = {};
-    float m_angle = 0;
-    double m_dt = 0.f;
+    float m_angle = 0.f;
+    double m_dt = 0;
 
     bool a = true;
     bool ssao = false;

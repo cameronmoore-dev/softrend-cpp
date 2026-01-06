@@ -10,7 +10,7 @@ Scene_Cube::Scene_Cube(jawl::Window &window) :
     m_window.getSize(x, y);
     m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
 
-    m_renderer = Renderer(m_window.getEBI());
+    m_renderer = echo::Renderer(m_window.getEBI());
 }
 
 void Scene_Cube::start()

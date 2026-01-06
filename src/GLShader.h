@@ -7,9 +7,6 @@
 
 #include <glad/glad.h>
 
-#include "Matrix.h"
-#include "Structs.h"
-
 class GLShader
 {
 public:
@@ -76,7 +73,7 @@ public:
 		glUniform1i(glGetUniformLocation(id, name.c_str()), (int)value);
 	}
 
-	void SetVec2(const std::string& name, const Vec2f& value)
+	void SetVec2(const std::string& name, const echo::vec2f& value)
 	{
 		glUniform2fv(glGetUniformLocation(id, name.c_str()), 1, &value.x);
 	}
@@ -86,7 +83,7 @@ public:
 		glUniform2f(glGetUniformLocation(id, name.c_str()), x, y);
 	}
 
-	void SetVec3(const std::string& name, const Vec3f& value) const
+	void SetVec3(const std::string& name, const echo::vec3f& value) const
 	{
 		glUniform3fv(glGetUniformLocation(id, name.c_str()), 1, &value.x);
 	}
@@ -96,7 +93,7 @@ public:
 		glUniform3f(glGetUniformLocation(id, name.c_str()), x, y, z);
 	}
 
-	void SetVec4(const std::string& name, const Vec4f& value) const
+	void SetVec4(const std::string& name, const echo::vec4f& value) const
 	{
 		glUniform4fv(glGetUniformLocation(id, name.c_str()), 1, &value.x);
 	}
@@ -111,12 +108,12 @@ public:
 	// 	glUniformMatrix2fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	// }
 
-	void SetMat3(const std::string& name, const Mat3& mat) const
+	void SetMat3(const std::string& name, const echo::mat3& mat) const
 	{
 		glUniformMatrix3fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	}
 
-	void SetMat4(const std::string& name, const Mat4& mat) const
+	void SetMat4(const std::string& name, const echo::mat4& mat) const
 	{
 		glUniformMatrix4fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	}

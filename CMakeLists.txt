@@ -17,7 +17,6 @@ add_executable(software_renderer EXCLUDE_FROM_ALL
 	"src/jawl/win32/win32_input.cpp"
 	"src/IShader.cpp"
     "src/math.cpp"
-    "src/Matrix.cpp"
     "src/Model.cpp"    
     "src/Image.cpp"
     "src/Renderer.cpp"

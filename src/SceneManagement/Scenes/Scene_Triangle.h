@@ -4,7 +4,6 @@
 #include "IShader.h"
 #include "Renderer.h"
 #include "Camera.h"
-#include "Matrix.h"
 
 #include "Shaders/Suzanne_Shader.h"
 
@@ -23,16 +22,16 @@ protected:
 
 private:
     jawl::Window &m_window;
-    Renderer m_renderer;
+    echo::Renderer m_renderer;
     Camera m_camera;
 
     // Suzanne_Shader m_shader;
 
-    Mat4 m_model = Matrix::identity();
+    echo::mat4 m_model = echo::identity();
 
-    Mat4 m_translate = Matrix::identity();
-    Mat4 m_rotation = Matrix::identity();
-    Mat4 m_scale = Matrix::identity();
+    echo::mat4 m_translate = echo::identity();
+    echo::mat4 m_rotation = echo::identity();
+    echo::mat4 m_scale = echo::identity();
 
     std::vector<Vertex> m_triangle;
 

@@ -4,36 +4,33 @@
 #include <cmath>
 
 #include "../IShader.h"
-#include "../Matrix.h"
 #include "../Renderer.h"
 
-class Suzanne_Shader : public IShader
+class Suzanne_Shader : public echo::IShader
 {
 public:
-    Uniform<Mat4> model;
-    Uniform<Mat4> view;
-    Uniform<Mat4> projection;
+    Uniform<echo::mat4> model;
+    Uniform<echo::mat4> view;
+    Uniform<echo::mat4> projection;
 
-    Uniform<Texture> diffuseMap;
-    Uniform<Texture> normalMap;
-    Uniform<Texture> specularMap;
+    Uniform<echo::Texture> diffuseMap;
+    Uniform<echo::Texture> normalMap;
+    Uniform<echo::Texture> specularMap;
 
     // Mat4 lightProj;
     // Mat4 lightView;
 
-    Vec3f lightDir{ 0, 0, -1 };
-    Vec3f colour = { 1, 1, 1 };
-    Vec3f ambient = { 0.17f, 0.17f, 0.17f };
+    echo::vec3f lightDir{ 0, 0, -1 };
+    echo::vec3f colour = { 1, 1, 1 };
+    echo::vec3f ambient = { 0.17f, 0.17f, 0.17f };
 
     bool isShadowPass = false;
-
-    Vec3f vertColour = {};
 
 private:
     void vertex(float *vertex) override
     {
-        Vec3f position = getVertexAttribData3(vertex, 0);
-        Vec3f normals = getVertexAttribData3(vertex, 1);
+        echo::vec3f position = getVertexAttribData<echo::vec3f>(vertex, 0);
+        echo::vec3f normals  = getVertexAttribData<echo::vec3f>(vertex, 1);
 
         // if (isShadowPass)
         // {
@@ -41,26 +38,27 @@ private:
         //     return;
         // }
         
-        Vec3f normal = normalise(Matrix::multiplyVec3(*model, normals));
+        echo::vec3f normal = echo::normalise(*model * normals);
         vertex[4] = normal.x;
         vertex[5] = normal.y;
         vertex[6] = normal.z;
-        glPosition(0, vertex, Matrix::multiply(*projection, Matrix::multiply(*view, Matrix::multiply(*model, position))));
+
+        glPosition(0, vertex, (*projection * (*view * (*model * vec4(position, 1.f)))));
     }
 
-    bool fragment(const Vec3f& barycentric, const face_t &face, Vec4f& fragColour) override
+    bool fragment(const echo::vec3f& barycentric, const echo::face &face, echo::vec4f& fragColour) override
     {
-        std::array<Vec3f, 3> normals = getFaceAttrib(face, 1);
+        std::array<echo::vec3f, 3> normals = getFaceAttrib<echo::vec3f>(face, 1);
 
-        // Vec4f fragWorldPos = polygon.v0.fragPos * barycentric.x + polygon.v1.fragPos * barycentric.y + polygon.v2.fragPos * barycentric.z;
-        // Vec4f fragPos = Matrix::multiply(lightProj, Matrix::multiply(lightView, fragWorldPos));
+        // echo::vec4f fragWorldPos = polygon.v0.fragPos * barycentric.x + polygon.v1.fragPos * barycentric.y + polygon.v2.fragPos * barycentric.z;
+        // echo::vec4f fragPos = Matrix::multiply(lightProj, Matrix::multiply(lightView, fragWorldPos));
 
         // /* Perspective Division for use with perspective projection */
         // fragPos.x /= fragPos.w;
         // fragPos.y /= fragPos.w;
         // fragPos.z /= fragPos.w;
 
-        // Vec2f shadowMapUV;
+        // echo::vec2f shadowMapUV;
         // shadowMapUV.x = fragPos.x * 0.5f + 0.5f;
         // shadowMapUV.y = fragPos.y * 0.5f + 0.5f;
         
@@ -73,19 +71,39 @@ private:
         // float bias = std::max(0.05f * (1.0f - dot(normal, lightDir)), 0.005f);
         // float shadow = currentDepth - bias > shadowDepth ? 1.f : 0.f;
 
-        Vec3f normal = sampleNormalMap(face, *normalMap, barycentric);
-        // Vec3f normal = normals[0] * barycentric.x + normals[1] * barycentric.y + normals[2] * barycentric.z;
+        echo::vec3f normal = getNormalMapTexel(face, barycentric);
+        // echo::vec3f normal = normals[0] * barycentric.x + normals[1] * barycentric.y + normals[2] * barycentric.z;
         normal = normalise(normal);
 
-        float diff = std::max(0.f, math::dot(normal, lightDir));
-        Vec3f diffuse = colour * diff;
+        float diff = std::max(0.f, echo::dot(normal, lightDir));
+        echo::vec3f diffuse = colour * diff;
 
-        Vec3f halfwayDir = normalise(lightDir + lightDir);
-        float spec = std::pow(std::max(dot(normal, halfwayDir), 0.f), 64);
-        Vec3f specular = sampleSpecularMap(face, *specularMap, barycentric) * spec;
+        echo::vec3f halfwayDir = normalise(lightDir + lightDir);
+        float spec = std::pow(std::max(dot(normal, halfwayDir), 0.f), 128);
+        echo::vec3f specular = vec3(texture(2, face, *specularMap, barycentric) * spec);
 
-        fragColour = vec4((ambient + (diffuse + specular) /* * (1.0f - shadow) */), 1.f) * sampleDiffuseMap(2, face, *diffuseMap, barycentric);
+        fragColour = vec4((ambient + (diffuse + specular) /* * (1.0f - shadow) */), 1.f) * texture(2, face, *diffuseMap, barycentric);
+        fragColour = echo::srgbToLinear(fragColour);
+        fragColour = echo::linearToSRGB(fragColour);
         return true;
+    }
+
+    echo::vec3f getNormalMapTexel(const echo::face &face, const echo::vec3f &barycentric)
+    {
+        std::array<echo::vec3f, 3> normals    = getFaceAttrib<echo::vec3f>(face, 1);
+        std::array<echo::vec3f, 3> tangents   = getFaceAttrib<echo::vec3f>(face, 3);
+        std::array<echo::vec3f, 3> bitangents = getFaceAttrib<echo::vec3f>(face, 4);
+    
+        // Perspective-correct TBN
+        echo::vec3f T = tangents[0] * barycentric.x + tangents[1] * barycentric.y + tangents[2] * barycentric.z;
+        echo::vec3f B = bitangents[0] * barycentric.x + bitangents[1] * barycentric.y + bitangents[2] * barycentric.z;
+        echo::vec3f N = normals[0] * barycentric.x + normals[1] * barycentric.y + normals[2] * barycentric.z;
+
+        echo::vec3f texel = vec3(texture(2, face, *normalMap, barycentric));
+        echo::vec3f normal = echo::normalise(texel * 2.f - 1.f);
+        echo::mat3 tbn = constructTBN(T, B, N);
+
+        return echo::normalise(tbn * normal);
     }
 };
 

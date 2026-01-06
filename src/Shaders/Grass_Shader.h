@@ -2,14 +2,14 @@
 
 #include "../IShader.h"
 
-class Grass_Shader : public IShader
+class Grass_Shader : public echo::IShader
 {
 public:
-    Uniform<Mat4> projection;
-    Uniform<Mat4> view;
-    Uniform<Mat4> model;
+    Uniform<echo::mat4> projection;
+    Uniform<echo::mat4> view;
+    Uniform<echo::mat4> model;
 
-    Uniform<Texture> texture;
+    Uniform<echo::Texture> texture;
 
     void vertex(float *vertex) override
     {
@@ -17,9 +17,9 @@ public:
         // copy.position = Matrix::multiply(*projection, Matrix::multiply(*view, Matrix::multiply(*model, v.position)));
     }
 
-    bool fragment(const Vec3f& barycentric, const face_t &face, Vec4f& finalColour) override
+    bool fragment(const echo::vec3f& barycentric, const echo::face &face, echo::vec4f& finalColour) override
     {
-        // Vec4f texel = sampleDiffuseMap(polygon, *texture, barycentric);
+        // echo::vec4f texel = sampleDiffuseMap(polygon, *texture, barycentric);
         // if (texel.w == 0)
         // {
         //     return false;

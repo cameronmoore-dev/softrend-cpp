@@ -11,7 +11,7 @@ Scene_Suzanne::Scene_Suzanne(jawl::Window &window) :
     m_window.getSize(x, y);
     m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
 
-    m_renderer = Renderer(m_window.getEBI());
+    m_renderer = echo::Renderer(m_window.getEBI());
     m_renderer.setVertexAttrib(sizeof(Vertex), 0, 4); /* Position */
     m_renderer.setVertexAttrib(sizeof(Vertex), 1, 3); /* Normal */
     m_renderer.setVertexAttrib(sizeof(Vertex), 2, 2); /* TexCoord */
@@ -21,9 +21,9 @@ Scene_Suzanne::Scene_Suzanne(jawl::Window &window) :
 
 void Scene_Suzanne::start()
 {
-    shader.setUniform<Mat4>(shader.model, m_model);
-    shader.setUniform<Mat4>(shader.view, m_camera.view());
-    shader.setUniform<Mat4>(shader.projection, m_camera.projection());
+    shader.setUniform<echo::mat4>(shader.model, m_model);
+    shader.setUniform<echo::mat4>(shader.view, m_camera.view());
+    shader.setUniform<echo::mat4>(shader.projection, m_camera.projection());
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -31,22 +31,25 @@ void Scene_Suzanne::start()
     uint8_t *t = stbi_load("./resources/suzanne_diffuse.jpg", &iw, &ih, &ic, 0);
     m_texture = m_renderer.createTexture(t, iw, ih, ic);
 
-    uint8_t *n = stbi_load("./resources/suzanne_normal.tga", &iw, &ih, &ic, 0);
+    uint8_t *n = stbi_load("./resources/suzanne_normal.jpg", &iw, &ih, &ic, 0);
     m_normalMap = m_renderer.createTexture(n, iw, ih, ic);
 
-    uint8_t *s = stbi_load("./resources/suzanne_specular.tga", &iw, &ih, &ic, 0);
+    uint8_t *s = stbi_load("./resources/suzanne_specular.jpg", &iw, &ih, &ic, 0);
     m_specularMap = m_renderer.createTexture(s, iw, ih, ic);
 
     m_renderer.generateMipMaps(m_texture);
     m_renderer.generateMipMaps(m_normalMap);
+    m_renderer.generateMipMaps(m_specularMap);
+    m_renderer.bilinearFilter(m_texture);
+    m_renderer.bilinearFilter(m_normalMap);
 
     stbi_image_free(t);
     stbi_image_free(n);
     stbi_image_free(s);
 
-    shader.setUniform<Texture>(shader.diffuseMap, m_texture);
-    shader.setUniform<Texture>(shader.normalMap, m_normalMap);
-    shader.setUniform<Texture>(shader.specularMap, m_specularMap);
+    shader.setUniform<echo::Texture>(shader.diffuseMap, m_texture);
+    shader.setUniform<echo::Texture>(shader.normalMap, m_normalMap);
+    shader.setUniform<echo::Texture>(shader.specularMap, m_specularMap);
 
     uint16_t w, h;
     m_renderer.size(w, h);
@@ -175,20 +178,14 @@ void Scene_Suzanne::update()
     m_camera.updateView();
 
     m_angle += 1.f * m_dt;
-
-    Vec3f t = { -1, 1, 1 };
-    position += t * m_dt;
-
-    m_model = Matrix::transform(Matrix::identity(), 
-                                Matrix::rotate(m_angle, { 0.5f, 1, 0 }), 
-                                Matrix::identity());
+    m_model = echo::identity() * (echo::rotate(m_angle, { 0.5f, 1, 0 }) * echo::identity());
 }
 
 void Scene_Suzanne::render()
 {
     m_renderer.clear(0x111111);
 
-    Vec3f centre{ 0, 0, 0 };
+    echo::vec3f centre{ 0, 0, 0 };
     float radius = 1.f;
     
     if (m_camera.isSphereInsideFrustum(*shader.model, centre, radius))

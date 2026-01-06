@@ -5,9 +5,7 @@
 #include <random>
 #include <cmath>
 
-#include "../Matrix.h"
-#include "../Structs.h"
-#include "../math.h"
+#include "math.h"
 
 class SSAO_Shader
 {
@@ -138,11 +136,11 @@ public:
                 continue;
             }
 
-            Vec3f fragColour = math::hexToRGB(framebuffer[i]);
+            echo::vec3f fragColour = echo::hexToRGB(framebuffer[i]);
             fragColour.x *= ao;
             fragColour.y *= ao;
             fragColour.z *= ao;
-            framebuffer[i] = math::rgbToHex(fragColour);
+            framebuffer[i] = echo::rgbToHex(fragColour);
         }
     }
 

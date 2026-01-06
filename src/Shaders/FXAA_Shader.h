@@ -78,11 +78,11 @@ public:
         for (uint32_t i = 0; i < size; i++)
         {
             /* Find contrast between pixel neighbours / Local Contrast Check */
-            Vec3f rgbN = fxaaTextureOffset(i, -width);
-            Vec3f rgbW = fxaaTextureOffset(i, -1);
-            Vec3f rgbM = fxaaTextureOffset(i, 0);
-            Vec3f rgbE = fxaaTextureOffset(i, 1);
-            Vec3f rgbS = fxaaTextureOffset(i, width);
+            echo::vec3f rgbN = fxaaTextureOffset(i, -width);
+            echo::vec3f rgbW = fxaaTextureOffset(i, -1);
+            echo::vec3f rgbM = fxaaTextureOffset(i, 0);
+            echo::vec3f rgbE = fxaaTextureOffset(i, 1);
+            echo::vec3f rgbS = fxaaTextureOffset(i, width);
 
             float lumaN = fxaaLuma(rgbN);
             float lumaW = fxaaLuma(rgbW);
@@ -97,7 +97,7 @@ public:
 
             if (range < std::max(EDGE_THRESHOLD_MIN, rangeMax * EDGE_THRESHOLD))
             {
-                framebuffer[i] = math::rgbToHex(fxaaTextureOffset(i, 0));
+                framebuffer[i] = echo::rgbToHex(fxaaTextureOffset(i, 0));
                 continue;
             }
 
@@ -109,14 +109,14 @@ public:
             blendL = std::min(SUBPIXEL_CAP, blendL);
 
             /* Box filter around current pixel */
-            Vec3f rgbL = rgbN + rgbW + rgbM + rgbE + rgbS;
-            Vec3f rgbNW = fxaaTextureOffset(i, -width - 1);
-            Vec3f rgbNE = fxaaTextureOffset(i, -width + 1);
-            Vec3f rgbSW = fxaaTextureOffset(i, width - 1);
-            Vec3f rgbSE = fxaaTextureOffset(i, width + 1);
+            echo::vec3f rgbL = rgbN + rgbW + rgbM + rgbE + rgbS;
+            echo::vec3f rgbNW = fxaaTextureOffset(i, -width - 1);
+            echo::vec3f rgbNE = fxaaTextureOffset(i, -width + 1);
+            echo::vec3f rgbSW = fxaaTextureOffset(i, width - 1);
+            echo::vec3f rgbSE = fxaaTextureOffset(i, width + 1);
 
             rgbL += rgbNW + rgbNE + rgbSW + rgbSE;
-            rgbL *= Vec3f{ 1.f / 9.f, 0, 0 };
+            rgbL *= echo::vec3f{ 1.f / 9.f, 0, 0 };
 
             float lumaNW = fxaaLuma(rgbNW);
             float lumaNE = fxaaLuma(rgbNE);
@@ -168,26 +168,26 @@ public:
                 
             }
 
-            Vec3f rgbMVec = rgbM;
-            Vec3f rgbLVec = fxaaTextureOffset(i, horzSpan ? (int)width : 1);
-            Vec3f rgbRVec = fxaaTextureOffset(i, horzSpan ? -(int)width : -1);
+            echo::vec3f rgbMVec = rgbM;
+            echo::vec3f rgbLVec = fxaaTextureOffset(i, horzSpan ? (int)width : 1);
+            echo::vec3f rgbRVec = fxaaTextureOffset(i, horzSpan ? -(int)width : -1);
 
             float dirLumaDiff = lumaNeg - lumaPos;
-            Vec3f targetColour = dirLumaDiff > 0 ? rgbRVec : rgbLVec;
-            Vec3f blended = rgbMVec * (1.f - blendL) + targetColour * blendL;
+            echo::vec3f targetColour = dirLumaDiff > 0 ? rgbRVec : rgbLVec;
+            echo::vec3f blended = rgbMVec * (1.f - blendL) + targetColour * blendL;
             
-            framebuffer[i] = math::rgbToHex(blended);
+            framebuffer[i] = echo::rgbToHex(blended);
         }
     }
 
 private:
-    float fxaaLuma(const Vec3f& colour)
+    float fxaaLuma(const echo::vec3f& colour)
     {
         return colour.y * (0.587f/0.299f) * colour.x;
         // return 0.299f * rgb.x + 0.587f * rgb.y + 0.114f * rgb.z;
     }
 
-    Vec3f fxaaTextureOffset(int current, int offset)
+    echo::vec3f fxaaTextureOffset(int current, int offset)
     {
         int index = current + offset;
         if (index < 0) 

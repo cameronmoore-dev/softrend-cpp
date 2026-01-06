@@ -25,7 +25,7 @@ protected:
 
 private:
     jawl::Window &m_window;
-    Renderer m_renderer;
+    echo::Renderer m_renderer;
     Camera m_camera;
 
     Grass_Shader m_grassShader;
@@ -39,18 +39,18 @@ private:
     // Image m_dirtTexture = Image("./resources/texture_dirtcube.tga");
     // Image m_windowTexture = Image("./resources/texture_window.tga");
 
-    Mat4 m_grassModel = Matrix::identity();
-    Mat4 m_cubeModel = Matrix::identity();
-    Mat4 m_windowModel = Matrix::identity();
+    echo::mat4 m_grassModel = echo::identity();
+    echo::mat4 m_cubeModel = echo::identity();
+    echo::mat4 m_windowModel = echo::identity();
 
-    Mat4 m_grassTranslate = Matrix::identity();
-    Mat4 m_cubeTranslate = Matrix::identity();
-    Mat4 m_windowTranslate = Matrix::identity();
+    echo::mat4 m_grassTranslate = echo::identity();
+    echo::mat4 m_cubeTranslate = echo::identity();
+    echo::mat4 m_windowTranslate = echo::identity();
 
-    Mat4 m_cubeRotation = Matrix::identity();
+    echo::mat4 m_cubeRotation = echo::identity();
 
-    Mat4 m_rotation = Matrix::identity();
-    Mat4 m_scale = Matrix::identity();
+    echo::mat4 m_rotation = echo::identity();
+    echo::mat4 m_scale = echo::identity();
 
     float m_angle = 0.f;
     double m_dt = 0.f;

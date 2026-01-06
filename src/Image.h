@@ -3,7 +3,7 @@
 #include <string>
 #include <cstdint>
 
-#include "Structs.h"
+#include "vertex.h"
 #include "math.h"
 
 #pragma pack(push, 1)
