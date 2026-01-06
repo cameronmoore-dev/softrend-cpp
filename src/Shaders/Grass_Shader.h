@@ -9,23 +9,25 @@ public:
     Uniform<echo::mat4> view;
     Uniform<echo::mat4> model;
 
-    Uniform<echo::Texture> texture;
+    Uniform<echo::Texture> grassTexture;
 
     void vertex(float *vertex) override
     {
-        // copy.uv = v.uv;
-        // copy.position = Matrix::multiply(*projection, Matrix::multiply(*view, Matrix::multiply(*model, v.position)));
+        echo::vec3f position = getVertexAttribData<echo::vec3f>(vertex, 0);
+
+        echo::vec4f clip = *projection * (*view * (*model * vec4(position, 1.f)));
+        glPosition(0, vertex, clip);
     }
 
-    bool fragment(const echo::vec3f& barycentric, const echo::face &face, echo::vec4f& finalColour) override
+    bool fragment(const echo::vec3f& barycentric, const echo::face &face, echo::vec4f& fragColour) override
     {
-        // echo::vec4f texel = sampleDiffuseMap(polygon, *texture, barycentric);
-        // if (texel.w == 0)
-        // {
-        //     return false;
-        // }
+        echo::vec4f texel = texture(2, face, *grassTexture, barycentric);
+        if (texel.w == 0)
+        {
+            return false;
+        }
 
-        // finalColour = texel;
+        fragColour = texel;
         return true;
     }
 };

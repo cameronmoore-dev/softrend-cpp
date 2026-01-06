@@ -37,7 +37,9 @@ namespace echo
         RenderMode renderMode = RenderMode::Final;
     
     private:
-        /* Pointers to shared data between the Window and the Renderer through the EchoBufferInfo structure */
+        /* 
+         * Pointers to shared data between the Window and the Renderer through the EchoBufferInfo structure
+         */
         uint32_t *m_backbuffer = nullptr;
         uint32_t **m_ppBackBuffer = nullptr;
         float *m_depthbuffer = nullptr;

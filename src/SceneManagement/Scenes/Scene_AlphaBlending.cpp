@@ -1,5 +1,6 @@
 #include "Scene_AlphaBlending.h"
 
+#include <stb_image/stb_image.h>
 #include "jawl/win32/win32_window.h"
 
 Scene_AlphaBlending::Scene_AlphaBlending(jawl::Window &window) : 
@@ -8,36 +9,50 @@ Scene_AlphaBlending::Scene_AlphaBlending(jawl::Window &window) :
     int x = 0;
     int y = 0;
     m_window.getSize(x, y);
-    m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
+    m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 100.f);
 
-    m_renderer = Renderer(m_window.getEBI());
+    m_renderer = echo::Renderer(m_window.getEBI());
+    m_renderer.setVertexAttrib(sizeof(Vertex), 0, 4); /* Position */
+    m_renderer.setVertexAttrib(sizeof(Vertex), 1, 3); /* Normal */
+    m_renderer.setVertexAttrib(sizeof(Vertex), 2, 2); /* TexCoord */
+    m_renderer.setVertexAttrib(sizeof(Vertex), 3, 3); /* Tangent */
+    m_renderer.setVertexAttrib(sizeof(Vertex), 4, 3); /* Bitangent */
 }
 
 void Scene_AlphaBlending::start()
 {
-    m_grassShader.setUniform<Image>(m_grassShader.texture, m_grassTexture);
-    m_cubeShader.setUniform<Image>(m_cubeShader.texture, m_dirtTexture);
-    m_windowShader.setUniform<Image>(m_windowShader.texture, m_windowTexture);
+    m_grassShader.setUniform<echo::mat4>(m_grassShader.projection, m_camera.projection());
+    m_grassShader.setUniform<echo::mat4>(m_grassShader.view, m_camera.view());
+    m_grassShader.setUniform<echo::mat4>(m_grassShader.model, m_grassModel);
 
-    m_rotation = Matrix::rotate(180, 1);
+    m_cubeShader.setUniform<echo::mat4>(m_cubeShader.projection, m_camera.projection());
+    m_cubeShader.setUniform<echo::mat4>(m_cubeShader.view, m_camera.view());
+    m_cubeShader.setUniform<echo::mat4>(m_cubeShader.model, m_cubeModel);
 
-    m_cubeTranslate = Matrix::translate({ -5.f, 0.f, 5.f });
-    m_windowTranslate = Matrix::translate({ 5.f, 0.f, -3.f });
+    m_windowShader.setUniform<echo::mat4>(m_windowShader.projection, m_camera.projection());
+    m_windowShader.setUniform<echo::mat4>(m_windowShader.view, m_camera.view());
+    m_windowShader.setUniform<echo::mat4>(m_windowShader.model, m_windowModel);
 
-    m_grassModel = Matrix::multiply(Matrix::multiply(Matrix::identity(), m_rotation), m_scale);
-    m_windowModel = Matrix::multiply(Matrix::multiply(m_windowTranslate, m_rotation), m_scale);
 
-    m_grassShader.setUniform<Mat4>(m_grassShader.projection, m_camera.projection());
-    m_grassShader.setUniform<Mat4>(m_grassShader.view, m_camera.view());
-    m_grassShader.setUniform<Mat4>(m_grassShader.model, m_grassModel);
+    stbi_set_flip_vertically_on_load(true);
 
-    m_cubeShader.setUniform<Mat4>(m_cubeShader.projection, m_camera.projection());
-    m_cubeShader.setUniform<Mat4>(m_cubeShader.view, m_camera.view());
-    m_cubeShader.setUniform<Mat4>(m_cubeShader.model, m_cubeModel);
+    int iw, ih, ic;
+    uint8_t *g = stbi_load("./resources/texture_grass.tga", &iw, &ih, &ic, 0);
+    m_grassTexture = m_renderer.createTexture(g, iw, ih, ic);
 
-    m_windowShader.setUniform<Mat4>(m_windowShader.projection, m_camera.projection());
-    m_windowShader.setUniform<Mat4>(m_windowShader.view, m_camera.view());
-    m_windowShader.setUniform<Mat4>(m_windowShader.model, m_windowModel);
+    uint8_t *d = stbi_load("./resources/texture_dirtcube.tga", &iw, &ih, &ic, 0);
+    m_dirtTexture = m_renderer.createTexture(d, iw, ih, ic);
+
+    uint8_t *w = stbi_load("./resources/texture_window.tga", &iw, &ih, &ic, 0);
+    m_windowTexture = m_renderer.createTexture(w, iw, ih, ic);
+
+    stbi_image_free(g);
+    stbi_image_free(d);
+    stbi_image_free(w);
+
+    m_grassShader.setUniform<echo::Texture>(m_grassShader.grassTexture, m_grassTexture);
+    m_cubeShader.setUniform<echo::Texture>(m_cubeShader.cubeTexture, m_dirtTexture);
+    m_windowShader.setUniform<echo::Texture>(m_windowShader.windowTexture, m_windowTexture);
 
     double previous = getTimeSeconds();
     while (m_window.isOpen())
@@ -86,19 +101,20 @@ void Scene_AlphaBlending::update()
     m_camera.updateMovement(m_dt);
     m_camera.updateView();
 
-    m_angle+=20.f * m_dt;
-    m_cubeRotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
-    m_cubeRotation = Matrix::multiply(m_cubeRotation, Matrix::rotate(m_angle, 2));
-    m_cubeModel = Matrix::multiply(Matrix::multiply(m_cubeTranslate, m_cubeRotation), m_scale);
+    m_angle += 1.f * m_dt;
+    m_cubeModel = echo::translate({ -7, 0, 7 }) * (echo::rotate(m_angle, { -1, 1, 1 }) * echo::identity());
+    m_grassModel = echo::identity() * (echo::rotate(90, { 0, 1, 0 }) * echo::identity());
+    m_windowModel = echo::translate({ 5.f, 0.f, -3.f }) * (echo::rotate(90, { 0, 1, 0 }) * echo::identity());
+
 }
 
 void Scene_AlphaBlending::render()
 {
     m_renderer.clear(0x111111);
 
-    m_renderer.draw(m_cube.vertices, m_cubeShader);
-    m_renderer.draw(m_plane.vertices, m_grassShader);
-    m_renderer.draw(m_plane.vertices, m_windowShader);
+    m_renderer.draw(m_cube.vertices.data(), m_cube.vertices.size(), m_cubeShader);
+    m_renderer.draw(m_plane.vertices.data(), m_plane.vertices.size(), m_grassShader);
+    m_renderer.draw(m_plane.vertices.data(), m_plane.vertices.size(), m_windowShader);
 
     m_window.swapBuffers();
 }

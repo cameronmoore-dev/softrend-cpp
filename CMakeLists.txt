@@ -24,7 +24,7 @@ add_executable(software_renderer EXCLUDE_FROM_ALL
     # "src/SceneManagement/Scenes/Scene_Triangle.cpp"
     # "src/SceneManagement/Scenes/Scene_Cube.cpp"
     "src/SceneManagement/Scenes/Scene_Suzanne.cpp"
-    # "src/SceneManagement/Scenes/Scene_AlphaBlending.cpp"
+    "src/SceneManagement/Scenes/Scene_AlphaBlending.cpp"
 	# "src/SceneManagement/Scenes/Scene_OpenGL.cpp"
 	
 	

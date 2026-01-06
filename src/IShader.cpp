@@ -66,20 +66,26 @@ namespace echo
     
     vec2f IShader::perspectiveCorrectedUV(const int uvIndex, const face &face, const vec3f& barycentric)
     {
+        std::array<vec2f, 3> st = getFaceAttrib<vec2f>(face, uvIndex);
+
+        float invW0 = 1.f / face.v0[3];
+        float invW1 = 1.f / face.v1[3];
+        float invW2 = 1.f / face.v2[3];
+
+        vec2f uv0 = (st[0] / face.v0[3]);
+        vec2f uv1 = (st[1] / face.v1[3]);
+        vec2f uv2 = (st[2] / face.v2[3]);
+
         /* Perspective-correct interpolation */
-        // float invInterp = inverseWs[vertIndex - 3] * barycentric.x +
-        //                   inverseWs[vertIndex - 2] * barycentric.y +
-        //                   inverseWs[vertIndex - 1] * barycentric.z;
-    
-        vec2f uv0 = getVertexAttribData<vec2f>(&face.v0[0], uvIndex);
-        vec2f uv1 = getVertexAttribData<vec2f>(&face.v1[0], uvIndex);
-        vec2f uv2 = getVertexAttribData<vec2f>(&face.v2[0], uvIndex);
-        
-        vec2f finalUV = uv0 * barycentric.x +
-                        uv1 * barycentric.y +
-                        uv2 * barycentric.z;
-    
-        return { finalUV.x, finalUV.y };
+        float inverse = invW0 * barycentric.x +
+                        invW1 * barycentric.y +
+                        invW2 * barycentric.z;
+
+        vec2f uv = uv0 * barycentric.x +
+                   uv1 * barycentric.y +
+                   uv2 * barycentric.z;
+
+        return uv / inverse;
     }
     
     vec4f IShader::texture(const int uvIndex, const face &face, Texture &texture, const vec3f& barycentric)
@@ -93,17 +99,25 @@ namespace echo
         uint8_t level = std::clamp((int)(_lod + 0.5f), 0, (int)texture.mipLevels.size() - 1);
         const MipMap &mip = texture.mipLevels[level];
     
+        if (uv.x < 0.f || uv.x > 1.f || uv.y < 0.f || uv.y > 1.f)
+        {
+            printf("%f, %f\n", uv.x, uv.y);
+
+        }
+
         int x = uv.x * (mip.width - 1);
         int y = uv.y * (mip.height - 1);
+
+        // x = std::clamp(x, 0, mip.width - 1);
+        // y = std::clamp(y, 0, mip.height - 1);
+
         uint32_t result = mip.data[x + y * mip.width];
-    
-        vec4f rgba = 
+        vec4f rgba = hexToRGBA(result);
+
+        if (texture.numChannels < 4)
         {
-            ((result >> 16) & 0xFF) / 255.f,
-            ((result >> 8)  & 0xFF) / 255.f,
-            ((result >> 0)  & 0xFF) / 255.f,
-            ((result >> 24) & 0xFF) / 255.f
-        };
+            rgba.w = 1.f;
+        }
     
         return rgba;
     }
@@ -114,6 +128,7 @@ namespace echo
         position[posIndex + 1] = clip.y;
         position[posIndex + 2] = clip.z;
         position[posIndex + 3] = clip.w;
+
         vertIndex++;
     }
 }

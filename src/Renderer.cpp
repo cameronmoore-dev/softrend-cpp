@@ -132,7 +132,7 @@ namespace echo
                 std::memcpy(v0, m_input[0],   _priv::vertexdef.size);
                 std::memcpy(v1, m_input[j],   _priv::vertexdef.size);
                 std::memcpy(v2, m_input[j+1], _priv::vertexdef.size);
-    
+
                 transformVertex(v0);
                 transformVertex(v1);
                 transformVertex(v2);
@@ -157,7 +157,7 @@ namespace echo
         float &vy = vertex[1];
         float &vz = vertex[2];
         float &vw = vertex[3];
-    
+
         /* Perspective Division */
         vx /= vw;
         vy /= vw;
@@ -213,15 +213,13 @@ namespace echo
                         if (z < m_depthbuffer[idx] && shader.fragment(point, face, fragColour))
                         {
                             m_depthbuffer[idx] = z;
-                            // vec4f src = { fragColour.x * fragColour.w, fragColour.y * fragColour.w, fragColour.z * fragColour.w, fragColour.w };
-                            // vec4f dest = Utils::hexToRGBA(m_backBuffer[idx]);
-                            // vec4f blendColour = src + dest * (1.f - src.w);
-    
-                            // m_backBuffer[idx] = Utils::rgbaToHex(blendColour);
-                            m_backbuffer[idx] = (((uint8_t)(std::clamp(fragColour.x, 0.f, 1.f) * 255.f)) << 16) | 
-                                                (((uint8_t)(std::clamp(fragColour.y, 0.f, 1.f) * 255.f)) << 8)  | 
-                                                (((uint8_t)(std::clamp(fragColour.z, 0.f, 1.f) * 255.f)) << 0)  | 
-                                                (((uint8_t)(std::clamp(fragColour.w, 0.f, 1.f) * 255.f)) << 24);
+
+                            echo::vec4f src = { fragColour.x * fragColour.w, fragColour.y * fragColour.w, fragColour.z * fragColour.w, fragColour.w };
+                            echo::vec4f dest = hexToRGBA(m_backbuffer[idx]);
+                            echo::vec4f blendColour = src + dest * (1.f - src.w);
+                            uint32_t c = rgbaToHex(blendColour);
+
+                            m_backbuffer[idx] = c;
                         }
                     }
                 }
@@ -279,7 +277,7 @@ namespace echo
         {
             m_clipped.emplace_back(a[i] + (b[i] - a[i]) * t);
         }
-    
+
         int index = m_clipped.size() - _priv::vertexdef.stride;
         return &m_clipped[index];
     }
@@ -348,6 +346,7 @@ namespace echo
         }
     
         Texture texture;
+        texture.numChannels = channels;
         texture.mipLevels.emplace_back(mip);
     
         return texture;

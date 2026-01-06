@@ -108,7 +108,9 @@ namespace echo
     const vec3f cross(const vec3f &a, const vec3f &b);
     const vec4f srgbToLinear(const vec4f &colour);
     const vec4f linearToSRGB(const vec4f &colour);
+    const uint32_t rgbaToHex(const vec4f &colour);
     const uint32_t rgbToHex(const vec3f &colour);
+    const vec4f hexToRGBA(const uint32_t colour);
     const vec3f hexToRGB(const uint32_t colour);
     vec3f vec3(const vec4f &vec);
     vec4f vec4(const vec3f &vec, const float w);

@@ -36,6 +36,7 @@ namespace echo
     struct Texture
     {
         std::vector<MipMap> mipLevels;
+        uint8_t numChannels;
     };
     
     using vertex = float*;
@@ -47,8 +48,6 @@ namespace echo
     class IShader
     {
         friend class Renderer;
-    
-        
     
     protected:
         template<typename T>

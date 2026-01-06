@@ -28,29 +28,20 @@ private:
     echo::Renderer m_renderer;
     Camera m_camera;
 
-    Grass_Shader m_grassShader;
-    Cube_Shader m_cubeShader;
-    Window_Shader m_windowShader;
+    Grass_Shader    m_grassShader;
+    Cube_Shader     m_cubeShader;
+    Window_Shader   m_windowShader;
 
-    Model m_cube = Model("./resources/model_cube.obj");
+    Model m_cube  = Model("./resources/model_cube.obj");
     Model m_plane = Model("./resources/model_plane.obj");
     
-    // Image m_grassTexture = Image("./resources/texture_grass.tga");
-    // Image m_dirtTexture = Image("./resources/texture_dirtcube.tga");
-    // Image m_windowTexture = Image("./resources/texture_window.tga");
+    echo::Texture m_grassTexture;
+    echo::Texture m_dirtTexture;
+    echo::Texture m_windowTexture;
 
     echo::mat4 m_grassModel = echo::identity();
     echo::mat4 m_cubeModel = echo::identity();
     echo::mat4 m_windowModel = echo::identity();
-
-    echo::mat4 m_grassTranslate = echo::identity();
-    echo::mat4 m_cubeTranslate = echo::identity();
-    echo::mat4 m_windowTranslate = echo::identity();
-
-    echo::mat4 m_cubeRotation = echo::identity();
-
-    echo::mat4 m_rotation = echo::identity();
-    echo::mat4 m_scale = echo::identity();
 
     float m_angle = 0.f;
     double m_dt = 0.f;

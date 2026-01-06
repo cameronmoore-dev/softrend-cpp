@@ -60,20 +60,39 @@ namespace echo
         return srgb;
     }
 
+    const uint32_t rgbaToHex(const vec4f &colour)
+    {
+        int r = std::clamp(int(colour.x * 255.f), 0, 255);
+        int g = std::clamp(int(colour.y * 255.f), 0, 255);
+        int b = std::clamp(int(colour.z * 255.f), 0, 255);
+        int a = std::clamp(int(colour.w * 255.f), 0, 255);
+        return (r << 16) | (g << 8) | b | (a << 24);
+    }
+
     const uint32_t rgbToHex(const vec3f &colour) 
     {
-        int R = std::clamp(int(colour.x * 255.f), 0, 255);
-        int G = std::clamp(int(colour.y * 255.f), 0, 255);
-        int B = std::clamp(int(colour.z * 255.f), 0, 255);
-        return (R << 16) | (G << 8) | B;
+        int r = std::clamp(int(colour.x * 255.f), 0, 255);
+        int g = std::clamp(int(colour.y * 255.f), 0, 255);
+        int b = std::clamp(int(colour.z * 255.f), 0, 255);
+        return (r<< 16) | (g << 8) | b;
     }
 
     const vec3f hexToRGB(const uint32_t colour)
     {
         float r = float((colour >> 16) & 0xFF) / 255.f;
-        float g = float((colour >> 8) & 0xFF) / 255.f;
-        float b = float(colour & 0xFF) / 255.f;
+        float g = float((colour >> 8)  & 0xFF) / 255.f;
+        float b = float((colour >> 0)  & 0xFF) / 255.f;
         return  { r, g, b };
+    }
+
+    const vec4f hexToRGBA(const uint32_t colour)
+    {
+        float r = float((colour >> 16) & 0xFF) / 255.f;
+        float g = float((colour >> 8)  & 0xFF) / 255.f;
+        float b = float((colour >> 0)  & 0xFF) / 255.f;
+        float a = float((colour >> 24) & 0xFF) / 255.f;
+
+        return  { r, g, b, a };
     }
 
     vec3f vec3(const vec4f &vec)
