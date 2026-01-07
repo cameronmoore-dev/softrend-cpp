@@ -10,12 +10,6 @@ namespace echo
     class Renderer
     {
     public:
-        enum class RenderMode
-        {
-            Shadow,
-            Final
-        };
-    
         Renderer() = default;
         Renderer(void *bufferInfo);
     
@@ -32,14 +26,10 @@ namespace echo
         float *depthbuffer();
         void size(uint16_t &outWidth, uint16_t &outHeight);
 
-        inline static std::vector<float> depthMap;
-        
-        RenderMode renderMode = RenderMode::Final;
-    
     private:
         /* 
-         * Pointers to shared data between the Window and the Renderer through the EchoBufferInfo structure
-         */
+            Pointers to shared data between the Window and the Renderer through the EchoBufferInfo structure
+        */
         uint32_t *m_backbuffer = nullptr;
         uint32_t **m_ppBackBuffer = nullptr;
         float *m_depthbuffer = nullptr;

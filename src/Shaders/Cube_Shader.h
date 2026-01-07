@@ -11,6 +11,8 @@ public:
 
     Uniform<echo::Texture> cubeTexture;
 
+    float offset = 0.f;
+
     void vertex(float *vertex) override
     {
         echo::vec3f position = getVertexAttribData<echo::vec3f>(vertex, 0);

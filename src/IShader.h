@@ -36,6 +36,8 @@ namespace echo
     struct Texture
     {
         std::vector<MipMap> mipLevels;
+        vec2f offset = {0.f, 0.f};
+        vec2f scale  = {1.f, 1.f};
         uint8_t numChannels;
     };
     
@@ -56,8 +58,8 @@ namespace echo
         float offset = 0.f;
         double previous = getTimeSeconds();
     
-        uint32_t vertIndex = 0;
-        uint32_t fragIndex = 0;
+        uint32_t vertID = 0;
+        uint32_t fragID = 0;
         
     public:
         // virtual ~IShader() = 0;
@@ -76,6 +78,7 @@ namespace echo
         void derivatives(const int uvIndex, const face &face, const Texture &texture, float& dudx, float& dudy, float& dvdx, float& dvdy);
         float lod(float dudx, float dudy, float dvdx, float dvdy);
         vec2f perspectiveCorrectedUV(const int uvIndex, const face &face, const vec3f& barycentric);
+        uint32_t textureWrap(float &u, float &v, const Texture &texture, const uint8_t mipLevel);
         // const uint32_t bilinear(float u, float v, const MipMap &mip) const;
     
     protected:

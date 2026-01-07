@@ -9,7 +9,7 @@ Scene_AlphaBlending::Scene_AlphaBlending(jawl::Window &window) :
     int x = 0;
     int y = 0;
     m_window.getSize(x, y);
-    m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 100.f);
+    m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
 
     m_renderer = echo::Renderer(m_window.getEBI());
     m_renderer.setVertexAttrib(sizeof(Vertex), 0, 4); /* Position */
@@ -49,6 +49,10 @@ void Scene_AlphaBlending::start()
     stbi_image_free(g);
     stbi_image_free(d);
     stbi_image_free(w);
+
+    // m_renderer.generateMipMaps(m_grassTexture);
+    // m_renderer.generateMipMaps(m_dirtTexture);
+    // m_renderer.generateMipMaps(m_windowTexture);
 
     m_grassShader.setUniform<echo::Texture>(m_grassShader.grassTexture, m_grassTexture);
     m_cubeShader.setUniform<echo::Texture>(m_cubeShader.cubeTexture, m_dirtTexture);
@@ -103,9 +107,8 @@ void Scene_AlphaBlending::update()
 
     m_angle += 1.f * m_dt;
     m_cubeModel = echo::translate({ -7, 0, 7 }) * (echo::rotate(m_angle, { -1, 1, 1 }) * echo::identity());
-    m_grassModel = echo::identity() * (echo::rotate(90, { 0, 1, 0 }) * echo::identity());
-    m_windowModel = echo::translate({ 5.f, 0.f, -3.f }) * (echo::rotate(90, { 0, 1, 0 }) * echo::identity());
-
+    m_grassModel = echo::identity() * (echo::rotate(135, { 0, 1, 0 }) * echo::identity());
+    m_windowModel = echo::translate({ 5.f, 0.f, -3.f }) * (echo::rotate(135, { 0, 1, 0 }) * echo::identity());
 }
 
 void Scene_AlphaBlending::render()

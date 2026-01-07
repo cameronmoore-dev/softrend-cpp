@@ -23,9 +23,6 @@ namespace echo
         m_input.reserve(6);
         m_output.reserve(6);
     
-        // vbo.reserve(17'000);
-    
-        // depthMap.resize(1024*1024, 1.f);
         previous = getTimeSeconds();
     
         /*  
@@ -89,9 +86,6 @@ namespace echo
         double current = getTimeSeconds();
         dt += current - previous;
         previous = current;
-    
-        // viewportWidth   = renderMode == RenderMode::Shadow ? 1024 : m_context.m_width;
-        // viewportHeight  = renderMode == RenderMode::Shadow ? 1024 : m_context.m_height;
         
         for (uint32_t i = 0; i < size; i+=3)
         {
@@ -199,28 +193,19 @@ namespace echo
                 {
                     float z = positions[0].z * point.x + positions[1].z * point.y + positions[2].z * point.z;
                     uint32_t idx = p.x + p.y * (m_viewportWidth);
-                    
-                    if (renderMode == RenderMode::Shadow)
-                    {
-                        if (z < depthMap[idx])
-                        {
-                            depthMap[idx] = z;
-                        }
-                    }
-                    else if (renderMode == RenderMode::Final)
-                    {
-                        vec4f fragColour;
-                        if (z < m_depthbuffer[idx] && shader.fragment(point, face, fragColour))
-                        {
-                            m_depthbuffer[idx] = z;
 
-                            echo::vec4f src = { fragColour.x * fragColour.w, fragColour.y * fragColour.w, fragColour.z * fragColour.w, fragColour.w };
-                            echo::vec4f dest = hexToRGBA(m_backbuffer[idx]);
-                            echo::vec4f blendColour = src + dest * (1.f - src.w);
-                            uint32_t c = rgbaToHex(blendColour);
+                    vec4f fragColour;
+                    if (z < m_depthbuffer[idx] && shader.fragment(point, face, fragColour))
+                    {
+                        m_depthbuffer[idx] = z;
 
-                            m_backbuffer[idx] = c;
-                        }
+                        echo::vec4f src = { fragColour.x * fragColour.w, fragColour.y * fragColour.w, fragColour.z * fragColour.w, fragColour.w };
+                        echo::vec4f dest = hexToRGBA(m_backbuffer[idx]);
+                        echo::vec4f blendColour = src + dest * (1.f - src.w);
+
+                        // blendColour = linearToSRGB(blendColour);
+
+                        m_backbuffer[idx] = rgbaToHex(blendColour);
                     }
                 }
             }

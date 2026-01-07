@@ -2,12 +2,15 @@
 
 #include <cmath>
 
+/* 0 = repeated, 1 = mirrored repeat, 2 = clamp to edge, 3 = clamp to border */
+#define WRAP_MODE 0
+
 namespace echo
 {
     void IShader::reset()
     {
-        vertIndex = 0;
-        fragIndex = 0;
+        vertID = 0;
+        fragID = 0;
     }
 
     vec3f IShader::reflect(const vec3f& i, const vec3f& n)
@@ -76,7 +79,6 @@ namespace echo
         vec2f uv1 = (st[1] / face.v1[3]);
         vec2f uv2 = (st[2] / face.v2[3]);
 
-        /* Perspective-correct interpolation */
         float inverse = invW0 * barycentric.x +
                         invW1 * barycentric.y +
                         invW2 * barycentric.z;
@@ -90,28 +92,19 @@ namespace echo
     
     vec4f IShader::texture(const int uvIndex, const face &face, Texture &texture, const vec3f& barycentric)
     {
-        float dudx, dudy, dvdx, dvdy;
-        derivatives(uvIndex, face, texture, dudx, dudy, dvdx, dvdy);
-        float _lod = lod(dudx, dudy, dvdx, dvdy);
-    
-        vec2f uv = perspectiveCorrectedUV(uvIndex, face, barycentric);
-
-        uint8_t level = std::clamp((int)(_lod + 0.5f), 0, (int)texture.mipLevels.size() - 1);
-        const MipMap &mip = texture.mipLevels[level];
-    
-        if (uv.x < 0.f || uv.x > 1.f || uv.y < 0.f || uv.y > 1.f)
+        uint8_t mipLevel = 0;
+        if (texture.mipLevels.size() > 1)
         {
-            printf("%f, %f\n", uv.x, uv.y);
-
+            float dudx, dudy, dvdx, dvdy;
+            derivatives(uvIndex, face, texture, dudx, dudy, dvdx, dvdy);
+            float _lod = lod(dudx, dudy, dvdx, dvdy);
+            mipLevel = std::clamp((int)(_lod + 0.5f), 0, (int)texture.mipLevels.size() - 1);
         }
-
-        int x = uv.x * (mip.width - 1);
-        int y = uv.y * (mip.height - 1);
-
-        // x = std::clamp(x, 0, mip.width - 1);
-        // y = std::clamp(y, 0, mip.height - 1);
-
-        uint32_t result = mip.data[x + y * mip.width];
+        
+        const MipMap &mip = texture.mipLevels[mipLevel];
+        
+        vec2f uv = perspectiveCorrectedUV(uvIndex, face, barycentric);
+        uint32_t result = textureWrap(uv.x, uv.y, texture, mipLevel);
         vec4f rgba = hexToRGBA(result);
 
         if (texture.numChannels < 4)
@@ -122,6 +115,59 @@ namespace echo
         return rgba;
     }
 
+    uint32_t IShader::textureWrap(float &u, float &v, const Texture &texture, const uint8_t mipLevel)
+    {
+        u += texture.offset.x;
+        v += texture.offset.y;
+        u *= texture.scale.x;
+        v *= texture.scale.y;
+
+        const MipMap &mip = texture.mipLevels[mipLevel];
+
+        float uFraction = u - (long)u;
+        float vFraction = v - (long)v;
+        uint32_t x = uint32_t(uFraction * mip.width)  % mip.width;
+        uint32_t y = uint32_t(vFraction * mip.height) % mip.height;
+
+        switch (WRAP_MODE)
+        {
+            case 1:
+            {
+                if ((int)std::ceil(u) & 1 != 0)
+                {
+                    x = uint32_t((1.f - uFraction) * mip.width)  % mip.width;
+                }
+    
+                if ((int)std::ceil(v) & 1 != 0)
+                {
+                    y = uint32_t((1.f - vFraction) * mip.height) % mip.height;
+                }
+            } break;
+
+            case 2:
+            {
+                u = std::clamp(u, 0.f, 1.f);
+                v = std::clamp(v, 0.f, 1.f);
+
+                x = u * (mip.width - 1);
+                y = v * (mip.height - 1);
+            } break;
+
+            case 3:
+            {
+                if (u < 0.f || u > 1.f || 
+                    v < 0.f || v > 1.f)
+                {
+                    return { 0xffff00ff };
+                }
+            } break;
+
+            default: break;
+        }
+
+        return mip.data[x + y * mip.width];
+    }
+
     void IShader::glPosition(int posIndex, float *position, const vec4f &clip)
     {
         position[posIndex]     = clip.x;
@@ -129,6 +175,6 @@ namespace echo
         position[posIndex + 2] = clip.z;
         position[posIndex + 3] = clip.w;
 
-        vertIndex++;
+        vertID++;
     }
 }
