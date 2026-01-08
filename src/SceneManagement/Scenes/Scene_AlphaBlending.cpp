@@ -9,9 +9,9 @@ Scene_AlphaBlending::Scene_AlphaBlending(jawl::Window &window) :
     int x = 0;
     int y = 0;
     m_window.getSize(x, y);
-    m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
+    m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 50.f);
 
-    m_renderer = echo::Renderer(m_window.getEBI());
+    m_renderer = echo::Renderer(m_window.frontbuffer(), 2);
     m_renderer.setVertexAttrib(sizeof(Vertex), 0, 4); /* Position */
     m_renderer.setVertexAttrib(sizeof(Vertex), 1, 3); /* Normal */
     m_renderer.setVertexAttrib(sizeof(Vertex), 2, 2); /* TexCoord */
@@ -33,6 +33,8 @@ void Scene_AlphaBlending::start()
     m_windowShader.setUniform<echo::mat4>(m_windowShader.view, m_camera.view());
     m_windowShader.setUniform<echo::mat4>(m_windowShader.model, m_windowModel);
 
+    m_grassModel = echo::identity() * (echo::rotate(180, { 0, 1, 0 }) * echo::identity());
+    m_windowModel = echo::translate({ 5.f, 0.f, -3.f }) * (echo::rotate(180, { 0, 1, 0 }) * echo::identity());
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -69,7 +71,7 @@ void Scene_AlphaBlending::start()
         update();
         render();
 
-        printf("FPS: %.0f\n", 1.f/m_dt);
+        // printf("FPS: %.0f\n", 1.f/m_dt);
     }
 }
 
@@ -86,6 +88,11 @@ void Scene_AlphaBlending::processInput()
                 {
                     m_window.close();
                 }
+
+                else if (e.keyCode == jawl::getKey(jawl::Key::F5))
+                {
+                    m_window.setFullscreen(fs = !fs);
+                }
             } break;
 
             case jawl::Event::KeyReleased:
@@ -96,6 +103,11 @@ void Scene_AlphaBlending::processInput()
             {
                 m_camera.updateRotation(e.mousePos.x, e.mousePos.y, m_dt);
             } break;
+
+            case jawl::Event::WindowResize:
+            {
+                windowResize(0, 0, e.wndResizeInfo.width, e.wndResizeInfo.height);
+            } break;
         }
     }
 }
@@ -105,10 +117,8 @@ void Scene_AlphaBlending::update()
     m_camera.updateMovement(m_dt);
     m_camera.updateView();
 
-    m_angle += 1.f * m_dt;
+    m_angle += 40.f * m_dt;
     m_cubeModel = echo::translate({ -7, 0, 7 }) * (echo::rotate(m_angle, { -1, 1, 1 }) * echo::identity());
-    m_grassModel = echo::identity() * (echo::rotate(135, { 0, 1, 0 }) * echo::identity());
-    m_windowModel = echo::translate({ 5.f, 0.f, -3.f }) * (echo::rotate(135, { 0, 1, 0 }) * echo::identity());
 }
 
 void Scene_AlphaBlending::render()
@@ -119,10 +129,17 @@ void Scene_AlphaBlending::render()
     m_renderer.draw(m_plane.vertices.data(), m_plane.vertices.size(), m_grassShader);
     m_renderer.draw(m_plane.vertices.data(), m_plane.vertices.size(), m_windowShader);
 
+    m_renderer.upscale();
+
     m_window.swapBuffers();
 }
 
 void Scene_AlphaBlending::shutdown()
 {
     
+}
+
+void Scene_AlphaBlending::windowResize(int x, int y, int w, int h)
+{
+    m_renderer.viewport(0, 0, w, h);
 }

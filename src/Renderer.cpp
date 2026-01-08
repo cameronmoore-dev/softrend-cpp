@@ -18,46 +18,36 @@ namespace echo
     #define FAR_PLANE       5
     #define NUM_PLANES      6
 
-    Renderer::Renderer(void *bufferInfo)
+    Renderer::Renderer(void *frontbuffer, const int8_t downScale) :
+        m_scale(downScale)
     {
-        m_input.reserve(6);
-        m_output.reserve(6);
-    
         previous = getTimeSeconds();
-    
-        /*  
-            Navigating through the void, 
-            assigning values based on the known layout of the EchoBufferInfo structure
-        */
-        m_viewportWidth = **((uint16_t**)bufferInfo);
-        m_viewportHeight = **((uint16_t**)bufferInfo + 1);
-        m_backbuffer = *((uint32_t**)bufferInfo + 2);
-        m_depthbuffer = *((float**)bufferInfo + 3);
-    
-        m_ppBackBuffer = ((uint32_t**)bufferInfo + 2);
-        m_ppDepthBuffer = ((float**)bufferInfo + 3);
+
+        m_wndFrontbuffer = *((uint32_t**)frontbuffer);
+        m_ppWndFrontbuffer = ((uint32_t**)frontbuffer);
     }
     
     void Renderer::clear(uint32_t colour)
     {
-        /*  
-            If the array that stores the backbuffer has reallocated its memory,
-            then set this pointer of the backbuffer to the new location.
-        */
-        if (m_backbuffer != *m_ppBackBuffer)
+        /* Update where this pointer's memory address to the window's frontbuffer if it changes */
+        if (m_wndFrontbuffer != *m_ppWndFrontbuffer)
         {
-            m_backbuffer = *m_ppBackBuffer;
-            m_depthbuffer = *m_ppDepthBuffer;
+            m_wndFrontbuffer = *m_ppWndFrontbuffer;
         }
-    
-        std::fill(m_backbuffer, m_backbuffer + (m_viewportWidth * m_viewportHeight), colour);
-        std::fill(m_depthbuffer, m_depthbuffer + (m_viewportWidth * m_viewportHeight), std::numeric_limits<float>::infinity());
+
+        std::fill(m_backbuffer.data(), m_backbuffer.data() + (m_viewportWidth*m_viewportHeight), colour);
+        std::fill(m_depthbuffer.data(), m_depthbuffer.data() + (m_viewportWidth*m_viewportHeight), std::numeric_limits<float>::max());
     }
     
     void Renderer::viewport(int x, int y, int w, int h)
     {
+        w /= m_scale;
+        h /= m_scale;
+
         m_viewportWidth  = w;
         m_viewportHeight = h;
+        m_backbuffer.resize(w * h);
+        m_depthbuffer.resize(w * h);
     }
 
     void Renderer::setVertexAttrib(uint16_t size, uint8_t index, uint8_t count)
@@ -202,8 +192,6 @@ namespace echo
                         echo::vec4f src = { fragColour.x * fragColour.w, fragColour.y * fragColour.w, fragColour.z * fragColour.w, fragColour.w };
                         echo::vec4f dest = hexToRGBA(m_backbuffer[idx]);
                         echo::vec4f blendColour = src + dest * (1.f - src.w);
-
-                        // blendColour = linearToSRGB(blendColour);
 
                         m_backbuffer[idx] = rgbaToHex(blendColour);
                     }
@@ -455,12 +443,12 @@ namespace echo
 
     uint32_t *Renderer::framebuffer()
     {
-        return m_backbuffer;
+        return m_backbuffer.data();
     }
 
     float *Renderer::depthbuffer()
     {
-        return m_depthbuffer;
+        return m_depthbuffer.data();
     }
 
     void Renderer::size(uint16_t &outWidth, uint16_t &outHeight)

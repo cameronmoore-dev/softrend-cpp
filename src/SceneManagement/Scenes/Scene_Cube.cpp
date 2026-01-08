@@ -2,6 +2,8 @@
 
 #include <chrono>
 
+#include <stb_image/stb_image.h>
+
 Scene_Cube::Scene_Cube(jawl::Window &window) :
     m_window(window)
 {
@@ -11,18 +13,34 @@ Scene_Cube::Scene_Cube(jawl::Window &window) :
     m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
 
     m_renderer = echo::Renderer(m_window.getEBI());
+    m_renderer.setVertexAttrib(sizeof(Vertex), 0, 4); /* Position */
+    m_renderer.setVertexAttrib(sizeof(Vertex), 1, 3); /* Normal */
+    m_renderer.setVertexAttrib(sizeof(Vertex), 2, 2); /* TexCoord */
+    m_renderer.setVertexAttrib(sizeof(Vertex), 3, 3); /* Tangent */
+    m_renderer.setVertexAttrib(sizeof(Vertex), 4, 3); /* Bitangent */
 }
 
 void Scene_Cube::start()
 {
-    uint16_t w, h;
-    m_renderer.size(w, h);
-    m_fxaa = FXAA_Shader(m_renderer.framebuffer(), w*h, w);
+    // uint16_t w, h;
+    // m_renderer.size(w, h);
+    // m_fxaa = FXAA_Shader(m_renderer.framebuffer(), w*h, w);
 
-    m_shader.setUniform<Mat4>(m_shader.model, m_model);
-    m_shader.setUniform<Mat4>(m_shader.view, m_camera.view());
-    m_shader.setUniform<Mat4>(m_shader.projection, m_camera.projection());
-    // m_shader.setUniform<Image>(m_shader.texture, m_texture);
+    m_shader.setUniform<echo::mat4>(m_shader.model, m_model);
+    m_shader.setUniform<echo::mat4>(m_shader.view, m_camera.view());
+    m_shader.setUniform<echo::mat4>(m_shader.projection, m_camera.projection());
+
+    stbi_set_flip_vertically_on_load(true);
+
+    int iw, ih, ic;
+    uint8_t *d = stbi_load("./resources/texture_dirtcube.tga", &iw, &ih, &ic, 0);
+    m_texture = m_renderer.createTexture(d, iw, ih, ic);
+
+    m_renderer.bilinearFilter(m_texture);
+
+    stbi_image_free(d);
+
+    m_shader.setUniform<echo::Texture>(m_shader.cubeTexture, m_texture);
     
     double previous = getTimeSeconds();
     while (m_window.isOpen())
@@ -71,20 +89,19 @@ void Scene_Cube::update()
     m_camera.updateMovement(m_dt);
     m_camera.updateView();
 
-    m_angle+=5.f * m_dt;
-    m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
-    m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
-
-    m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
+    m_angle += 40.f * m_dt;
+    m_model = echo::identity() * (echo::rotate(m_angle, {-1, 1, 2 }) * echo::identity());
 }
 
 void Scene_Cube::render()
 {
     m_renderer.clear(0x111111);
 
-    // m_renderer.draw(m_cube.vertices, m_shader);
+    m_renderer.draw(m_cube.vertices.data(), m_cube.vertices.size(), m_shader);
 
-    m_fxaa.apply();
+    // m_fxaa.apply();
+
+    m_renderer.upscale();
     
     m_window.swapBuffers();
 }

@@ -25,16 +25,16 @@ public:
 
     bool fragment(const echo::vec3f& barycentric, const echo::face &face, echo::vec4f& fragColour) override
     {
-        double current = getTimeSeconds();
-        double dt = current - previous;
-        previous = current;
+        // double current = getTimeSeconds();
+        // double dt = current - previous;
+        // previous = current;
 
-        offset += dt;
+        // offset += dt;
 
-        windowTexture->offset.x = -offset;
-        windowTexture->offset.y = -offset;
-        windowTexture->scale.x = 1.5f;
-        windowTexture->scale.y = 1.5f;
+        // windowTexture->offset.x = -offset;
+        // windowTexture->offset.y = -offset;
+        // windowTexture->scale.x = 1.5f;
+        // windowTexture->scale.y = 1.5f;
 
         fragColour = texture(2, face, *windowTexture, barycentric);
         return true;

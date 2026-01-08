@@ -65,11 +65,12 @@ namespace jawl
                 return DefWindowProc(hwnd, uMsg, wParam, lParam);
             }
         }
+        
         LPCWSTR className() const { return L"JawlWindowClass"; }
         LRESULT handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam);
         void registerWinClass();
         void pollMessages();
-    
+
         void swSetup() override;
         void glSetup() override;
         void registerInputDevices() override;

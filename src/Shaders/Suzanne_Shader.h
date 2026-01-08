@@ -71,18 +71,18 @@ private:
         // float bias = std::max(0.05f * (1.0f - dot(normal, lightDir)), 0.005f);
         // float shadow = currentDepth - bias > shadowDepth ? 1.f : 0.f;
 
-        echo::vec3f normal = getNormalMapTexel(face, barycentric);
-        // echo::vec3f normal = normals[0] * barycentric.x + normals[1] * barycentric.y + normals[2] * barycentric.z;
+        // echo::vec3f normal = getNormalMapTexel(face, barycentric);
+        echo::vec3f normal = normals[0] * barycentric.x + normals[1] * barycentric.y + normals[2] * barycentric.z;
         normal = normalise(normal);
 
         float diff = std::max(0.f, echo::dot(normal, lightDir));
         echo::vec3f diffuse = colour * diff;
 
-        echo::vec3f halfwayDir = normalise(lightDir + lightDir);
-        float spec = std::pow(std::max(dot(normal, halfwayDir), 0.f), 128);
-        echo::vec3f specular = vec3(texture(2, face, *specularMap, barycentric) * spec);
+        // echo::vec3f halfwayDir = normalise(lightDir + lightDir);
+        // float spec = std::pow(std::max(dot(normal, halfwayDir), 0.f), 128);
+        // echo::vec3f specular = vec3(texture(2, face, *specularMap, barycentric) * spec);
 
-        fragColour = vec4((ambient + (diffuse + specular) /* * (1.0f - shadow) */), 1.f) * texture(2, face, *diffuseMap, barycentric);
+        fragColour = vec4((ambient + (diffuse ) /* * (1.0f - shadow) */), 1.f) * texture(2, face, *diffuseMap, barycentric);
         fragColour = echo::srgbToLinear(fragColour);
         fragColour = echo::linearToSRGB(fragColour);
         return true;

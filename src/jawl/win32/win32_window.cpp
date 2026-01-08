@@ -8,14 +8,6 @@
 
 namespace jawl
 {
-    struct EchoBuffersInfo
-    {
-        uint16_t *width;
-        uint16_t *height;
-        uint32_t *backbuffer;
-        float    *depthbuffer;
-    };
-
     LRESULT Win32_Window::handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         switch(uMsg)
@@ -207,9 +199,7 @@ namespace jawl
             PAINTSTRUCT paint;
             HDC hdc = ::BeginPaint(m_window, &paint);
         
-            m_ebi->backbuffer[m_width / 2 + m_height / 2 * m_width] = 0xff00ff;
-        
-            std::memcpy(m_frontBuffer, m_ebi->backbuffer, m_width*m_height*sizeof(uint32_t));
+            // std::memcpy(m_frontBuffer, m_ebi->backbuffer, m_width*m_height*sizeof(uint32_t));
             ::BitBlt(hdc, 
                      paint.rcPaint.left, paint.rcPaint.top, 
                      m_width, m_height, 
@@ -349,14 +339,11 @@ namespace jawl
         m_frameInfo.bmiHeader.biPlanes = 1;
         m_frameInfo.bmiHeader.biBitCount = 32;
         m_frameInfo.bmiHeader.biCompression = BI_RGB;
-        m_ebi = new EchoBuffersInfo_t {};
     }
 
     void Win32_Window::glSetup()
     {
-        /* 
-            Make dummy context so GLAD can load OpenGL extensions for the ability to create a modern context
-        */
+        /* Make dummy context so GLAD can load OpenGL extensions for the ability to create a modern context */
         HDC dummyDC;
         dummyDC = GetDC(m_window);
 
@@ -375,9 +362,7 @@ namespace jawl
         ::ReleaseDC(m_window, dummyDC);
         ::DestroyWindow(m_window);
 
-        /* 
-            Create the finished window and make the modern context
-        */
+        /* Create the finished window and make the modern context */
         LPCWSTR cTitle = std::wstring(m_title.begin(), m_title.end()).c_str();
         m_window = ::CreateWindowEx(
             0, 
@@ -487,13 +472,10 @@ namespace jawl
         m_frameInfo.bmiHeader.biWidth  = m_width;
         m_frameInfo.bmiHeader.biHeight = m_height;
 
-        m_bitmapHandle = ::CreateDIBSection(nullptr, &m_frameInfo, DIB_RGB_COLORS, (void**)&m_frontBuffer, nullptr, 0);
+        m_bitmapHandle = ::CreateDIBSection(nullptr, &m_frameInfo, DIB_RGB_COLORS, (void**)&m_frontbuffer, nullptr, 0);
         ::SelectObject(m_deviceContext, m_bitmapHandle);
         ::GetWindowRect(m_window, &m_rect);
 
-        m_backBuffer.resize(m_width*m_height);
-        m_depthBuffer.resize(m_width*m_height, std::numeric_limits<float>::infinity());
-        m_ebi->backbuffer = m_backBuffer.data();
-        m_ebi->depthbuffer = m_depthBuffer.data();
+        m_ppFrontbuffer = &m_frontbuffer;
     }
 }

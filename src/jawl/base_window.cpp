@@ -4,22 +4,6 @@
 
 namespace jawl
 {
-    struct EchoBuffersInfo
-    {
-        uint16_t *width;
-        uint16_t *height;
-        uint32_t *backbuffer;
-        float    *depthbuffer;
-    };
-
-    EchoBuffersInfo_t *Window::getEBI()
-    {
-        m_ebi->width  = &m_width;
-        m_ebi->height = &m_height;
-    
-        return m_ebi;
-    }
-    
     Window::Window()
     {
         /* Set default values to window hints */

@@ -37,9 +37,9 @@ void Scene_Suzanne::start()
     uint8_t *s = stbi_load("./resources/suzanne_specular.jpg", &iw, &ih, &ic, 0);
     m_specularMap = m_renderer.createTexture(s, iw, ih, ic);
 
-    m_renderer.generateMipMaps(m_texture);
-    m_renderer.generateMipMaps(m_normalMap);
-    m_renderer.generateMipMaps(m_specularMap);
+    // m_renderer.generateMipMaps(m_texture);
+    // m_renderer.generateMipMaps(m_normalMap);
+    // m_renderer.generateMipMaps(m_specularMap);
     m_renderer.bilinearFilter(m_texture);
     m_renderer.bilinearFilter(m_normalMap);
 
@@ -177,8 +177,8 @@ void Scene_Suzanne::update()
     m_camera.updateMovement(m_dt);
     m_camera.updateView();
 
-    m_angle += 1.f * m_dt;
-    m_model = echo::identity() * (echo::rotate(m_angle, { 0.5f, 1, 0 }) * echo::identity());
+    m_angle += 40.f * m_dt;
+    m_model = echo::identity() * (echo::rotate(m_angle, { 0.5f, 1, 1 }) * echo::identity());
 }
 
 void Scene_Suzanne::render()
@@ -205,7 +205,10 @@ void Scene_Suzanne::render()
         {
             m_ssao.apply();
         }
+
     }
+    
+    m_renderer.upscale();
     
     m_window.swapBuffers();
 }
@@ -217,5 +220,5 @@ void Scene_Suzanne::shutdown()
 
 void Scene_Suzanne::onWindowResize(int w, int h)
 {
-    m_renderer.viewport(0, 0, w, h);
+    // m_renderer.viewport(0, 0, w, h);
 }

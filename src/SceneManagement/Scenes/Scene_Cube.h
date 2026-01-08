@@ -28,19 +28,15 @@ private:
     jawl::Window &m_window;
     echo::Renderer m_renderer;
     Model m_cube = Model("./resources/model_cube.obj");
-    // Image m_texture = Image("./resources/texture_dirtcube.tga");
     Camera m_camera;
+
+    echo::Texture m_texture;
 
     Cube_Shader m_shader;
     FXAA_Shader m_fxaa;    
     
     echo::mat4 m_model = echo::identity();
 
-    echo::mat4 m_translate = echo::identity();
-    echo::mat4 m_rotation = echo::identity();
-    echo::mat4 m_scale = echo::identity();
-
     float m_angle = 0.f;
-
     double m_dt = 0.f;
 };

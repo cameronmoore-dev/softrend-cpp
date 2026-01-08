@@ -199,8 +199,8 @@ namespace echo
         const float _angle = degToRad(angle);
         const vec3f _axis = normalise(axis);
 
-        float c = cos(angle);
-        float s = sin(angle);
+        float c = std::cos(_angle);
+        float s = std::sin(_angle);
         float t = 1 - c;
 
         mat4 r = identity();

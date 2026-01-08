@@ -59,7 +59,7 @@ namespace jawl
         HintsCount
     };
 
-    typedef struct EchoBuffersInfo EchoBuffersInfo_t;
+    struct frontbuffer_t;
 
     class Window
     {
@@ -74,6 +74,8 @@ namespace jawl
         void cursorEnableFlags(uint8_t flags);
         void cursorDisableFlags(uint8_t flags);
     
+        uint32_t **frontbuffer() { return m_ppFrontbuffer; }
+        
         virtual Window *create(const std::string &title, uint16_t width, uint16_t height, uint32_t style, RendererType rtype) = 0;
         virtual void cleanup() = 0;
         virtual void swapBuffers() = 0;
@@ -88,13 +90,9 @@ namespace jawl
         virtual bool isFocused() = 0;
         bool isOpen() { return m_isOpen; }
     
-        EchoBuffersInfo_t *getEBI();
-    
     protected:
-        uint32_t *m_frontBuffer = nullptr;
-        EchoBuffersInfo_t *m_ebi = nullptr;
-        std::vector<uint32_t> m_backBuffer;
-        std::vector<float> m_depthBuffer;
+        uint32_t *m_frontbuffer = nullptr;
+        uint32_t **m_ppFrontbuffer = nullptr;
 
         std::queue<Event> m_events;
         std::array<Hints, HintsCount> m_hints;
