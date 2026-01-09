@@ -47,7 +47,4 @@ private:
     double m_dt = 0.f;
 
     bool fs = false;
-
-private:
-    void windowResize(int x, int y, int w, int h);
 };

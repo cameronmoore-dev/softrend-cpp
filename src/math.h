@@ -13,6 +13,14 @@ namespace echo
     inline const float pi = 3.14159265359f;
     inline const float e = 2.71828f;
 
+    struct rect
+    {
+        int x;
+        int y;
+        uint16_t width;
+        uint16_t height;
+    };
+    
     struct vec2i
     {
         uint32_t x, y;

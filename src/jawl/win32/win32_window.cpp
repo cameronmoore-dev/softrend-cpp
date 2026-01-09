@@ -8,6 +8,13 @@
 
 namespace jawl
 {
+    struct Backbuffer
+    {
+        uint16_t width;
+        uint16_t height;
+        uint32_t *backbuffer = nullptr;
+    };
+
     LRESULT Win32_Window::handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         switch(uMsg)
@@ -146,7 +153,7 @@ namespace jawl
         }
     }
 
-    Win32_Window *Win32_Window::create(const std::string &title, uint16_t width, uint16_t height, uint32_t style, RendererType rtype)
+    Win32_Window *Win32_Window::create(const std::string &title, const uint16_t width, const uint16_t height, const uint32_t style, const RendererType rtype)
     {
         registerWinClass();
 
@@ -199,7 +206,7 @@ namespace jawl
             PAINTSTRUCT paint;
             HDC hdc = ::BeginPaint(m_window, &paint);
         
-            // std::memcpy(m_frontBuffer, m_ebi->backbuffer, m_width*m_height*sizeof(uint32_t));
+            std::memcpy(m_frontbuffer, m_backbuffer->backbuffer, m_width*m_height*sizeof(uint32_t));
             ::BitBlt(hdc, 
                      paint.rcPaint.left, paint.rcPaint.top, 
                      m_width, m_height, 
@@ -216,7 +223,7 @@ namespace jawl
         pollMessages();
     }
 
-    void Win32_Window::swapInterval(uint8_t interval)
+    void Win32_Window::swapInterval(const uint8_t interval)
     {
         if (m_rtype == RendererType::Hardware)
         {
@@ -228,17 +235,23 @@ namespace jawl
     void Win32_Window::cleanup()
     {
         ::DestroyWindow(m_window);
-        if (m_bitmapHandle)
-        {
-            ::DeleteObject(m_bitmapHandle);
-        }
-        
-        if (m_deviceContext)
-        {
-            ::DeleteDC(m_deviceContext);
-        }
 
-        ::ClipCursor(nullptr);
+        if (m_rtype == RendererType::Software)
+        {
+            if (m_bitmapHandle)
+            {
+                ::DeleteObject(m_bitmapHandle);
+            }
+            if (m_deviceContext)
+            {
+                ::DeleteDC(m_deviceContext);
+            }
+            ::ClipCursor(nullptr);
+    
+            delete[] m_backbuffer->backbuffer;
+            delete(m_backbuffer);
+            m_backbuffer = nullptr;
+        }
     }
 
     void Win32_Window::setTitle(const std::string &title)
@@ -247,7 +260,7 @@ namespace jawl
         ::SetWindowTextW(m_window, str);
     }
 
-    void Win32_Window::setFullscreen(bool fullscreen)
+    void Win32_Window::setFullscreen(const bool fullscreen)
     {
         if (fullscreen)
         {
@@ -294,7 +307,7 @@ namespace jawl
         outHeight = m_rect.bottom - m_rect.top;
     }
 
-    void Win32_Window::setPos(int x, int y)
+    void Win32_Window::setPos(const int x, const int y)
     {
         ::SetWindowPos( m_window, 
                         NULL, 
@@ -304,7 +317,7 @@ namespace jawl
                         SWP_FRAMECHANGED);
     }
 
-    void Win32_Window::setSize(int width, int height)
+    void Win32_Window::setSize(const int width, const int height)
     {
         ::SetWindowPos( m_window,
                         NULL, 
@@ -315,7 +328,7 @@ namespace jawl
                         SWP_FRAMECHANGED);
     }
 
-    void Win32_Window::setFlash(UINT count, DWORD timeout, bool sound)
+    void Win32_Window::setFlash(const UINT count, const DWORD timeout, const bool sound)
     {
         FLASHWINFO info;
         info.cbSize = sizeof(FLASHWINFO);
@@ -339,6 +352,7 @@ namespace jawl
         m_frameInfo.bmiHeader.biPlanes = 1;
         m_frameInfo.bmiHeader.biBitCount = 32;
         m_frameInfo.bmiHeader.biCompression = BI_RGB;
+        m_backbuffer = new Backbuffer{};
     }
 
     void Win32_Window::glSetup()
@@ -454,7 +468,7 @@ namespace jawl
         ::ShowCursor(!(m_cursorState & CursorFlags::Hidden));
     }
 
-    void Win32_Window::onWindowResize(LPARAM lParam)
+    void Win32_Window::onWindowResize(const LPARAM lParam)
     {
         m_width  = LOWORD(lParam);
         m_height = HIWORD(lParam);
@@ -476,6 +490,13 @@ namespace jawl
         ::SelectObject(m_deviceContext, m_bitmapHandle);
         ::GetWindowRect(m_window, &m_rect);
 
-        m_ppFrontbuffer = &m_frontbuffer;
+        if (m_backbuffer)
+        {
+            m_backbuffer->width  = m_width;
+            m_backbuffer->height = m_height;
+
+            delete[] m_backbuffer->backbuffer;
+            m_backbuffer->backbuffer = new uint32_t[m_width*m_height];
+        }
     }
 }

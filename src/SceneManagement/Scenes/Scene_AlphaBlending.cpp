@@ -11,7 +11,7 @@ Scene_AlphaBlending::Scene_AlphaBlending(jawl::Window &window) :
     m_window.getSize(x, y);
     m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 50.f);
 
-    m_renderer = echo::Renderer(m_window.frontbuffer(), 2);
+    m_renderer = echo::Renderer(m_window.backbuffer());
     m_renderer.setVertexAttrib(sizeof(Vertex), 0, 4); /* Position */
     m_renderer.setVertexAttrib(sizeof(Vertex), 1, 3); /* Normal */
     m_renderer.setVertexAttrib(sizeof(Vertex), 2, 2); /* TexCoord */
@@ -71,7 +71,7 @@ void Scene_AlphaBlending::start()
         update();
         render();
 
-        // printf("FPS: %.0f\n", 1.f/m_dt);
+        printf("FPS: %.0f\n", 1.f/m_dt);
     }
 }
 
@@ -106,7 +106,10 @@ void Scene_AlphaBlending::processInput()
 
             case jawl::Event::WindowResize:
             {
-                windowResize(0, 0, e.wndResizeInfo.width, e.wndResizeInfo.height);
+                m_renderer.viewport(0, 
+                                    0, 
+                                    e.wndResizeInfo.width, 
+                                    e.wndResizeInfo.height);
             } break;
         }
     }
@@ -124,12 +127,10 @@ void Scene_AlphaBlending::update()
 void Scene_AlphaBlending::render()
 {
     m_renderer.clear(0x111111);
-
+    
     m_renderer.draw(m_cube.vertices.data(), m_cube.vertices.size(), m_cubeShader);
     m_renderer.draw(m_plane.vertices.data(), m_plane.vertices.size(), m_grassShader);
     m_renderer.draw(m_plane.vertices.data(), m_plane.vertices.size(), m_windowShader);
-
-    m_renderer.upscale();
 
     m_window.swapBuffers();
 }
@@ -137,9 +138,4 @@ void Scene_AlphaBlending::render()
 void Scene_AlphaBlending::shutdown()
 {
     
-}
-
-void Scene_AlphaBlending::windowResize(int x, int y, int w, int h)
-{
-    m_renderer.viewport(0, 0, w, h);
 }

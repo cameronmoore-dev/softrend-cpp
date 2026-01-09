@@ -59,7 +59,7 @@ namespace jawl
         HintsCount
     };
 
-    struct frontbuffer_t;
+    struct Backbuffer;
 
     class Window
     {
@@ -69,30 +69,29 @@ namespace jawl
 
         void setHint(Hints index, uint8_t value);
         void close();
-        // void pollMessages();
         bool pollEvents(Event &event);
-        void cursorEnableFlags(uint8_t flags);
-        void cursorDisableFlags(uint8_t flags);
+        void cursorEnableFlags(const uint8_t flags);
+        void cursorDisableFlags(const uint8_t flags);
     
-        uint32_t **frontbuffer() { return m_ppFrontbuffer; }
+        const Backbuffer *backbuffer() { return m_backbuffer; } const
         
-        virtual Window *create(const std::string &title, uint16_t width, uint16_t height, uint32_t style, RendererType rtype) = 0;
+        virtual Window *create(const std::string &title, const uint16_t width, const uint16_t height, const uint32_t style, const RendererType rtype) = 0;
         virtual void cleanup() = 0;
         virtual void swapBuffers() = 0;
-        virtual void swapInterval(uint8_t interval) = 0;
+        virtual void swapInterval(const uint8_t interval) = 0;
         virtual void setTitle(const std::string &title) = 0;
-        virtual void setFullscreen(bool fullscreen) = 0;
+        virtual void setFullscreen(const bool fullscreen) = 0;
         virtual void getPos(int &outX, int &outY) = 0;
         virtual void getSize(int &outWidth, int & outHeight) = 0;
-        virtual void setPos(int x, int y) = 0;
-        virtual void setSize(int width, int height) = 0;
+        virtual void setPos(const int x, const int y) = 0;
+        virtual void setSize(const int width, const int height) = 0;
         
         virtual bool isFocused() = 0;
         bool isOpen() { return m_isOpen; }
     
     protected:
         uint32_t *m_frontbuffer = nullptr;
-        uint32_t **m_ppFrontbuffer = nullptr;
+        Backbuffer *m_backbuffer = nullptr;
 
         std::queue<Event> m_events;
         std::array<Hints, HintsCount> m_hints;

@@ -11,12 +11,14 @@ Scene_Suzanne::Scene_Suzanne(jawl::Window &window) :
     m_window.getSize(x, y);
     m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
 
-    m_renderer = echo::Renderer(m_window.getEBI());
+    m_renderer = echo::Renderer(m_window.backbuffer(), 1);
     m_renderer.setVertexAttrib(sizeof(Vertex), 0, 4); /* Position */
     m_renderer.setVertexAttrib(sizeof(Vertex), 1, 3); /* Normal */
     m_renderer.setVertexAttrib(sizeof(Vertex), 2, 2); /* TexCoord */
     m_renderer.setVertexAttrib(sizeof(Vertex), 3, 3); /* Tangent */
     m_renderer.setVertexAttrib(sizeof(Vertex), 4, 3); /* Bitangent */
+
+    m_renderer.viewport(0, 0, x, y);
 }
 
 void Scene_Suzanne::start()
@@ -208,7 +210,7 @@ void Scene_Suzanne::render()
 
     }
     
-    m_renderer.upscale();
+    m_renderer.endDraw();
     
     m_window.swapBuffers();
 }

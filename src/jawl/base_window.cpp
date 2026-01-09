@@ -41,12 +41,12 @@ namespace jawl
         return true;    
     }
 
-    void Window::cursorEnableFlags(uint8_t state)
+    void Window::cursorEnableFlags(const uint8_t state)
     {
         m_cursorState |= state;
     }
     
-    void Window::cursorDisableFlags(uint8_t state)
+    void Window::cursorDisableFlags(const uint8_t state)
     {
         m_cursorState &= ~(state);
     }

@@ -18,36 +18,35 @@ namespace echo
     #define FAR_PLANE       5
     #define NUM_PLANES      6
 
-    Renderer::Renderer(void *frontbuffer, const int8_t downScale) :
+    Renderer::Renderer(const void *frontbuffer, const int8_t downScale) :
         m_scale(downScale)
     {
-        previous = getTimeSeconds();
-
-        m_wndFrontbuffer = *((uint32_t**)frontbuffer);
-        m_ppWndFrontbuffer = ((uint32_t**)frontbuffer);
+        m_wndWidth      = ((uint16_t*)frontbuffer);
+        m_wndHeight     = ((uint16_t*)frontbuffer+1);
+        m_backbuffer    = *((uint32_t**)frontbuffer+1);
+        m_ppBackbuffer  = ((uint32_t**)frontbuffer+1);
     }
     
     void Renderer::clear(uint32_t colour)
     {
-        /* Update where this pointer's memory address to the window's frontbuffer if it changes */
-        if (m_wndFrontbuffer != *m_ppWndFrontbuffer)
+        /* Update where this pointer's memory address to the backbuffer if it changes */
+        if (m_backbuffer != *m_ppBackbuffer)
         {
-            m_wndFrontbuffer = *m_ppWndFrontbuffer;
+            m_backbuffer = *m_ppBackbuffer;
         }
 
-        std::fill(m_backbuffer.data(), m_backbuffer.data() + (m_viewportWidth*m_viewportHeight), colour);
-        std::fill(m_depthbuffer.data(), m_depthbuffer.data() + (m_viewportWidth*m_viewportHeight), std::numeric_limits<float>::max());
+        std::fill(m_backbuffer, m_backbuffer + (*m_wndWidth * *m_wndHeight), colour);
+        std::fill(m_depthbuffer.data(), m_depthbuffer.data() + (*m_wndWidth * *m_wndHeight), std::numeric_limits<float>::max());
     }
     
     void Renderer::viewport(int x, int y, int w, int h)
     {
-        w /= m_scale;
-        h /= m_scale;
+        m_viewport.x = x;
+        m_viewport.y = y;
+        m_viewport.width  = w;
+        m_viewport.height = h;
 
-        m_viewportWidth  = w;
-        m_viewportHeight = h;
-        m_backbuffer.resize(w * h);
-        m_depthbuffer.resize(w * h);
+        m_depthbuffer.resize(*m_wndWidth * *m_wndHeight);
     }
 
     void Renderer::setVertexAttrib(uint16_t size, uint8_t index, uint8_t count)
@@ -69,14 +68,8 @@ namespace echo
         std::memcpy(m_vbo.data(), vertices, _priv::vertexdef.size * size);
     
         m_clipped.clear();
-        m_clipped.reserve(_priv::vertexdef.stride * NUM_PLANES);
-    
         shader.reset();
-    
-        double current = getTimeSeconds();
-        dt += current - previous;
-        previous = current;
-        
+
         for (uint32_t i = 0; i < size; i+=3)
         {
             int index = i * _priv::vertexdef.stride;
@@ -148,24 +141,13 @@ namespace echo
         vz /= vw;
     
         /* To Screen Space Coordinates */
-        vec4f screenPos;
-        screenPos.x = (vx + 1.f) * 0.5f * m_viewportWidth;
-        screenPos.y = (vy + 1.f) * 0.5f * m_viewportHeight;
-        screenPos.z = vz;
-    
-        /*  
-            The extra '- 0.1f' is to stop flickering along the left and bottom screen edges after polygon clipping, 
-            most likely due to floating-point precision issues.
-            Might not be scalable with different screen resolutions. Test this later
-        */
-        vx = screenPos.x - 0.1f;
-        vy = screenPos.y - 0.1f;
+        vx = (vx + 1.f) * (m_viewport.width  * 0.5f) + m_viewport.x;
+        vy = (vy + 1.f) * (m_viewport.height * 0.5f) + m_viewport.y;
     }
     
     void Renderer::rasterise(IShader& shader, const face &face)
     {
         std::array<vec4f, 3> positions = shader.getFaceAttrib<vec4f>(face, 0);
-    
         boundingBox(positions[0], positions[1], positions[2]);
     
         vec2i p;
@@ -173,7 +155,10 @@ namespace echo
         {
             for (p.x = m_bbMin.x; p.x <= m_bbMax.x; p.x++)
             {
-                if (p.x < 0 || p.y < 0 || p.x >= m_viewportWidth || p.y >= m_viewportHeight)
+                if (p.x <= m_viewport.x || p.x >= m_viewport.x + m_viewport.width  ||
+                    p.y <= m_viewport.y || p.y >= m_viewport.y + m_viewport.height ||
+                    p.x < 0 || p.x > *m_wndWidth  - 1 ||
+                    p.y < 0 || p.y > *m_wndHeight - 1)
                 {
                     continue;
                 }
@@ -182,7 +167,7 @@ namespace echo
                 if (point.x >= 0 && point.y >= 0 && point.z >= 0)
                 {
                     float z = positions[0].z * point.x + positions[1].z * point.y + positions[2].z * point.z;
-                    uint32_t idx = p.x + p.y * (m_viewportWidth);
+                    uint32_t idx = p.x + p.y * *m_wndWidth;
 
                     vec4f fragColour;
                     if (z < m_depthbuffer[idx] && shader.fragment(point, face, fragColour))
@@ -443,7 +428,7 @@ namespace echo
 
     uint32_t *Renderer::framebuffer()
     {
-        return m_backbuffer.data();
+        return m_backbuffer;
     }
 
     float *Renderer::depthbuffer()
@@ -453,8 +438,8 @@ namespace echo
 
     void Renderer::size(uint16_t &outWidth, uint16_t &outHeight)
     {
-        outWidth  = m_viewportWidth;
-        outHeight = m_viewportHeight;
+        outWidth  = m_viewport.width;
+        outHeight = m_viewport.height;
     }
 }
 
