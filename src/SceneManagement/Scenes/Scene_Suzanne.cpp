@@ -11,14 +11,27 @@ Scene_Suzanne::Scene_Suzanne(jawl::Window &window) :
     m_window.getSize(x, y);
     m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
 
-    m_renderer = echo::Renderer(m_window.backbuffer(), 1);
+    m_renderer = echo::Renderer(m_window.renderTarget());
     m_renderer.setVertexAttrib(sizeof(Vertex), 0, 4); /* Position */
     m_renderer.setVertexAttrib(sizeof(Vertex), 1, 3); /* Normal */
     m_renderer.setVertexAttrib(sizeof(Vertex), 2, 2); /* TexCoord */
     m_renderer.setVertexAttrib(sizeof(Vertex), 3, 3); /* Tangent */
     m_renderer.setVertexAttrib(sizeof(Vertex), 4, 3); /* Bitangent */
 
-    m_renderer.viewport(0, 0, x, y);
+
+    int scale = 2;
+    int w, h;
+    m_renderer.internalDownScale(scale);
+    m_window.getScreenSize(w, h);
+    w/=scale;
+    h/=scale;
+
+    echo::RenderTarget rt;
+    rt.colour.resize(w*h);
+    rt.depth.resize(w*h);
+    rt.rect = { 0, 0, (uint16_t)w, (uint16_t)h };
+
+    m_renderer.setRenderTarget(rt);
 }
 
 void Scene_Suzanne::start()
@@ -39,7 +52,7 @@ void Scene_Suzanne::start()
     uint8_t *s = stbi_load("./resources/suzanne_specular.jpg", &iw, &ih, &ic, 0);
     m_specularMap = m_renderer.createTexture(s, iw, ih, ic);
 
-    // m_renderer.generateMipMaps(m_texture);
+    m_renderer.generateMipMaps(m_texture);
     // m_renderer.generateMipMaps(m_normalMap);
     // m_renderer.generateMipMaps(m_specularMap);
     m_renderer.bilinearFilter(m_texture);
@@ -53,9 +66,9 @@ void Scene_Suzanne::start()
     shader.setUniform<echo::Texture>(shader.normalMap, m_normalMap);
     shader.setUniform<echo::Texture>(shader.specularMap, m_specularMap);
 
-    uint16_t w, h;
-    m_renderer.size(w, h);
-    m_ssao = SSAO_Shader(m_renderer.framebuffer(), m_renderer.depthbuffer(), w, h);
+    // uint16_t w, h;
+    // m_renderer.size(w, h);
+    // m_ssao = SSAO_Shader(m_renderer.framebuffer(), m_renderer.depthbuffer(), w, h);
 
     // Vec3f pos{ 0.f, 0.f, -5.f };
     // Vec3f forward{ 0.f, 0.f, -1.f };
@@ -208,9 +221,9 @@ void Scene_Suzanne::render()
             m_ssao.apply();
         }
 
+        m_renderer.endDraw();
     }
     
-    m_renderer.endDraw();
     
     m_window.swapBuffers();
 }

@@ -18,25 +18,43 @@ namespace echo
     #define FAR_PLANE       5
     #define NUM_PLANES      6
 
-    Renderer::Renderer(const void *frontbuffer, const int8_t downScale) :
-        m_scale(downScale)
+    Renderer::Renderer(void *windowRenderTarget)
     {
-        m_wndWidth      = ((uint16_t*)frontbuffer);
-        m_wndHeight     = ((uint16_t*)frontbuffer+1);
-        m_backbuffer    = *((uint32_t**)frontbuffer+1);
-        m_ppBackbuffer  = ((uint32_t**)frontbuffer+1);
+        m_wndInfo = windowRenderTarget;
+        m_scrnwidth = *((uint16_t*)windowRenderTarget);
+        m_scrnheight = *((uint16_t*)windowRenderTarget+1);
+        m_drawbuffer = *((uint32_t**)windowRenderTarget+1);
+        m_ppBackbuffer = ((uint32_t**)windowRenderTarget+1);
+
+        /* Setup a default target which matches the window */
+        m_currentTarget.colour.resize(m_scrnwidth * m_scrnheight);
+        m_currentTarget.depth.resize(m_scrnwidth * m_scrnheight);
+        m_currentTarget.rect.x = 0;
+        m_currentTarget.rect.y = 0;
+        m_currentTarget.rect.width  = m_scrnwidth;
+        m_currentTarget.rect.height = m_scrnheight;
+
+        setRenderTarget(m_currentTarget);
     }
     
     void Renderer::clear(uint32_t colour)
     {
         /* Update where this pointer's memory address to the backbuffer if it changes */
-        if (m_backbuffer != *m_ppBackbuffer)
+        if (m_drawbuffer != *m_ppBackbuffer)
         {
-            m_backbuffer = *m_ppBackbuffer;
+            m_drawbuffer = *m_ppBackbuffer;
+            m_scrnwidth  = *((uint16_t*)m_wndInfo);
+            m_scrnheight = *((uint16_t*)m_wndInfo+1);
+            
+            m_currentTarget.rect.width = m_scrnwidth / m_scale;
+            m_currentTarget.rect.height = m_scrnheight / m_scale;
+            m_currentTarget.colour.resize(m_currentTarget.rect.width*m_currentTarget.rect.height);
+            m_currentTarget.depth.resize(m_currentTarget.rect.width*m_currentTarget.rect.height);
+            updateRenderTarget();
         }
 
-        std::fill(m_backbuffer, m_backbuffer + (*m_wndWidth * *m_wndHeight), colour);
-        std::fill(m_depthbuffer.data(), m_depthbuffer.data() + (*m_wndWidth * *m_wndHeight), std::numeric_limits<float>::max());
+        std::fill(m_currentTarget.colour.data(), m_currentTarget.colour.data() + (m_currentTarget.rect.width * m_currentTarget.rect.height), colour);
+        std::fill(m_currentTarget.depth.data(), m_currentTarget.depth.data() + (m_currentTarget.rect.width * m_currentTarget.rect.height), std::numeric_limits<float>::infinity());
     }
     
     void Renderer::viewport(int x, int y, int w, int h)
@@ -45,8 +63,6 @@ namespace echo
         m_viewport.y = y;
         m_viewport.width  = w;
         m_viewport.height = h;
-
-        m_depthbuffer.resize(*m_wndWidth * *m_wndHeight);
     }
 
     void Renderer::setVertexAttrib(uint16_t size, uint8_t index, uint8_t count)
@@ -66,7 +82,7 @@ namespace echo
     {
         m_vbo.resize(_priv::vertexdef.stride * size);
         std::memcpy(m_vbo.data(), vertices, _priv::vertexdef.size * size);
-    
+
         m_clipped.clear();
         shader.reset();
 
@@ -76,13 +92,27 @@ namespace echo
             int v0 = index;
             int v1 = index +  _priv::vertexdef.stride;
             int v2 = index + (_priv::vertexdef.stride * 2);
-    
+
             shader.vertex(&m_vbo[v0]);
             shader.vertex(&m_vbo[v1]);
             shader.vertex(&m_vbo[v2]);
             vertex _v0 = &m_vbo[v0];
             vertex _v1 = &m_vbo[v1];
             vertex _v2 = &m_vbo[v2];
+
+            // transformVertex(_v0);
+            // transformVertex(_v1);
+            // transformVertex(_v2);
+
+            // std::array<vec4f, 3> positions = shader.getFaceAttrib<vec4f>({ _v0, _v1, _v2 }, 0);
+            // float winding = windingOrder(positions[0], positions[1], positions[2]);
+            // if (winding <= 0.f)
+            // {
+            //     continue;
+            // }
+
+            // face face = { _v0, _v1, _v2 };
+            // rasterise(shader, face);
             
             m_input = { _v0, _v1, _v2 };
             for (size_t p = 0; p < NUM_PLANES; p++)
@@ -141,44 +171,50 @@ namespace echo
         vz /= vw;
     
         /* To Screen Space Coordinates */
-        vx = (vx + 1.f) * (m_viewport.width  * 0.5f) + m_viewport.x;
-        vy = (vy + 1.f) * (m_viewport.height * 0.5f) + m_viewport.y;
+        /* 
+            The '- 0.1f' at the end is to stop weird ~1 pixel wide 
+            tearing of the bottom and left edge when clipping occurs.
+        */
+        vx = (vx + 1.f) * (m_viewport.width  * 0.5f) + (m_viewport.x - 0.1f);
+        vy = (vy + 1.f) * (m_viewport.height * 0.5f) + (m_viewport.y - 0.1f);
     }
     
     void Renderer::rasterise(IShader& shader, const face &face)
     {
         std::array<vec4f, 3> positions = shader.getFaceAttrib<vec4f>(face, 0);
         boundingBox(positions[0], positions[1], positions[2]);
-    
+
         vec2i p;
         for (p.y = m_bbMin.y; p.y <= m_bbMax.y; p.y++)
         {
             for (p.x = m_bbMin.x; p.x <= m_bbMax.x; p.x++)
             {
-                if (p.x <= m_viewport.x || p.x >= m_viewport.x + m_viewport.width  ||
-                    p.y <= m_viewport.y || p.y >= m_viewport.y + m_viewport.height ||
-                    p.x < 0 || p.x > *m_wndWidth  - 1 ||
-                    p.y < 0 || p.y > *m_wndHeight - 1)
+                if (p.x < m_currentTarget.rect.x || p.x > m_currentTarget.rect.width  - 1 ||
+                    p.y < m_currentTarget.rect.y || p.y > m_currentTarget.rect.height - 1)
                 {
                     continue;
                 }
-    
+
                 vec3f point = barycentric(p, positions[0], positions[1], positions[2]);
                 if (point.x >= 0 && point.y >= 0 && point.z >= 0)
                 {
                     float z = positions[0].z * point.x + positions[1].z * point.y + positions[2].z * point.z;
-                    uint32_t idx = p.x + p.y * *m_wndWidth;
+                    uint32_t idx = p.x + p.y * m_currentTarget.rect.width;
 
                     vec4f fragColour;
-                    if (z < m_depthbuffer[idx] && shader.fragment(point, face, fragColour))
+                    if (z < m_currentTarget.depth[idx] && shader.fragment(point, face, fragColour))
                     {
-                        m_depthbuffer[idx] = z;
+                        m_currentTarget.depth[idx] = z;
 
-                        echo::vec4f src = { fragColour.x * fragColour.w, fragColour.y * fragColour.w, fragColour.z * fragColour.w, fragColour.w };
-                        echo::vec4f dest = hexToRGBA(m_backbuffer[idx]);
+                        echo::vec4f src = { fragColour.x * fragColour.w, 
+                                            fragColour.y * fragColour.w, 
+                                            fragColour.z * fragColour.w, 
+                                            fragColour.w };
+                                            
+                        echo::vec4f dest = hexToRGBA(m_currentTarget.colour[idx]);
                         echo::vec4f blendColour = src + dest * (1.f - src.w);
 
-                        m_backbuffer[idx] = rgbaToHex(blendColour);
+                        m_currentTarget.colour[idx] = rgbaToHex(blendColour);
                     }
                 }
             }
@@ -199,9 +235,9 @@ namespace echo
     vec3f Renderer::barycentric(const vec2i& p, const vec4f& a, const vec4f& b, const vec4f& c)
     {
         float denom = ((b.y-c.y)*(a.x-c.x)+(c.x-b.x)*(a.y-c.y));
-        float w1 = ((b.y-c.y)*(p.x-c.x)+(c.x-b.x)*(p.y-c.y)) / denom;
-        float w2 = ((c.y-a.y)*(p.x-c.x)+(a.x-c.x)*(p.y-c.y)) / denom;
-        float w3 = 1.0f - w1 - w2;
+        float w1    = ((b.y-c.y)*(p.x-c.x)+(c.x-b.x)*(p.y-c.y)) / denom;
+        float w2    = ((c.y-a.y)*(p.x-c.x)+(a.x-c.x)*(p.y-c.y)) / denom;
+        float w3    = 1.0f - w1 - w2;
     
         return { w1, w2, w3 };
     }
@@ -219,7 +255,7 @@ namespace echo
         std::array<float, 4> bPos;
         std::memcpy(aPos.data(), &a[0], sizeof(float) * aPos.size());
         std::memcpy(bPos.data(), &b[0], sizeof(float) * bPos.size());
-    
+
         switch (plane)
         {
             case LEFT_PLANE:    t = (-aPos[0] - aPos[3]) / ((bPos[0] - aPos[0]) + (bPos[3] - aPos[3])); break;
@@ -283,7 +319,7 @@ namespace echo
         }
     }
     
-    Texture Renderer::createTexture(uint8_t *data, int width, int height, int channels)
+    Texture Renderer::createTexture(const uint8_t *data, const int width, const int height, const int channels)
     {
         MipMap mip =
         {
@@ -424,22 +460,6 @@ namespace echo
                 }
             }
         }
-    }
-
-    uint32_t *Renderer::framebuffer()
-    {
-        return m_backbuffer;
-    }
-
-    float *Renderer::depthbuffer()
-    {
-        return m_depthbuffer.data();
-    }
-
-    void Renderer::size(uint16_t &outWidth, uint16_t &outHeight)
-    {
-        outWidth  = m_viewport.width;
-        outHeight = m_viewport.height;
     }
 }
 

@@ -11,3 +11,10 @@ struct Vertex
     echo::vec3f bitangent;
     // uint32_t colour;
 };
+
+struct AssimpVertex
+{
+    echo::vec4f position;
+    echo::vec3f normal;
+    echo::vec2f uv;
+};

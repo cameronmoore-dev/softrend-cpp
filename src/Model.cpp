@@ -26,8 +26,8 @@ void Model::loadModel(const std::string& dir)
     }
     
     std::vector<echo::vec4f> positions;
-    std::vector<echo::vec2f> texCoords;
     std::vector<echo::vec3f> normals;
+    std::vector<echo::vec2f> texCoords;
 
     std::string line;
     while (!file.eof())

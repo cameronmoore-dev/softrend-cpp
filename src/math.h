@@ -23,7 +23,7 @@ namespace echo
     
     struct vec2i
     {
-        uint32_t x, y;
+        int32_t x, y;
     };
 
     struct vec4f

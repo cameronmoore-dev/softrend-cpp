@@ -7,6 +7,7 @@
 #include "SceneManagement/Scenes/Scene_Suzanne.h"
 #include "SceneManagement/Scenes/Scene_AlphaBlending.h"
 #include "SceneManagement/Scenes/Scene_OpenGL.h"
+#include "SceneManagement/Scenes/Scene_Assimp.h"
 
 int main()
 {

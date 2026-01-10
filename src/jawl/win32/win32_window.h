@@ -25,7 +25,8 @@ namespace jawl
         void setTitle(const std::string &title) override;
         void setFullscreen(bool fullscreen) override;
         void getPos(int &outX, int &outY) override;
-        void getSize(int &outWidth, int & outHeight) override;
+        void getSize(int &outWidth, int &outHeight) override;
+        void getScreenSize(int &outWidth, int &outHeight) override;
         void setPos(int x, int y) override;
         void setSize(int width, int height) override;
         void setFlash(UINT count, DWORD timeout, bool sound);

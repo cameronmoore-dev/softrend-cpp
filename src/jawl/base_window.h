@@ -59,7 +59,7 @@ namespace jawl
         HintsCount
     };
 
-    struct Backbuffer;
+    struct WndRndTgt;
 
     class Window
     {
@@ -73,7 +73,7 @@ namespace jawl
         void cursorEnableFlags(const uint8_t flags);
         void cursorDisableFlags(const uint8_t flags);
     
-        const Backbuffer *backbuffer() { return m_backbuffer; } const
+        WndRndTgt *renderTarget() { return m_rendertarget; }
         
         virtual Window *create(const std::string &title, const uint16_t width, const uint16_t height, const uint32_t style, const RendererType rtype) = 0;
         virtual void cleanup() = 0;
@@ -82,7 +82,8 @@ namespace jawl
         virtual void setTitle(const std::string &title) = 0;
         virtual void setFullscreen(const bool fullscreen) = 0;
         virtual void getPos(int &outX, int &outY) = 0;
-        virtual void getSize(int &outWidth, int & outHeight) = 0;
+        virtual void getSize(int &outWidth, int &outHeight) = 0;
+        virtual void getScreenSize(int &outWidth, int &outHeight) = 0;
         virtual void setPos(const int x, const int y) = 0;
         virtual void setSize(const int width, const int height) = 0;
         
@@ -91,7 +92,7 @@ namespace jawl
     
     protected:
         uint32_t *m_frontbuffer = nullptr;
-        Backbuffer *m_backbuffer = nullptr;
+        WndRndTgt *m_rendertarget = nullptr;
 
         std::queue<Event> m_events;
         std::array<Hints, HintsCount> m_hints;

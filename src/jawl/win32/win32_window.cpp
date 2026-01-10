@@ -8,11 +8,11 @@
 
 namespace jawl
 {
-    struct Backbuffer
+    struct WndRndTgt
     {
         uint16_t width;
         uint16_t height;
-        uint32_t *backbuffer = nullptr;
+        uint32_t *buffer = nullptr;
     };
 
     LRESULT Win32_Window::handleMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -206,7 +206,7 @@ namespace jawl
             PAINTSTRUCT paint;
             HDC hdc = ::BeginPaint(m_window, &paint);
         
-            std::memcpy(m_frontbuffer, m_backbuffer->backbuffer, m_width*m_height*sizeof(uint32_t));
+            std::memcpy(m_frontbuffer, m_rendertarget->buffer, m_width * m_height * sizeof(uint32_t));
             ::BitBlt(hdc, 
                      paint.rcPaint.left, paint.rcPaint.top, 
                      m_width, m_height, 
@@ -248,9 +248,9 @@ namespace jawl
             }
             ::ClipCursor(nullptr);
     
-            delete[] m_backbuffer->backbuffer;
-            delete(m_backbuffer);
-            m_backbuffer = nullptr;
+            delete[] m_rendertarget->buffer;
+            delete(m_rendertarget);
+            m_rendertarget = nullptr;
         }
     }
 
@@ -307,6 +307,12 @@ namespace jawl
         outHeight = m_rect.bottom - m_rect.top;
     }
 
+    void Win32_Window::getScreenSize(int &outWidth, int &outHeight)
+    {
+        outWidth = m_width;
+        outHeight = m_height;
+    }
+
     void Win32_Window::setPos(const int x, const int y)
     {
         ::SetWindowPos( m_window, 
@@ -352,7 +358,7 @@ namespace jawl
         m_frameInfo.bmiHeader.biPlanes = 1;
         m_frameInfo.bmiHeader.biBitCount = 32;
         m_frameInfo.bmiHeader.biCompression = BI_RGB;
-        m_backbuffer = new Backbuffer{};
+        m_rendertarget = new WndRndTgt{};
     }
 
     void Win32_Window::glSetup()
@@ -490,13 +496,9 @@ namespace jawl
         ::SelectObject(m_deviceContext, m_bitmapHandle);
         ::GetWindowRect(m_window, &m_rect);
 
-        if (m_backbuffer)
-        {
-            m_backbuffer->width  = m_width;
-            m_backbuffer->height = m_height;
-
-            delete[] m_backbuffer->backbuffer;
-            m_backbuffer->backbuffer = new uint32_t[m_width*m_height];
-        }
+        delete[] m_rendertarget->buffer;
+        m_rendertarget->buffer = new uint32_t[m_width*m_height];
+        m_rendertarget->width  = m_width;
+        m_rendertarget->height = m_height;
     }
 }

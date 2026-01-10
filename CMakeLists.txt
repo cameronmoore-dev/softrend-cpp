@@ -7,6 +7,7 @@ set(${CMAKE_CXX_STANDARD_REQUIRED} TRUE)
 
 set(SRC_PATH			"${CMAKE_SOURCE_DIR}/src")
 set(LIB_INCLUDE_PATH	"${CMAKE_SOURCE_DIR}/externals/includes")
+set(LIB_PATH			"${CMAKE_SOURCE_DIR}/externals/libs")
 
 add_executable(software_renderer EXCLUDE_FROM_ALL
 	"src/Entry.cpp"
@@ -22,17 +23,21 @@ add_executable(software_renderer EXCLUDE_FROM_ALL
     "src/Renderer.cpp"
     "src/Camera.cpp"
     # "src/SceneManagement/Scenes/Scene_Triangle.cpp"
-    # "src/SceneManagement/Scenes/Scene_Cube.cpp"
-    # "src/SceneManagement/Scenes/Scene_Suzanne.cpp"
+    "src/SceneManagement/Scenes/Scene_Cube.cpp"
+    "src/SceneManagement/Scenes/Scene_Suzanne.cpp"
     "src/SceneManagement/Scenes/Scene_AlphaBlending.cpp"
 	# "src/SceneManagement/Scenes/Scene_OpenGL.cpp"
+	"src/SceneManagement/Scenes/Scene_Assimp.cpp"
 	
+	"src/assimp_model.cpp"
+	"src/assimp_mesh.cpp"
 	
 	"src/glad.c"
 	"src/stb_image.cpp"
 )
 
 target_include_directories(software_renderer PUBLIC "${SRC_PATH}" "${LIB_INCLUDE_PATH}")
+target_link_libraries(software_renderer PRIVATE ${LIB_PATH}/libassimp.dll.a)
 
 if(WIN32)
 	if(MSVC)

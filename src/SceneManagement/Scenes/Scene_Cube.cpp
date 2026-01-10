@@ -7,26 +7,35 @@
 Scene_Cube::Scene_Cube(jawl::Window &window) :
     m_window(window)
 {
-    int x = 0;
-    int y = 0;
-    m_window.getSize(x, y);
-    m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
+    int w, h;
+    m_window.getSize(w, h);
+    m_camera = Camera(45.f, (float)w / (float)h, 0.5f, 20.f);
 
-    m_renderer = echo::Renderer(m_window.wndData(), 1);
+    m_renderer = echo::Renderer(m_window.renderTarget());
     m_renderer.setVertexAttrib(sizeof(Vertex), 0, 4); /* Position */
     m_renderer.setVertexAttrib(sizeof(Vertex), 1, 3); /* Normal */
     m_renderer.setVertexAttrib(sizeof(Vertex), 2, 2); /* TexCoord */
     m_renderer.setVertexAttrib(sizeof(Vertex), 3, 3); /* Tangent */
     m_renderer.setVertexAttrib(sizeof(Vertex), 4, 3); /* Bitangent */
+    
+    m_window.getScreenSize(w, h);
 
-    m_renderer.viewport(0, 0, x, y);
+    echo::RenderTarget rt;
+    rt.colour.resize((w/2)*(h/2));
+    rt.depth.resize((w/2)*(h/2));
+    rt.rect.x = 0;
+    rt.rect.y = 0;
+    rt.rect.width  = w/2;
+    rt.rect.height = h/2;
+
+    m_renderer.setRenderTarget(rt);
 }
 
 void Scene_Cube::start()
 {
-    uint16_t w, h;
-    m_renderer.size(w, h);
-    m_fxaa = FXAA_Shader(m_renderer.framebuffer(), w*h, w);
+    // uint16_t w, h;
+    // m_renderer.size(w, h);
+    // m_fxaa = FXAA_Shader(m_renderer.framebuffer(), w*h, w);
 
     m_shader.setUniform<echo::mat4>(m_shader.model, m_model);
     m_shader.setUniform<echo::mat4>(m_shader.view, m_camera.view());
@@ -55,7 +64,7 @@ void Scene_Cube::start()
         update();
         render();
 
-        printf("FPS: %.0f\n", 1.f/m_dt);
+        // printf("FPS: %.0f\n", 1.f/m_dt);
     }
 }
 
@@ -100,6 +109,7 @@ void Scene_Cube::render()
     m_renderer.clear(0x111111);
 
     m_renderer.draw(m_cube.vertices.data(), m_cube.vertices.size(), m_shader);
+
     m_renderer.endDraw();
     
     // m_fxaa.apply();

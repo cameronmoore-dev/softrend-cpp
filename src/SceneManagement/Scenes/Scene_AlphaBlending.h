@@ -28,6 +28,8 @@ private:
     echo::Renderer m_renderer;
     Camera m_camera;
 
+    echo::RenderTarget m_rt;
+
     Grass_Shader    m_grassShader;
     Cube_Shader     m_cubeShader;
     Window_Shader   m_windowShader;
