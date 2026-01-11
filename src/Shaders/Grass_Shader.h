@@ -21,7 +21,7 @@ public:
         glPosition(0, vertex, clip);
     }
 
-    bool fragment(const echo::vec3f& barycentric, const echo::face &face, echo::vec4f& fragColour) override
+    bool fragment(const echo::vec3f& barycentric, const echo::Face &face, echo::vec4f& fragColour) override
     {
         double current = getTimeSeconds();
         double dt = current - previous;

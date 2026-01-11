@@ -18,7 +18,7 @@ namespace echo
         return i - n * (2.0f * dot(n, i));
     }
     
-    void IShader::derivatives(const int uvIndex, const face &face, const Texture &texture, float& dudx, float& dudy, float& dvdx, float& dvdy)
+    void IShader::derivatives(const int uvIndex, const Face &face, const Texture &texture, float& dudx, float& dudy, float& dvdx, float& dvdy)
     {
         const float texWidth  = texture.mipLevels[0].width;
         const float texHeight = texture.mipLevels[0].height;
@@ -67,7 +67,7 @@ namespace echo
         return 0.5f * std::log2(rho);
     }
     
-    vec2f IShader::perspectiveCorrectedUV(const int uvIndex, const face &face, const vec3f& barycentric)
+    vec2f IShader::perspectiveCorrectedUV(const int uvIndex, const Face &face, const vec3f& barycentric)
     {
         std::array<vec2f, 3> st = getFaceAttrib<vec2f>(face, uvIndex);
 
@@ -90,7 +90,7 @@ namespace echo
         return uv / inverse;
     }
     
-    vec4f IShader::texture(const int uvIndex, const face &face, Texture &texture, const vec3f& barycentric)
+    vec4f IShader::texture(const int uvIndex, const Face &face, Texture &texture, const vec3f& barycentric)
     {
         uint8_t mipLevel = 0;
         if (texture.mipLevels.size() > 1)
@@ -168,12 +168,14 @@ namespace echo
         return mip.data[x + y * mip.width];
     }
 
-    void IShader::glPosition(int posIndex, float *position, const vec4f &clip)
+    void IShader::glPosition(const int posIndex, float *vertex, const vec4f &clip)
     {
-        position[posIndex]     = clip.x;
-        position[posIndex + 1] = clip.y;
-        position[posIndex + 2] = clip.z;
-        position[posIndex + 3] = clip.w;
+        m_vtxPosAttribIndex = posIndex;
+
+        vertex[posIndex]     = clip.x;
+        vertex[posIndex + 1] = clip.y;
+        vertex[posIndex + 2] = clip.z;
+        vertex[posIndex + 3] = clip.w;
 
         vertID++;
     }

@@ -19,8 +19,8 @@ namespace echo
         typedef struct
         {
             std::vector<attrib_t> attribs;
-            uint16_t size;
-            uint8_t stride;
+            uint32_t size;
+            uint32_t stride;
         } vertexdef_t;
     
         inline vertexdef_t vertexdef = {};
@@ -29,27 +29,29 @@ namespace echo
     struct MipMap
     {
         std::vector<uint32_t> data;
-        uint16_t width;
-        uint16_t height;
+        uint32_t width;
+        uint32_t height;
     };
     
     struct Texture
     {
         std::vector<MipMap> mipLevels;
-        vec2f offset = {0.f, 0.f};
-        vec2f scale  = {1.f, 1.f};
-        uint8_t numChannels;
+        vec2f offset = { 0.f, 0.f };
+        vec2f scale  = { 1.f, 1.f };
+        uint32_t numChannels;
     };
     
     using vertex = float*;
-    typedef struct 
+    struct Face
     {
         vertex v0, v1, v2;
-    } face;
+    };
     
     class IShader
     {
         friend class Renderer;
+
+        uint32_t m_vtxPosAttribIndex = 0;
     
     protected:
         template<typename T>
@@ -62,8 +64,6 @@ namespace echo
         uint32_t fragID = 0;
         
     public:
-        // virtual ~IShader() = 0;
-    
         template<typename T>
         void setUniform(Uniform<T> &uniform, T &data)
         {
@@ -71,23 +71,23 @@ namespace echo
         }
     
         virtual void vertex(float *vertex) = 0;
-        virtual bool fragment(const vec3f &barycentric, const face &face, vec4f &fragColour) = 0;
+        virtual bool fragment(const vec3f &barycentric, const Face &face, vec4f &fragColour) = 0;
     
     private:
         void reset();
-        void derivatives(const int uvIndex, const face &face, const Texture &texture, float& dudx, float& dudy, float& dvdx, float& dvdy);
-        float lod(float dudx, float dudy, float dvdx, float dvdy);
-        vec2f perspectiveCorrectedUV(const int uvIndex, const face &face, const vec3f& barycentric);
+        void derivatives(const int uvIndex, const Face &face, const Texture &texture, float& dudx, float& dudy, float& dvdx, float& dvdy);
+        float lod(const float dudx, const float dudy, const float dvdx, const float dvdy);
+        vec2f perspectiveCorrectedUV(const int uvIndex, const Face &face, const vec3f& barycentric);
         uint32_t textureWrap(float &u, float &v, const Texture &texture, const uint8_t mipLevel);
         // const uint32_t bilinear(float u, float v, const MipMap &mip) const;
     
     protected:
         vec3f reflect(const vec3f& i, const vec3f& n);
-        vec4f texture(const int uvIndex, const face &face, Texture &texture, const vec3f& barycentric);
-        void glPosition(int posIndex, float *position, const vec4f &clip);
+        vec4f texture(const int uvIndex, const Face &face, Texture &texture, const vec3f& barycentric);
+        void glPosition(const int posIndex, float *position, const vec4f &clip);
 
         template<typename T>
-        std::array<T, 3> getFaceAttrib(const face &face, const int attribIndex)
+        std::array<T, 3> getFaceAttrib(const Face &face, const int attribIndex)
         {
             return
             { 
@@ -119,25 +119,5 @@ namespace echo
                 return vec2f{ vertex[offset], vertex[offset + 1] };
             }
         }
-    
-        // Vec4i sampleRGBA(const glTriangle& polygon, Image& image, const vec3f& barycentric)
-        // {
-        //     double current = getTimeSeconds();
-        //     double dt = current - previous;
-        //     previous = current;
-    
-    
-        //     float dudx, dudy, dvdx, dvdy;
-        //     image.derivatives(polygon, dudx, dudy, dvdx, dvdy);
-    
-        //     float lod = image.lod(dudx, dudy, dvdx, dvdy);
-    
-        //     vec2f uv = perspectiveCorrectedUV(polygon, barycentric);
-    
-        //     offset += dt;
-        //     uv += offset;
-    
-        //     return image.pixelRGBA(uv.x, uv.y, lod);
-        // }
     };
 }

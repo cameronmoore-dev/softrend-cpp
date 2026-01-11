@@ -7,7 +7,7 @@ Scene_Assimp::Scene_Assimp(jawl::Window &window) :
 {
     int w, h;
     m_window.getSize(w, h);
-    m_camera = Camera(45.f, (float)w / (float)h, 0.5f, 1000.f);
+    m_camera = Camera(45.f, (float)w / (float)h, 0.5f, 20.f);
 
     m_renderer = echo::Renderer(m_window.renderTarget());
     m_renderer.setVertexAttrib(sizeof(AssimpVertex), 0, 4); /* Position */
@@ -21,19 +21,21 @@ void Scene_Assimp::start()
     m_shader.setUniform<echo::mat4>(m_shader.view, m_camera.view());
     m_shader.setUniform<echo::mat4>(m_shader.projection, m_camera.projection());
 
-    m_modelMat = echo::identity() * (echo::rotate(180, {0, 1, 0}) * echo::scale({ 1,1,1 }));
-    // m_modelMat = echo::identity() * (echo::identity() * echo::identity());
-
-    m_model.loadModel("./resources/suz_obj.obj");
-
-    stbi_set_flip_vertically_on_load(true);
+    m_modelMat = echo::identity() * (echo::rotate(180, { 0, 1, 0 }) * echo::scale({ 0.03f, 0.03f, 0.03f }));
+    
+    m_model.loadModel("./resources/male_character_ps1-style/scene.gltf");
 
     int w, h, c;
-    uint8_t *tex = stbi_load("./resources/suzanne_diffuse.jpg", &w, &h, &c, 0);
+    uint8_t *tex = stbi_load("./resources/hero_baseColor.png", &w, &h, &c, 0);
     m_texture = m_renderer.createTexture(tex, w, h, c);
+
     stbi_image_free(tex);
 
     m_shader.setUniform<echo::Texture>(m_shader.diffuse, m_texture);
+
+    AssimpMesh &mesh = m_model.meshes[0];
+    m_renderer.bindVertexArray(mesh.m_vertices.data(), mesh.m_vertices.size());
+    m_renderer.bindShader(m_shader);
 
     double previous = getTimeSeconds();
     while (m_window.isOpen())
@@ -46,10 +48,8 @@ void Scene_Assimp::start()
         update();
         render();
 
-        // printf("FPS: %.0f\n", 1.f/m_dt);
+        printf("FPS: %.0f\n", 1.f/m_dt);
     }
-
-    m_window.cleanup();
 }
 
 void Scene_Assimp::processInput()
@@ -85,9 +85,10 @@ void Scene_Assimp::render()
 {
     m_renderer.clear(0x111111);
 
-    m_renderer.draw(m_model.meshes[0].m_vertices.data(), m_model.meshes[0].m_vertices.size(), m_shader);
-
+    AssimpMesh &mesh = m_model.meshes[0];
+    m_renderer.drawIndex(mesh.m_indices);
     m_renderer.endDraw();
+
     m_window.swapBuffers();
 }
 

@@ -35,8 +35,9 @@ int main()
     window->cursorEnableFlags(jawl::CursorFlags::Locked | jawl::CursorFlags::Hidden | jawl::CursorFlags::Clamped);
 
     SceneManager sceneManager;
-    sceneManager.addScene<Scene_AlphaBlending>(*window);
+    sceneManager.addScene<Scene_Suzanne>(*window);
 
+    window->cleanup();
     delete(window);
 
     return 0;

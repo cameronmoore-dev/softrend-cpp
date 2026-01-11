@@ -77,6 +77,8 @@ void Scene_Suzanne::start()
     // shader.lightProj = m_lightProj;
     // shader.lightView = m_lightView;
 
+    m_renderer.bindShader(shader);
+
     double previous = getTimeSeconds();
     while (m_window.isOpen())
     {
@@ -88,10 +90,8 @@ void Scene_Suzanne::start()
         update();
         render();
 
-        printf("FPS: %.0f\n", 1.f/m_dt);
+        // printf("FPS: %.0f\n", 1.f/m_dt);
     }
-
-    m_window.cleanup();
 }
 
 void Scene_Suzanne::processInput()
@@ -165,16 +165,6 @@ void Scene_Suzanne::processInput()
                 {
                     break;
                 }
-
-                if (e.triggerInfo.trigger == 0)
-                {
-                    printf("lt: %d\n", e.axisInfo.value);
-                }
-
-                if (e.triggerInfo.trigger == 1)
-                {
-                    printf("rt: %d\n", e.axisInfo.value);
-                }
             } break;
         }
     }
@@ -214,7 +204,7 @@ void Scene_Suzanne::render()
         // m_renderer.renderMode = Renderer::RenderMode::Final;
         // shader.isShadowPass = false;
 
-        m_renderer.draw(m_suzanne.vertices.data(), m_suzanne.vertices.size(), shader);
+        m_renderer.drawArray(m_suzanne.vertices.data(), m_suzanne.vertices.size());
 
         if (ssao)
         {
@@ -223,7 +213,6 @@ void Scene_Suzanne::render()
 
         m_renderer.endDraw();
     }
-    
     
     m_window.swapBuffers();
 }

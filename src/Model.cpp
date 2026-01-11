@@ -95,8 +95,8 @@ void Model::loadModel(const std::string& dir)
                 }
 
                 vtx.position = positions[std::stoi(v) - 1];
-                if (t.size() > 0) vtx.uv = texCoords[std::stoi(t) - 1];
                 if (n.size() > 0) vtx.normal = normals[std::stoi(n) - 1];
+                if (t.size() > 0) vtx.uv = texCoords[std::stoi(t) - 1];
 
                 vertices.emplace_back(vtx);
             }

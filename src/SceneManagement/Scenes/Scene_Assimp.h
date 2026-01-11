@@ -6,6 +6,7 @@
 
 #include "Camera.h"
 #include "assimp_model.h"
+
 #include "Shaders/AssimpModelShader.h"
 
 class Scene_Assimp : public Scene

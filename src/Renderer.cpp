@@ -1,12 +1,9 @@
 #include "Renderer.h"
 
 #include <algorithm>
-#include <iterator>
 #include <initializer_list>
 #include <cmath>
 #include <cstring>
-
-#include <iostream>
 
 namespace echo
 {
@@ -21,149 +18,143 @@ namespace echo
     Renderer::Renderer(void *windowRenderTarget)
     {
         m_wndInfo = windowRenderTarget;
-        m_scrnwidth = *((uint16_t*)windowRenderTarget);
-        m_scrnheight = *((uint16_t*)windowRenderTarget+1);
-        m_drawbuffer = *((uint32_t**)windowRenderTarget+1);
         m_ppBackbuffer = ((uint32_t**)windowRenderTarget+1);
 
-        /* Setup a default target which matches the window */
-        m_currentTarget.colour.resize(m_scrnwidth * m_scrnheight);
-        m_currentTarget.depth.resize(m_scrnwidth * m_scrnheight);
-        m_currentTarget.rect.x = 0;
-        m_currentTarget.rect.y = 0;
-        m_currentTarget.rect.width  = m_scrnwidth;
-        m_currentTarget.rect.height = m_scrnheight;
+        /* Setup a default render target which matches the window */
+        resizeBuffers();
+    }
 
-        setRenderTarget(m_currentTarget);
+    void Renderer::bindVertexArray(const void *arr, const uint32_t size)
+    {
+        if (!arr || size < 1)
+        {
+            m_vbo.clear();
+            return;
+        }
+
+        m_vbo.resize(_priv::vertexdef.stride * size);
+        std::memcpy(m_vbo.data(), arr, _priv::vertexdef.size * size);
+    }
+
+    void Renderer::bindShader(IShader &shader)
+    {
+        m_shader = &shader;
     }
     
     void Renderer::clear(uint32_t colour)
     {
-        /* Update where this pointer's memory address to the backbuffer if it changes */
+        /* Update this pointer's memory address to the backbuffer if it changes */
         if (m_drawbuffer != *m_ppBackbuffer)
         {
-            m_drawbuffer = *m_ppBackbuffer;
-            m_scrnwidth  = *((uint16_t*)m_wndInfo);
-            m_scrnheight = *((uint16_t*)m_wndInfo+1);
-            
-            m_currentTarget.rect.width = m_scrnwidth / m_scale;
-            m_currentTarget.rect.height = m_scrnheight / m_scale;
-            m_currentTarget.colour.resize(m_currentTarget.rect.width*m_currentTarget.rect.height);
-            m_currentTarget.depth.resize(m_currentTarget.rect.width*m_currentTarget.rect.height);
-            updateRenderTarget();
+            resizeBuffers();
         }
 
-        std::fill(m_currentTarget.colour.data(), m_currentTarget.colour.data() + (m_currentTarget.rect.width * m_currentTarget.rect.height), colour);
-        std::fill(m_currentTarget.depth.data(), m_currentTarget.depth.data() + (m_currentTarget.rect.width * m_currentTarget.rect.height), std::numeric_limits<float>::infinity());
-    }
-    
-    void Renderer::viewport(int x, int y, int w, int h)
-    {
-        m_viewport.x = x;
-        m_viewport.y = y;
-        m_viewport.width  = w;
-        m_viewport.height = h;
+        std::fill(m_rendertarget.colour.data(), 
+                  m_rendertarget.colour.data() + (m_rendertarget.rect.width * m_rendertarget.rect.height), 
+                  colour);
+                  
+        std::fill(m_rendertarget.depth.data(), 
+                  m_rendertarget.depth.data() + (m_rendertarget.rect.width * m_rendertarget.rect.height), 
+                  std::numeric_limits<float>::infinity());
     }
 
-    void Renderer::setVertexAttrib(uint16_t size, uint8_t index, uint8_t count)
+    void Renderer::drawArray(const void* vertices, const uint32_t size)
     {
-        _priv::attrib_t attrib =
+        if (m_vbo.empty())
         {
-            .index = index,
-            .count = count
-        };
-
-        _priv::vertexdef.attribs.emplace_back(attrib);
-        _priv::vertexdef.size = size;
-        _priv::vertexdef.stride = size / sizeof(float);
-    }
-    
-    void Renderer::draw(const void* vertices, int size, IShader& shader)
-    {
-        m_vbo.resize(_priv::vertexdef.stride * size);
-        std::memcpy(m_vbo.data(), vertices, _priv::vertexdef.size * size);
+            bindVertexArray(vertices, size);
+        }
 
         m_clipped.clear();
-        shader.reset();
+        m_shader->reset();
 
         for (uint32_t i = 0; i < size; i+=3)
         {
             int index = i * _priv::vertexdef.stride;
             int v0 = index;
-            int v1 = index +  _priv::vertexdef.stride;
-            int v2 = index + (_priv::vertexdef.stride * 2);
+            int v1 = index + _priv::vertexdef.stride;
+            int v2 = index + _priv::vertexdef.stride * 2;
 
-            shader.vertex(&m_vbo[v0]);
-            shader.vertex(&m_vbo[v1]);
-            shader.vertex(&m_vbo[v2]);
-            vertex _v0 = &m_vbo[v0];
-            vertex _v1 = &m_vbo[v1];
-            vertex _v2 = &m_vbo[v2];
+            float copy[_priv::vertexdef.stride * 3];
+            Face f = copyVertices(copy, &m_vbo[v0], &m_vbo[v1], &m_vbo[v2]);
 
-            // transformVertex(_v0);
-            // transformVertex(_v1);
-            // transformVertex(_v2);
+            draw(f);
+        }
+    }
 
-            // std::array<vec4f, 3> positions = shader.getFaceAttrib<vec4f>({ _v0, _v1, _v2 }, 0);
-            // float winding = windingOrder(positions[0], positions[1], positions[2]);
-            // if (winding <= 0.f)
-            // {
-            //     continue;
-            // }
+    void Renderer::drawIndex(const std::vector<uint32_t> &indices)
+    {
+        if (m_vbo.empty())
+        {
+            printf("ERROR::ECHO::A VERTEX ARRAY MUST BE BOUND BEFORE DRAWING WITH AN INDEX BUFFER!\n");
+            return;
+        }
 
-            // face face = { _v0, _v1, _v2 };
-            // rasterise(shader, face);
-            
-            m_input = { _v0, _v1, _v2 };
-            for (size_t p = 0; p < NUM_PLANES; p++)
+        m_clipped.clear();
+        m_shader->reset();
+
+        for (uint32_t i = 0; i < indices.size(); i+=3)
+        {
+            int v0_index = indices[i]   * _priv::vertexdef.stride;
+            int v1_index = indices[i+1] * _priv::vertexdef.stride;
+            int v2_index = indices[i+2] * _priv::vertexdef.stride;
+
+            float copy[_priv::vertexdef.stride * 3];
+            Face f = copyVertices(copy, &m_vbo[v0_index], &m_vbo[v1_index], &m_vbo[v2_index]);
+
+            draw(f);
+        }
+    }
+    
+    void Renderer::draw(const Face &face)
+    {
+        m_shader->vertex(face.v0);
+        m_shader->vertex(face.v1);
+        m_shader->vertex(face.v2);
+        
+        m_input = { face.v0, face.v1, face.v2 };
+        for (size_t p = 0; p < NUM_PLANES; p++)
+        {
+            m_output.clear();
+
+            clipTriangle(m_input, m_output, p);
+
+            if (m_output.empty())
             {
-                m_output.clear();
-    
-                clipTriangle(m_input, m_output, p);
-    
-                if (m_output.empty())
-                {
-                    m_input.clear();
-                    break;
-                }
-    
-                m_input.swap(m_output);
+                m_input.clear();
+                break;
             }
-            
-            for (uint32_t j = 1; j + 1 < m_input.size(); j++)
-            {
-                /* Copy the vertices so transforming doesn’t corrupt shared data */
-                float v0[_priv::vertexdef.stride] = {};
-                float v1[_priv::vertexdef.stride] = {};
-                float v2[_priv::vertexdef.stride] = {};
-                std::memcpy(v0, m_input[0],   _priv::vertexdef.size);
-                std::memcpy(v1, m_input[j],   _priv::vertexdef.size);
-                std::memcpy(v2, m_input[j+1], _priv::vertexdef.size);
 
-                transformVertex(v0);
-                transformVertex(v1);
-                transformVertex(v2);
-    
-                std::array<vec4f, 3> positions = shader.getFaceAttrib<vec4f>({ v0, v1, v2 }, 0);
-    
-                float winding = windingOrder(positions[0], positions[1], positions[2]);
-                if (winding <= 0.f)
-                {
-                    continue;
-                }
-    
-                face face = { v0, v1, v2 };
-                rasterise(shader, face);
+            m_input.swap(m_output);
+        }
+        
+        for (uint32_t j = 1; j + 1 < m_input.size(); j++)
+        {
+            float copy[_priv::vertexdef.stride * 3];
+            Face clipped = copyVertices(copy, m_input[0], m_input[j], m_input[j+1]);
+
+            transformVertex(clipped.v0);
+            transformVertex(clipped.v1);
+            transformVertex(clipped.v2);
+
+            std::array<vec4f, 3> positions = m_shader->getFaceAttrib<vec4f>(clipped, m_shader->m_vtxPosAttribIndex);
+            float winding = windingOrder(positions[0], positions[1], positions[2]);
+            if (winding <= 0.f)
+            {
+                continue;
             }
+
+            rasterize(clipped);
         }
     }
     
     void Renderer::transformVertex(vertex vertex)
     {
-        float &vx = vertex[0];
-        float &vy = vertex[1];
-        float &vz = vertex[2];
-        float &vw = vertex[3];
+        uint32_t posIndex = m_shader->m_vtxPosAttribIndex;
+        float &vx = vertex[posIndex];
+        float &vy = vertex[posIndex+1];
+        float &vz = vertex[posIndex+2];
+        float &vw = vertex[posIndex+3];
 
         /* Perspective Division */
         vx /= vw;
@@ -179,9 +170,9 @@ namespace echo
         vy = (vy + 1.f) * (m_viewport.height * 0.5f) + (m_viewport.y - 0.1f);
     }
     
-    void Renderer::rasterise(IShader& shader, const face &face)
+    void Renderer::rasterize(const Face &face)
     {
-        std::array<vec4f, 3> positions = shader.getFaceAttrib<vec4f>(face, 0);
+        std::array<vec4f, 3> positions = m_shader->getFaceAttrib<vec4f>(face, m_shader->m_vtxPosAttribIndex);
         boundingBox(positions[0], positions[1], positions[2]);
 
         vec2i p;
@@ -189,8 +180,8 @@ namespace echo
         {
             for (p.x = m_bbMin.x; p.x <= m_bbMax.x; p.x++)
             {
-                if (p.x < m_currentTarget.rect.x || p.x > m_currentTarget.rect.width  - 1 ||
-                    p.y < m_currentTarget.rect.y || p.y > m_currentTarget.rect.height - 1)
+                if (p.x < m_rendertarget.rect.x || p.x > m_rendertarget.rect.width  - 1 ||
+                    p.y < m_rendertarget.rect.y || p.y > m_rendertarget.rect.height - 1)
                 {
                     continue;
                 }
@@ -199,24 +190,47 @@ namespace echo
                 if (point.x >= 0 && point.y >= 0 && point.z >= 0)
                 {
                     float z = positions[0].z * point.x + positions[1].z * point.y + positions[2].z * point.z;
-                    uint32_t idx = p.x + p.y * m_currentTarget.rect.width;
+                    uint32_t idx = p.x + p.y * m_rendertarget.rect.width;
 
                     vec4f fragColour;
-                    if (z < m_currentTarget.depth[idx] && shader.fragment(point, face, fragColour))
+                    if (z < m_rendertarget.depth[idx] && m_shader->fragment(point, face, fragColour))
                     {
-                        m_currentTarget.depth[idx] = z;
+                        m_rendertarget.depth[idx] = z;
 
                         echo::vec4f src = { fragColour.x * fragColour.w, 
                                             fragColour.y * fragColour.w, 
                                             fragColour.z * fragColour.w, 
                                             fragColour.w };
                                             
-                        echo::vec4f dest = hexToRGBA(m_currentTarget.colour[idx]);
+                        echo::vec4f dest = hexToRGBA(m_rendertarget.colour[idx]);
                         echo::vec4f blendColour = src + dest * (1.f - src.w);
 
-                        m_currentTarget.colour[idx] = rgbaToHex(blendColour);
+                        m_rendertarget.colour[idx] = rgbaToHex(blendColour);
                     }
                 }
+            }
+        }
+    }
+
+    void Renderer::endDraw()
+    {
+        bool buffersEqualSize = (m_scrnwidth * m_scrnheight) == m_rendertarget.rect.width * m_rendertarget.rect.height;
+        if (buffersEqualSize)
+        {
+            std::memcpy(m_drawbuffer, 
+                        m_rendertarget.colour.data(), 
+                        m_rendertarget.rect.width * m_rendertarget.rect.height * sizeof(uint32_t));
+            return;
+        }
+
+        for (int y = 0; y < m_scrnheight; y++)
+        {
+            for (int x = 0; x < m_scrnwidth; x++)
+            {
+                int sx = std::floor(x * m_rendertarget.rect.width  / m_scrnwidth);
+                int sy = std::floor(y * m_rendertarget.rect.height / m_scrnheight);
+
+                m_drawbuffer[x + y * m_scrnwidth] = m_rendertarget.colour[sx + sy * m_rendertarget.rect.width];
             }
         }
     }
@@ -276,7 +290,7 @@ namespace echo
         return &m_clipped[index];
     }
     
-    void Renderer::clipTriangle(std::vector<vertex> &face, std::vector<vertex> &out, const int plane)
+    void Renderer::clipTriangle(std::vector<vertex> &Face, std::vector<vertex> &out, const int plane)
     {
         auto isInside = [](const vertex v, const int plane)
         {
@@ -293,10 +307,10 @@ namespace echo
             }
         };
     
-        for (size_t v = 0; v < face.size(); v++)
+        for (size_t v = 0; v < Face.size(); v++)
         {
-            vertex curr = face[v];
-            vertex next = face[(v + 1) % face.size()];
+            vertex curr = Face[v];
+            vertex next = Face[(v + 1) % Face.size()];
     
             bool currInside = isInside(curr, plane);
             bool nextInside = isInside(next, plane);
@@ -317,6 +331,31 @@ namespace echo
                 out.emplace_back(next);
             }
         }
+    }
+
+    void Renderer::resizeBuffers()
+    {
+        m_drawbuffer = *m_ppBackbuffer;
+        m_scrnwidth  = *((uint16_t*)m_wndInfo);
+        m_scrnheight = *((uint16_t*)m_wndInfo+1);
+        
+        m_rendertarget.rect.width = m_scrnwidth / m_scale;
+        m_rendertarget.rect.height = m_scrnheight / m_scale;
+        m_rendertarget.colour.resize(m_rendertarget.rect.width*m_rendertarget.rect.height);
+        m_rendertarget.depth.resize(m_rendertarget.rect.width*m_rendertarget.rect.height);
+        setRenderTarget(m_rendertarget);
+    }
+
+    Face Renderer::copyVertices(float *arr, const vertex v0, const vertex v1, const vertex v2)
+    {
+        vertex c0 = arr;
+        vertex c1 = arr + _priv::vertexdef.stride;
+        vertex c2 = arr + _priv::vertexdef.stride * 2;
+        std::memcpy(c0, v0, _priv::vertexdef.size);
+        std::memcpy(c1, v1, _priv::vertexdef.size);
+        std::memcpy(c2, v2, _priv::vertexdef.size);
+
+        return { c0, c1, c2 };
     }
     
     Texture Renderer::createTexture(const uint8_t *data, const int width, const int height, const int channels)
@@ -348,9 +387,6 @@ namespace echo
     
     void Renderer::generateMipMaps(Texture &texture)
     {
-        uint8_t totalMipLevels = log2f(texture.mipLevels[0].width);
-        texture.mipLevels.reserve(totalMipLevels + 1);
-    
         auto blend = [](const std::initializer_list<uint32_t> colours)
         {
             uint32_t r = 0;
@@ -377,8 +413,8 @@ namespace echo
         MipMap current = texture.mipLevels[0];
         while (current.width > 1 && current.height > 1)
         {
-            uint16_t newWidth  = std::max(1, current.width  / 2);
-            uint16_t newHeight = std::max(1, current.height / 2);
+            uint32_t newWidth  = std::max(1, (int)current.width  / 2);
+            uint32_t newHeight = std::max(1, (int)current.height / 2);
     
             MipMap next;
             next.width  = newWidth;
@@ -435,10 +471,10 @@ namespace echo
                     // int x1 = std::clamp(_x - 1, 0, mip.width - 1);
                     // int y1 = std::clamp(_y - 1, 0, mip.height - 1);
     
-                    int x1 = std::clamp(_x, 0, mip.width - 1);
-                    int y1 = std::clamp(_y, 0, mip.height - 1);
-                    int x2 = std::clamp(_x + 1, 0, mip.width  - 1);
-                    int y2 = std::clamp(_y + 1, 0, mip.height - 1);
+                    int x1 = std::clamp(_x, 0, (int)mip.width - 1);
+                    int y1 = std::clamp(_y, 0, (int)mip.height - 1);
+                    int x2 = std::clamp(_x + 1, 0, (int)mip.width  - 1);
+                    int y2 = std::clamp(_y + 1, 0, (int)mip.height - 1);
                 
                     const uint32_t &tl = mip.data[x1 + y1 * mip.width];
                     const uint32_t &tr = mip.data[x2 + y1 * mip.width];
@@ -460,6 +496,61 @@ namespace echo
                 }
             }
         }
+    }
+
+    void Renderer::setVertexAttrib(uint16_t size, uint8_t index, uint8_t count)
+    {
+        _priv::attrib_t attrib =
+        {
+            .index = index,
+            .count = count
+        };
+
+        _priv::vertexdef.attribs.emplace_back(attrib);
+        _priv::vertexdef.size = size;
+        _priv::vertexdef.stride = size / sizeof(float);
+    }
+
+    void Renderer::viewport(int x, int y, int w, int h)
+    {
+        m_viewport.x = x;
+        m_viewport.y = y;
+        m_viewport.width  = w;
+        m_viewport.height = h;
+    }
+
+    const rect &Renderer::viewport() const
+    {
+        return m_viewport;
+    }
+
+    void Renderer::setRenderTarget(const RenderTarget &target)
+    {
+        m_rendertarget = target;
+        updateRenderTarget();
+    }
+
+    void Renderer::updateRenderTarget()
+    {
+        viewport(m_rendertarget.rect.x, 
+                 m_rendertarget.rect.y, 
+                 m_rendertarget.rect.width, 
+                 m_rendertarget.rect.height);
+    }
+
+    const RenderTarget &Renderer::rendertarget() const
+    {
+        return m_rendertarget;
+    }
+
+    void Renderer::internalDownScale(uint32_t factor)
+    {
+        m_scale = factor;
+    }
+
+    const uint32_t Renderer::internalDownScale() const
+    {
+        return m_scale;
     }
 }
 

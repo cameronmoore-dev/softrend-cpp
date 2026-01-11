@@ -46,7 +46,7 @@ private:
         glPosition(0, vertex, (*projection * (*view * (*model * vec4(position, 1.f)))));
     }
 
-    bool fragment(const echo::vec3f& barycentric, const echo::face &face, echo::vec4f& fragColour) override
+    bool fragment(const echo::vec3f& barycentric, const echo::Face &face, echo::vec4f& fragColour) override
     {
         std::array<echo::vec3f, 3> normals = getFaceAttrib<echo::vec3f>(face, 1);
 
@@ -83,12 +83,10 @@ private:
         // echo::vec3f specular = vec3(texture(2, face, *specularMap, barycentric) * spec);
 
         fragColour = vec4((ambient + (diffuse ) /* * (1.0f - shadow) */), 1.f) * texture(2, face, *diffuseMap, barycentric);
-        fragColour = echo::srgbToLinear(fragColour);
-        fragColour = echo::linearToSRGB(fragColour);
         return true;
     }
 
-    echo::vec3f getNormalMapTexel(const echo::face &face, const echo::vec3f &barycentric)
+    echo::vec3f getNormalMapTexel(const echo::Face &face, const echo::vec3f &barycentric)
     {
         std::array<echo::vec3f, 3> normals    = getFaceAttrib<echo::vec3f>(face, 1);
         std::array<echo::vec3f, 3> tangents   = getFaceAttrib<echo::vec3f>(face, 3);

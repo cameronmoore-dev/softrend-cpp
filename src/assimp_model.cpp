@@ -2,12 +2,12 @@
 
 void AssimpModel::loadModel(const std::string &path)
 {
-    Assimp::Importer imp;
-    const aiScene *scene = imp.ReadFile(path, aiProcess_Triangulate);
+    Assimp::Importer importer;
+    const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices );
 
-    if (!scene)
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
-        printf("error loading model!\n");
+        printf("ERROR::ASSIMP::%s", importer.GetErrorString());
         return;
     }
 
@@ -31,24 +31,25 @@ void AssimpModel::processNode(aiNode *node, const aiScene *scene)
 AssimpMesh AssimpModel::processMesh(aiMesh *mesh, const aiScene *scene)
 {
     std::vector<AssimpVertex> vertices;
-
     for (int i = 0; i < mesh->mNumVertices; i++)
     {
-        AssimpVertex vertex;
-        vertex.position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z, 1.f };
-        vertex.normal   = { mesh->mNormals[i].x, mesh->mNormals[i].y,  mesh->mNormals[i].z};
-
-        if (mesh->mTextureCoords[0])
-        {
-            vertex.uv   = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
-        }
-        else 
-        {
-            vertex.uv = { 0, 0 };
-        }
+        AssimpVertex vertex{};
+        vertex.position = echo::vec4f{ mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
+        vertex.normal   = echo::vec3f{ mesh->mNormals[i].x,  mesh->mNormals[i].y,  mesh->mNormals[i].z};
+        vertex.uv       = echo::vec2f{ mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
 
         vertices.emplace_back(vertex);
     }
 
-    return AssimpMesh(vertices);
+    std::vector<uint32_t> indices;
+    for (int i = 0; i < mesh->mNumFaces; i++)
+    {
+        aiFace face = mesh->mFaces[i];
+        for (int j = 0; j < face.mNumIndices; j++)
+        {
+            indices.emplace_back(face.mIndices[j]);
+        }
+    }
+
+    return AssimpMesh(vertices, indices);
 }
