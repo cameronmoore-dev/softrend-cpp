@@ -47,6 +47,7 @@ namespace echo
         std::vector<float>    m_clipped;
         std::vector<vertex>   m_input;
         std::vector<vertex>   m_output;
+        std::vector<vec2i>    m_computedDownscale;
 
         rect  m_viewport = {};
         vec2f m_bbMin;
@@ -76,6 +77,7 @@ namespace echo
         vertex interpolate(const vertex a, const vertex b, const int plane);
         Face copyVertices(float *arr, const vertex v0, const vertex v1, const vertex v2);
         void resizeBuffers();
+        void precomputeUpscaling();
         
         // uint32_t fog(uint32_t idx, uint32_t fogColour);
     };

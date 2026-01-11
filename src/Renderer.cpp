@@ -223,15 +223,10 @@ namespace echo
             return;
         }
 
-        for (int y = 0; y < m_scrnheight; y++)
+        for (int i = 0; i < m_scrnwidth * m_scrnheight; i++)
         {
-            for (int x = 0; x < m_scrnwidth; x++)
-            {
-                int sx = std::floor(x * m_rendertarget.rect.width  / m_scrnwidth);
-                int sy = std::floor(y * m_rendertarget.rect.height / m_scrnheight);
-
-                m_drawbuffer[x + y * m_scrnwidth] = m_rendertarget.colour[sx + sy * m_rendertarget.rect.width];
-            }
+            vec2i coord = m_computedDownscale[i];
+            m_drawbuffer[i] = m_rendertarget.colour[coord.x + coord.y * m_rendertarget.rect.width];
         }
     }
     
@@ -524,10 +519,29 @@ namespace echo
         return m_viewport;
     }
 
+    void Renderer::precomputeUpscaling()
+    {
+        if (!m_computedDownscale.empty())
+        {
+            m_computedDownscale.clear();
+        }
+
+        for (int y = 0; y < m_scrnheight; y++)
+        {
+            for (int x = 0; x < m_scrnwidth; x++)
+            {
+                int sx = std::floor(x * m_rendertarget.rect.width  / m_scrnwidth);
+                int sy = std::floor(y * m_rendertarget.rect.height / m_scrnheight);
+                m_computedDownscale.emplace_back(vec2i{ sx, sy });
+            }
+        }
+    }
+
     void Renderer::setRenderTarget(const RenderTarget &target)
     {
         m_rendertarget = target;
         updateRenderTarget();
+        precomputeUpscaling();
     }
 
     void Renderer::updateRenderTarget()

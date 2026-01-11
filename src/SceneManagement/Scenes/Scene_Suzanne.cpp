@@ -90,7 +90,7 @@ void Scene_Suzanne::start()
         update();
         render();
 
-        // printf("FPS: %.0f\n", 1.f/m_dt);
+        printf("FPS: %.0f\n", 1.f/m_dt);
     }
 }
 
