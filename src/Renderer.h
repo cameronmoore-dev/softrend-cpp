@@ -23,7 +23,7 @@ namespace echo
         void bindVertexArray(const void* arr, const uint32_t size);
         void bindShader(IShader &shader);
 
-        void clear(uint32_t colour);
+        void clear(const uint32_t colour);
         void drawArray(const void* vertices, const uint32_t size);
         void drawIndex(const std::vector<uint32_t> &indices);
         void endDraw();

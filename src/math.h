@@ -15,20 +15,24 @@ namespace echo
 
     struct rect
     {
-        int x;
-        int y;
+        int32_t x = 0;
+        int32_t y = 0;
         uint16_t width;
         uint16_t height;
     };
     
     struct vec2i
     {
-        int32_t x, y;
+        int32_t x = 0;
+        int32_t y = 0;
     };
 
     struct vec4f
     {
-        float x, y, z, w;
+        float x = 0.f;
+        float y = 0.f;
+        float z = 0.f;
+        float w = 0.f;
 
         const vec4f operator+(const vec4f &rhs) const { return { x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w }; }
         const vec4f operator-(const vec4f &rhs) const { return { x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w }; }
@@ -53,7 +57,8 @@ namespace echo
 
     struct vec2f
     {
-        float x, y;
+        float x = 0.f;
+        float y = 0.f;
 
         const vec2f operator+(const vec2f &rhs) const { return { x + rhs.x, y + rhs.y }; }
         const vec2f operator-(const vec2f &rhs) const { return { x - rhs.x, y - rhs.y }; }
@@ -77,7 +82,9 @@ namespace echo
 
     struct vec3f
     {
-        float x, y, z;
+        float x = 0.f;
+        float y = 0.f;
+        float z = 0.f;
 
         const vec3f operator+(const vec3f &rhs) const { return { x + rhs.x, y + rhs.y, z + rhs.z }; }
         const vec3f operator-(const vec3f &rhs) const { return { x - rhs.x, y - rhs.y, z - rhs.z }; }

@@ -6,10 +6,9 @@
 Scene_Suzanne::Scene_Suzanne(jawl::Window &window) :
     m_window(window)
 {
-    int x = 0;
-    int y = 0;
-    m_window.getSize(x, y);
-    m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
+    int w, h;
+    m_window.getSize(w, h);
+    m_camera = Camera(45.f, (float)w / (float)h, 0.5f, 20.f);
 
     m_renderer = echo::Renderer(m_window.renderTarget());
     m_renderer.setVertexAttrib(sizeof(Vertex), 0, 4); /* Position */
@@ -20,7 +19,6 @@ Scene_Suzanne::Scene_Suzanne(jawl::Window &window) :
 
 
     int scale = 2;
-    int w, h;
     m_renderer.internalDownScale(scale);
     m_window.getScreenSize(w, h);
     w/=scale;
@@ -210,9 +208,8 @@ void Scene_Suzanne::render()
         {
             m_ssao.apply();
         }
-
-        m_renderer.endDraw();
     }
+    m_renderer.endDraw();
     
     m_window.swapBuffers();
 }

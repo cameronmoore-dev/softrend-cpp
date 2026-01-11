@@ -41,7 +41,7 @@ namespace echo
         m_shader = &shader;
     }
     
-    void Renderer::clear(uint32_t colour)
+    void Renderer::clear(const uint32_t colour)
     {
         /* Update this pointer's memory address to the backbuffer if it changes */
         if (m_drawbuffer != *m_ppBackbuffer)
