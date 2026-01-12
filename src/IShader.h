@@ -1,9 +1,8 @@
 #pragma once
 
-#include <algorithm>
 #include <memory>
 
-#include "math.h"
+#include "echomath.h"
 #include "jawl/base_window.h"
 
 namespace echo
@@ -57,8 +56,8 @@ namespace echo
         template<typename T>
         using Uniform = std::unique_ptr<T>;
     
-        float offset = 0.f;
-        double previous = getTimeSeconds();
+        float _offset = 0.f;
+        double _previous = getTimeSeconds();
     
         uint32_t vertID = 0;
         uint32_t fragID = 0;

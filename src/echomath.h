@@ -115,18 +115,18 @@ namespace echo
         }
     };
 
-    const float lerp(const float a, const float b, float t);
-    const float degToRad(const float deg);
-    const float dot(const vec3f &a, const vec3f &b);
-    const float length(const vec3f &normal);
+    float lerp(const float a, const float b, float t);
+    float degToRad(const float deg);
+    float dot(const vec3f &a, const vec3f &b);
+    float length(const vec3f &normal);
     const vec3f normalise(const vec3f &vec);
     const vec3f cross(const vec3f &a, const vec3f &b);
     const vec4f srgbToLinear(const vec4f &colour);
     const vec4f linearToSRGB(const vec4f &colour);
-    const uint32_t rgbaToHex(const vec4f &colour);
-    const uint32_t rgbToHex(const vec3f &colour);
     const vec4f hexToRGBA(const uint32_t colour);
     const vec3f hexToRGB(const uint32_t colour);
+    uint32_t rgbaToHex(const vec4f &colour);
+    uint32_t rgbToHex(const vec3f &colour);
     vec3f vec3(const vec4f &vec);
     vec4f vec4(const vec3f &vec, const float w);
     vec4f vec4(const vec2f &vec, const float z, const float w);

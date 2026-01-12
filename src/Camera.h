@@ -1,9 +1,6 @@
 #pragma once
 
-#include <array>
-#include <cstdint>
-
-#include "math.h"
+#include "echomath.h"
 #include "jawl/jawl.hpp"
 
 class Camera
@@ -27,7 +24,7 @@ public:
     Camera(int32_t left, int32_t top, int32_t right, int32_t bottom, float zNear, float zFar);
 
     void updateView();
-    void updateRotation(int xOffset, int yOffset, double dt);
+    void updateRotation(int xOffset, int yOffset);
     void updateRotation(float xOffset, float yOffset, double dt);
     void updateMovement(double dt);
 
@@ -38,8 +35,8 @@ public:
     const echo::vec3f& position()  const { return m_position; }
     const echo::vec3f& forward()   const { return m_forward; }
 
-    const float farPlane()   const { return m_farPlane; }
-    const float nearPlane()  const { return m_nearPlane; }
+    float farPlane()  { return m_farPlane;  }
+    float nearPlane() { return m_nearPlane; }
 
 private:
     echo::mat4 m_projection = echo::identity();

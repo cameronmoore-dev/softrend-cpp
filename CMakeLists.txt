@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.28)
 
 project(software_renderer LANGUAGES C CXX)
 
-set(${CMAKE_CXX_STANDARD} 17)
-set(${CMAKE_CXX_STANDARD_REQUIRED} TRUE)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(SRC_PATH			"${CMAKE_SOURCE_DIR}/src")
 set(LIB_INCLUDE_PATH	"${CMAKE_SOURCE_DIR}/externals/includes")
@@ -16,25 +17,32 @@ add_executable(software_renderer EXCLUDE_FROM_ALL
 	"src/jawl/input.cpp"
 	"src/jawl/win32/win32_window.cpp"
 	"src/jawl/win32/win32_input.cpp"
+	src/jawl/win32/wgl.c
 	"src/IShader.cpp"
-    "src/math.cpp"
+    "src/echomath.cpp"
     "src/Model.cpp"    
     # "src/Image.cpp"
     "src/Renderer.cpp"
     "src/Camera.cpp"
     # "src/SceneManagement/Scenes/Scene_Triangle.cpp"
-    # "src/SceneManagement/Scenes/Scene_Cube.cpp"
+    "src/SceneManagement/Scenes/Scene_Cube.cpp"
     "src/SceneManagement/Scenes/Scene_Suzanne.cpp"
-    # "src/SceneManagement/Scenes/Scene_AlphaBlending.cpp"
-	# "src/SceneManagement/Scenes/Scene_OpenGL.cpp"
+    "src/SceneManagement/Scenes/Scene_AlphaBlending.cpp"
+	"src/SceneManagement/Scenes/Scene_OpenGL.cpp"
 	"src/SceneManagement/Scenes/Scene_Assimp.cpp"
 	
 	"src/assimp_model.cpp"
 	"src/assimp_mesh.cpp"
 	
-	"src/glad.c"
+	"src/gl.c"
 	"src/stb_image.cpp"
 )
+
+if (MSVC)
+	target_compile_options(software_renderer PRIVATE /W4 /permissive)
+else()
+	#target_compile_options(software_renderer PRIVATE -Wall -Wextra -Werror=vla)
+endif()
 
 target_include_directories(software_renderer PUBLIC "${SRC_PATH}" "${LIB_INCLUDE_PATH}")
 target_link_libraries(software_renderer PRIVATE ${LIB_PATH}/libassimp.dll.a)

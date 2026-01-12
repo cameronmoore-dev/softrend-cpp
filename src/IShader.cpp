@@ -1,7 +1,5 @@
 #include "IShader.h"
 
-#include <cmath>
-
 /* 0 = repeated, 1 = mirrored repeat, 2 = clamp to edge, 3 = clamp to border */
 #define WRAP_MODE 0
 
@@ -20,8 +18,8 @@ namespace echo
     
     void IShader::derivatives(const int uvIndex, const Face &face, const Texture &texture, float& dudx, float& dudy, float& dvdx, float& dvdy)
     {
-        const float texWidth  = texture.mipLevels[0].width;
-        const float texHeight = texture.mipLevels[0].height;
+        const float texWidth  = (float)texture.mipLevels[0].width;
+        const float texHeight = (float)texture.mipLevels[0].height;
     
         std::array<vec4f, 3> positions = getFaceAttrib<vec4f>(face, 0);
         float x1 = positions[1].x - positions[0].x;
@@ -92,16 +90,14 @@ namespace echo
     
     vec4f IShader::texture(const int uvIndex, const Face &face, Texture &texture, const vec3f& barycentric)
     {
-        uint8_t mipLevel = 0;
+        int32_t mipLevel = 0;
         if (texture.mipLevels.size() > 1)
         {
             float dudx, dudy, dvdx, dvdy;
             derivatives(uvIndex, face, texture, dudx, dudy, dvdx, dvdy);
             float _lod = lod(dudx, dudy, dvdx, dvdy);
-            mipLevel = std::clamp((int)(_lod + 0.5f), 0, (int)texture.mipLevels.size() - 1);
+            mipLevel = std::clamp((int32_t)(_lod + 0.5f), 0, (int32_t)texture.mipLevels.size() - 1);
         }
-        
-        const MipMap &mip = texture.mipLevels[mipLevel];
         
         vec2f uv = perspectiveCorrectedUV(uvIndex, face, barycentric);
         uint32_t result = textureWrap(uv.x, uv.y, texture, mipLevel);
@@ -133,12 +129,12 @@ namespace echo
         {
             case 1:
             {
-                if ((int)std::ceil(u) & 1 != 0)
+                if ((int)std::ceil(u) & (1 != 0))
                 {
-                    x = uint32_t((1.f - uFraction) * mip.width)  % mip.width;
+                    x = uint32_t((1.f - uFraction) * mip.width) % mip.width;
                 }
     
-                if ((int)std::ceil(v) & 1 != 0)
+                if ((int)std::ceil(v) & (1 != 0))
                 {
                     y = uint32_t((1.f - vFraction) * mip.height) % mip.height;
                 }
@@ -146,8 +142,8 @@ namespace echo
 
             case 2:
             {
-                u = std::clamp(u, 0.f, 1.f);
-                v = std::clamp(v, 0.f, 1.f);
+                u = (uint32_t)std::clamp(u, 0.f, 1.f);
+                v = (uint32_t)std::clamp(v, 0.f, 1.f);
 
                 x = u * (mip.width - 1);
                 y = v * (mip.height - 1);

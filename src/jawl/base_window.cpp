@@ -1,7 +1,5 @@
 #include "base_window.h"
 
-#include <cstring>
-
 namespace jawl
 {
     Window::Window()

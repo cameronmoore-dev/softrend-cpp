@@ -1,7 +1,5 @@
 #include "input.h"
 
-#include <cmath>
-
 namespace jawl
 {
     bool isGamepadConnected(uint8_t slot)

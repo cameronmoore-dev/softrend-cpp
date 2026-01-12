@@ -1,5 +1,7 @@
 #include <windows.h>
 #include <xinput.h>
+#include <cstdio>
+#include <algorithm>
 
 #include "../input.h"
 

@@ -4,7 +4,6 @@
 #include <cstdint>
 
 #include "vertex.h"
-#include "math.h"
 
 #pragma pack(push, 1)
 struct TGAHeader

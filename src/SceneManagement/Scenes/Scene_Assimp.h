@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stb_image/stb_image.h>
+
 #include "jawl/base_window.h"
 #include "Renderer.h"
 #include "../Scene.h"

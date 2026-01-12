@@ -24,13 +24,13 @@ public:
     bool fragment(const echo::vec3f& barycentric, const echo::Face &face, echo::vec4f& fragColour) override
     {
         double current = getTimeSeconds();
-        double dt = current - previous;
-        previous = current;
+        double dt = current - _previous;
+        _previous = current;
 
-        offset += dt;
+        _offset += dt;
 
-        grassTexture->offset.x = offset;
-        grassTexture->offset.y = offset;
+        grassTexture->offset.x = _offset;
+        grassTexture->offset.y = _offset;
         grassTexture->scale.x = 2;
 
         echo::vec4f texel = texture(2, face, *grassTexture, barycentric);

@@ -1,4 +1,5 @@
-#include <glad/glad.h>
+#include <glad/gl.h>
+
 #include "jawl/jawl.hpp"
 
 #include "SceneManagement/SceneManager.h"
@@ -25,17 +26,18 @@ int main()
     window->setHint(jawl::Samples, 4);
 
     window->create("JAWL Window", 640, 480, jawl::Style::Default, jawl::RendererType::Software);
-    // if (!gladLoadGL())
+
+    // if (!gladLoaderLoadGL())
     // {
-    //     printf("Failed to load glad\n");
-    //     return -1;
+    //     printf("Failed to load GLAD!\n");
+    //     return EXIT_FAILURE;
     // }
 
     window->swapInterval(1);
     window->cursorEnableFlags(jawl::CursorFlags::Locked | jawl::CursorFlags::Hidden | jawl::CursorFlags::Clamped);
 
     SceneManager sceneManager;
-    sceneManager.addScene<Scene_Suzanne>(*window);
+    sceneManager.addScene<Scene_Cube>(*window);
 
     window->cleanup();
     delete(window);

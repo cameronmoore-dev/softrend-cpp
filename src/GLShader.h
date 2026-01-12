@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iostream>
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 class GLShader
 {
@@ -40,9 +40,10 @@ public:
 			vertCode = vShaderStream.str();
 			fragCode = fShaderStream.str();
 		}
-		catch (std::ifstream::failure e)
+		catch (std::ifstream::failure &err)
 		{
 			std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+			std::cout << err.what() << std::endl;
 		}
 
 		const char* vShaderCode = vertCode.c_str();

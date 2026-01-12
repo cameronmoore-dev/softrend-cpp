@@ -4,7 +4,14 @@
 #define UNICODE 1
 #endif
 
-#include <windows.h>
+#ifndef WIN32_LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+    #define NOMINMAX
+#endif
+
+#include <glad/wgl.h>
 
 #include "../base_window.h"
 #include "win32_input.h"
@@ -40,6 +47,8 @@ namespace jawl
         HDC         m_deviceContext;
         RECT        m_rect;
         RECT        m_windowedRect;
+
+        std::vector<BYTE> m_inputBuffer;
     
     private:
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

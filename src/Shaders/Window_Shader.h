@@ -2,8 +2,6 @@
 
 #include "../IShader.h"
 
-#include <iostream>
-
 class Window_Shader : public echo::IShader
 {
 public:
@@ -26,13 +24,13 @@ public:
     bool fragment(const echo::vec3f& barycentric, const echo::Face &face, echo::vec4f& fragColour) override
     {
         double current = getTimeSeconds();
-        double dt = current - previous;
-        previous = current;
+        double dt = current - _previous;
+        _previous = current;
 
-        offset += dt;
+        _offset += dt;
 
-        windowTexture->offset.x = -offset;
-        windowTexture->offset.y = -offset;
+        windowTexture->offset.x = -_offset;
+        windowTexture->offset.y = -_offset;
         windowTexture->scale.x = 1.5f;
         windowTexture->scale.y = 1.5f;
 

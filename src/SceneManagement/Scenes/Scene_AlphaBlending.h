@@ -1,6 +1,8 @@
 #pragma once
 
-#include "jawl/base_window.h"
+#include <stb_image/stb_image.h>
+#include "jawl/win32/win32_window.h"
+
 #include "../Scene.h"
 #include "Renderer.h"
 #include "Model.h"

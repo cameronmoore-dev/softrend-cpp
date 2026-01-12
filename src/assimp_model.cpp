@@ -16,22 +16,22 @@ void AssimpModel::loadModel(const std::string &path)
 
 void AssimpModel::processNode(aiNode *node, const aiScene *scene)
 {
-    for (int i = 0; i < node->mNumMeshes; i++)
+    for (uint32_t i = 0; i < node->mNumMeshes; i++)
     {
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
-        meshes.emplace_back(processMesh(mesh, scene));
+        meshes.emplace_back(processMesh(mesh));
     }
 
-    for (int i = 0; i < node->mNumChildren; i++)
+    for (uint32_t i = 0; i < node->mNumChildren; i++)
     {
         processNode(node->mChildren[i], scene);
     }
 }
 
-AssimpMesh AssimpModel::processMesh(aiMesh *mesh, const aiScene *scene)
+AssimpMesh AssimpModel::processMesh(aiMesh *mesh)
 {
     std::vector<AssimpVertex> vertices;
-    for (int i = 0; i < mesh->mNumVertices; i++)
+    for (uint32_t i = 0; i < mesh->mNumVertices; i++)
     {
         AssimpVertex vertex{};
         vertex.position = echo::vec4f{ mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
@@ -42,10 +42,10 @@ AssimpMesh AssimpModel::processMesh(aiMesh *mesh, const aiScene *scene)
     }
 
     std::vector<uint32_t> indices;
-    for (int i = 0; i < mesh->mNumFaces; i++)
+    for (uint32_t i = 0; i < mesh->mNumFaces; i++)
     {
         aiFace face = mesh->mFaces[i];
-        for (int j = 0; j < face.mNumIndices; j++)
+        for (uint32_t j = 0; j < face.mNumIndices; j++)
         {
             indices.emplace_back(face.mIndices[j]);
         }

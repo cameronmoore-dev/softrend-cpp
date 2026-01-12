@@ -1,11 +1,5 @@
 #include "win32_window.h"
 
-#include <cstring>
-#include <limits>
-
-#include <GL/gl.h>
-#include <GL/wglext.h>
-
 namespace jawl
 {
     struct WndRndTgt
@@ -49,13 +43,13 @@ namespace jawl
                 UINT size = 0;
                 ::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER));
 
-                BYTE buffer[size] = {};
-                if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, buffer, &size, sizeof(RAWINPUTHEADER)) != size)
+                m_inputBuffer.resize(size);
+                if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, m_inputBuffer.data(), &size, sizeof(RAWINPUTHEADER)) != size)
                 {
                     break;
                 }
 
-                RAWINPUT* raw = (RAWINPUT*)buffer;
+                RAWINPUT* raw = (RAWINPUT*)m_inputBuffer.data();
                 if (raw->header.dwType == RIM_TYPEHID)
                 {
                     pollGamepads(raw->data.hid, m_events);
@@ -227,8 +221,7 @@ namespace jawl
     {
         if (m_rtype == RendererType::Hardware)
         {
-            PFNWGLSWAPINTERVALEXTPROC wglSwapInterval = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
-            wglSwapInterval(interval);
+            wglSwapIntervalEXT(interval);
         }
     }
 
@@ -367,15 +360,16 @@ namespace jawl
         HDC dummyDC;
         dummyDC = GetDC(m_window);
 
-        PIXELFORMATDESCRIPTOR pfd = { .nSize = sizeof(pfd) };
+        PIXELFORMATDESCRIPTOR pfd;
+        pfd.nSize = sizeof(pfd);
+        
         ::SetPixelFormat(dummyDC, ChoosePixelFormat(dummyDC, &pfd), &pfd);
 
         HGLRC dummyRC;
         dummyRC = wglCreateContext(dummyDC);
         ::wglMakeCurrent(dummyDC, dummyRC);
 
-        PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
-        PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
+        gladLoadWGL(dummyDC, (GLADloadfunc)wglGetProcAddress);
 
         ::wglMakeCurrent(NULL, NULL);
         ::wglDeleteContext(dummyRC);
@@ -419,7 +413,9 @@ namespace jawl
 
         wglChoosePixelFormatARB(m_deviceContext, formatAttribs, 0, 1, &formats, &numFormats);
 
-        PIXELFORMATDESCRIPTOR desc = { .nSize = sizeof(desc) };
+        PIXELFORMATDESCRIPTOR desc;
+        desc.nSize = sizeof(desc);
+        
         ::SetPixelFormat(m_deviceContext, formats, &desc);
 
         int attribList[] =
@@ -430,7 +426,7 @@ namespace jawl
             0
         };
         HGLRC hRenderContext = wglCreateContextAttribsARB(m_deviceContext, 0, attribList);
-
+        
         ::wglMakeCurrent(m_deviceContext, hRenderContext);
     }
 

@@ -1,7 +1,5 @@
 #include "Scene_Assimp.h"
 
-#include <stb_image/stb_image.h>
-
 Scene_Assimp::Scene_Assimp(jawl::Window &window) : 
     m_window(window)
 {
@@ -21,7 +19,7 @@ void Scene_Assimp::start()
     m_shader.setUniform<echo::mat4>(m_shader.view, m_camera.view());
     m_shader.setUniform<echo::mat4>(m_shader.projection, m_camera.projection());
 
-    m_modelMat = echo::identity() * (echo::rotate(180, { 0, 1, 0 }) * echo::scale({ 0.03f, 0.03f, 0.03f }));
+    m_modelMat = echo::translate({ 0, 0, 0 }) * (echo::rotate(180, { 0, 1, 0 }) * echo::scale({ 0.03f, 0.03f, 0.03f }));
     
     m_model.loadModel("./resources/male_character_ps1-style/scene.gltf");
 
@@ -69,8 +67,10 @@ void Scene_Assimp::processInput()
 
             case jawl::Event::MouseMove:
             {
-                m_camera.updateRotation(event.mousePos.x, event.mousePos.y, m_dt);
+                m_camera.updateRotation(event.mousePos.x, event.mousePos.y);
             } break;
+
+            default: break;
         }
     }
 }

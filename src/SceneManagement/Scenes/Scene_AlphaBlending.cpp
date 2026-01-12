@@ -1,13 +1,9 @@
 #include "Scene_AlphaBlending.h"
 
-#include <stb_image/stb_image.h>
-#include "jawl/win32/win32_window.h"
-
 Scene_AlphaBlending::Scene_AlphaBlending(jawl::Window &window) : 
     m_window(window)
 {
-    int w = 0;
-    int h = 0;
+    int w, h;
     m_window.getSize(w, h);
     m_camera = Camera(45.f, (float)w / (float)h, 0.5f, 50.f);
 
@@ -114,7 +110,7 @@ void Scene_AlphaBlending::processInput()
 
             case jawl::Event::MouseMove:
             {
-                m_camera.updateRotation(e.mousePos.x, e.mousePos.y, m_dt);
+                m_camera.updateRotation(e.mousePos.x, e.mousePos.y);
             } break;
         }
     }
@@ -140,11 +136,17 @@ void Scene_AlphaBlending::render()
     int s = scale*2;
 
     m_renderer.viewport(w/s, h/s, w/s, h/s);
-    m_renderer.draw(m_cube.vertices.data(), m_cube.vertices.size(), m_cubeShader);
+    m_renderer.bindVertexArray(m_cube.vertices.data(), m_cube.vertices.size());
+    m_renderer.bindShader(m_cubeShader);
+    m_renderer.drawArray(m_cube.vertices.data(), m_cube.vertices.size());
 
     m_renderer.viewport(0, 0, w/s, h/s);
-    m_renderer.draw(m_plane.vertices.data(), m_plane.vertices.size(), m_grassShader);
-    m_renderer.draw(m_plane.vertices.data(), m_plane.vertices.size(), m_windowShader);
+    m_renderer.bindVertexArray(m_plane.vertices.data(), m_plane.vertices.size());
+    m_renderer.bindShader(m_grassShader);
+    m_renderer.drawArray(m_plane.vertices.data(), m_plane.vertices.size());
+
+    m_renderer.bindShader(m_windowShader);
+    m_renderer.drawArray(m_plane.vertices.data(), m_plane.vertices.size());
 
     m_renderer.endDraw();
 

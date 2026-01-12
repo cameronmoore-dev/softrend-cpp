@@ -1,8 +1,5 @@
 #include "Camera.h"
 
-#include <algorithm>
-#include <cmath>
-
 Camera::Camera(float fov, float aspect, float zNear, float zFar)
 {
     m_projection = echo::perspective(fov, aspect, zNear, zFar);
@@ -91,7 +88,7 @@ bool Camera::isSphereInsideFrustum(const echo::mat4& model, const echo::vec3f& c
     return true;
 }
 
-void Camera::updateRotation(int xOffset, int yOffset, double dt)
+void Camera::updateRotation(int xOffset, int yOffset)
 {
     m_yaw   += xOffset * m_sensitivity;
     m_pitch += yOffset * m_sensitivity;

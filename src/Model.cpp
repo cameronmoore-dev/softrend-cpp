@@ -1,13 +1,5 @@
 #include "Model.h"
 
-#include <filesystem>
-#include <algorithm>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-
-#include "math.h"
-
 Model::Model(const std::string& dir)
 {
     loadModel(dir);
@@ -74,7 +66,7 @@ void Model::loadModel(const std::string& dir)
 
                 size_t v_pos = vtxStr.find("/");
                 size_t t_pos = vtxStr.find("/", v_pos + 1);
-                size_t n_pos = vtxStr.find("/", v_pos + 3);
+                // size_t n_pos = vtxStr.find("/", v_pos + 3);
 
                 if (v_pos != std::string::npos)
                 {

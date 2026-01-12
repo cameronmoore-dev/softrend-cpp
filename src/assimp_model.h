@@ -15,7 +15,7 @@ public:
 
     void loadModel(const std::string &path);
     void processNode(aiNode *node, const aiScene *scene);
-    AssimpMesh processMesh(aiMesh *mesh, const aiScene *scene);
+    AssimpMesh processMesh(aiMesh *mesh);
 
     std::vector<AssimpMesh> meshes;
 private:

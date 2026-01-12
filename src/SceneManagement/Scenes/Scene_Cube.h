@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stb_image/stb_image.h>
+
 #include "jawl/base_window.h"
 
 #include "../Scene.h"
@@ -9,7 +11,7 @@
 #include "Camera.h"
 
 #include "Shaders/Cube_Shader.h"
-#include "Shaders/FXAA_Shader.h"
+// #include "Shaders/FXAA_Shader.h"
 
 class Scene_Cube : public Scene
 {
@@ -33,7 +35,7 @@ private:
     echo::Texture m_texture;
 
     Cube_Shader m_shader;
-    FXAA_Shader m_fxaa;    
+    // FXAA_Shader m_fxaa;    
     
     echo::mat4 m_model = echo::identity();
 

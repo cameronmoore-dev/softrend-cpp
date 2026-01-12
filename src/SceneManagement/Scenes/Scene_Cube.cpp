@@ -1,9 +1,5 @@
 #include "Scene_Cube.h"
 
-#include <chrono>
-
-#include <stb_image/stb_image.h>
-
 Scene_Cube::Scene_Cube(jawl::Window &window) :
     m_window(window)
 {
@@ -29,6 +25,9 @@ Scene_Cube::Scene_Cube(jawl::Window &window) :
     rt.rect.height = h/2;
 
     m_renderer.setRenderTarget(rt);
+
+    m_renderer.bindVertexArray(m_cube.vertices.data(), m_cube.vertices.size());
+    m_renderer.bindShader(m_shader);
 }
 
 void Scene_Cube::start()
@@ -89,7 +88,7 @@ void Scene_Cube::processInput()
 
             case jawl::Event::MouseMove:
             {
-                m_camera.updateRotation(e.mousePos.x, e.mousePos.y, m_dt);
+                m_camera.updateRotation(e.mousePos.x, e.mousePos.y);
             } break;
         }
     }
@@ -108,7 +107,7 @@ void Scene_Cube::render()
 {
     m_renderer.clear(0x111111);
 
-    m_renderer.draw(m_cube.vertices.data(), m_cube.vertices.size(), m_shader);
+    m_renderer.drawArray(m_cube.vertices.data(), m_cube.vertices.size());
 
     m_renderer.endDraw();
     

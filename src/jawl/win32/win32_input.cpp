@@ -1,9 +1,5 @@
 #include "win32_input.h"
 
-#include <cmath>
-#include <cstdio>
-#include <algorithm>
-
 namespace jawl
 {
     bool isKeyPressed(Key key)
@@ -19,7 +15,7 @@ namespace jawl
     void pollGamepads(RAWHID &hidData, std::queue<Event> &events)
     {
         int numXInputDevices = 0;
-        for (uint8_t i = 0; i < _priv::g_gamepads.size(); i++)
+        for (size_t i = 0; i < _priv::g_gamepads.size(); i++)
         {
             Gamepad &gamepad = _priv::g_gamepads[i];
             Gamepad &previousState = _priv::g_previousGamepadStates[i];
@@ -100,12 +96,12 @@ namespace jawl
             return;
         }
         
-        RAWINPUTDEVICELIST devices[size];
-        ::GetRawInputDeviceList(devices, &size, sizeof(RAWINPUTDEVICELIST));
+        std::vector<RAWINPUTDEVICELIST> devices(size);
+        ::GetRawInputDeviceList(devices.data(), &size, sizeof(RAWINPUTDEVICELIST));
         _priv::g_gamepads.clear();
         _priv::g_previousGamepadStates.clear();
 
-        for (int i = 0; i < size; i++)
+        for (UINT i = 0; i < size; i++)
         {
             if (devices[i].dwType == RIM_TYPEHID)
             {

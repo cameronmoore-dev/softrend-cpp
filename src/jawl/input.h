@@ -3,6 +3,7 @@
 #include <vector>
 #include <queue>
 #include <cstdint>
+#include <cmath>
 
 #include "event.h"
 

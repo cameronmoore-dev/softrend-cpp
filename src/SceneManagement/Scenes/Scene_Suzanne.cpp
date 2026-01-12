@@ -1,8 +1,5 @@
 #include "Scene_Suzanne.h"
 
-#include <stb_image/stb_image.h>
-#include <iostream>
-
 Scene_Suzanne::Scene_Suzanne(jawl::Window &window) :
     m_window(window)
 {
@@ -99,11 +96,6 @@ void Scene_Suzanne::processInput()
     {
         switch(e.type)
         {
-            case jawl::Event::WindowResize:
-            {
-                onWindowResize(e.wndResizeInfo.width, e.wndResizeInfo.height);
-            } break;
-
             case jawl::Event::KeyPressed:
             {
                 if (e.keyCode == jawl::getKey(jawl::Key::Escape))
@@ -124,7 +116,7 @@ void Scene_Suzanne::processInput()
 
                 else if (e.keyCode == jawl::getKey(jawl::Key::Enter))
                 {
-                    m_ssao.doBlur = !m_ssao.doBlur;
+                    // m_ssao.doBlur = !m_ssao.doBlur;
                 }
             } break;
 
@@ -134,7 +126,7 @@ void Scene_Suzanne::processInput()
 
             case jawl::Event::MouseMove:
             {
-                m_camera.updateRotation(e.mousePos.x, e.mousePos.y, m_dt);
+                m_camera.updateRotation(e.mousePos.x, e.mousePos.y);
             } break;
 
             case jawl::Event::GamepadButtonPressed:
@@ -164,6 +156,8 @@ void Scene_Suzanne::processInput()
                     break;
                 }
             } break;
+
+            default: break;
         }
     }
 }
@@ -206,7 +200,7 @@ void Scene_Suzanne::render()
 
         if (ssao)
         {
-            m_ssao.apply();
+            // m_ssao.apply();
         }
     }
     m_renderer.endDraw();
@@ -217,9 +211,4 @@ void Scene_Suzanne::render()
 void Scene_Suzanne::shutdown()
 {
 
-}
-
-void Scene_Suzanne::onWindowResize(int w, int h)
-{
-    // m_renderer.viewport(0, 0, w, h);
 }

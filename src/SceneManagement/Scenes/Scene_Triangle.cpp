@@ -1,7 +1,5 @@
 #include "Scene_Triangle.h"
 
-#include <chrono>
-
 Scene_Triangle::Scene_Triangle(jawl::Window &window) :
     m_window(window)
 {

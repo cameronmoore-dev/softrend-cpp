@@ -1,30 +1,30 @@
-#include "math.h"
+#include "echomath.h"
 
 namespace echo
 {
-    const float lerp(const float a, const float b, float t)
+    float lerp(const float a, const float b, float t)
     {
         return a + t * (b-a);
     }
 
-    const float degToRad(const float deg)
+    float degToRad(const float deg)
     {
         return deg * (pi / 180.f);
     }
 
-    const float dot(const vec3f &a, const vec3f &b)
+    float dot(const vec3f &a, const vec3f &b)
     {
         return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
     }
 
-    const float length(const vec3f &normal)
+    float length(const vec3f &normal)
     {
-        return sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+        return std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
     }
 
     const vec3f normalise(const vec3f &vec)
     {
-        float mag = sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+        float mag = std::sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
         return { vec.x / mag, vec.y / mag, vec.z / mag };
     }
 
@@ -41,10 +41,10 @@ namespace echo
     const vec4f srgbToLinear(const vec4f &colour)
     {
         vec4f linear;
-        linear.x = std::powf(colour.x, 2.2f);
-        linear.y = std::powf(colour.y, 2.2f);
-        linear.z = std::powf(colour.z, 2.2f);
-        linear.w = std::powf(colour.w, 2.2f);
+        linear.x = std::pow(colour.x, 2.2f);
+        linear.y = std::pow(colour.y, 2.2f);
+        linear.z = std::pow(colour.z, 2.2f);
+        linear.w = std::pow(colour.w, 2.2f);
         
         return linear;
     }
@@ -52,29 +52,12 @@ namespace echo
     const vec4f linearToSRGB(const vec4f &colour)
     {
         vec4f srgb;
-        srgb.x = std::powf(colour.x, 1.f / 2.2f);
-        srgb.y = std::powf(colour.y, 1.f / 2.2f);
-        srgb.z = std::powf(colour.z, 1.f / 2.2f);
-        srgb.w = std::powf(colour.w, 1.f / 2.2f);
+        srgb.x = std::pow(colour.x, 1.f / 2.2f);
+        srgb.y = std::pow(colour.y, 1.f / 2.2f);
+        srgb.z = std::pow(colour.z, 1.f / 2.2f);
+        srgb.w = std::pow(colour.w, 1.f / 2.2f);
 
         return srgb;
-    }
-
-    const uint32_t rgbaToHex(const vec4f &colour)
-    {
-        int r = std::clamp(int(colour.x * 255.f), 0, 255);
-        int g = std::clamp(int(colour.y * 255.f), 0, 255);
-        int b = std::clamp(int(colour.z * 255.f), 0, 255);
-        int a = std::clamp(int(colour.w * 255.f), 0, 255);
-        return (r << 16) | (g << 8) | b | (a << 24);
-    }
-
-    const uint32_t rgbToHex(const vec3f &colour) 
-    {
-        int r = std::clamp(int(colour.x * 255.f), 0, 255);
-        int g = std::clamp(int(colour.y * 255.f), 0, 255);
-        int b = std::clamp(int(colour.z * 255.f), 0, 255);
-        return (r<< 16) | (g << 8) | b;
     }
 
     const vec3f hexToRGB(const uint32_t colour)
@@ -93,6 +76,23 @@ namespace echo
         float a = float((colour >> 24) & 0xFF) / 255.f;
 
         return  { r, g, b, a };
+    }
+
+    uint32_t rgbaToHex(const vec4f &colour)
+    {
+        int r = std::clamp(int(colour.x * 255.f), 0, 255);
+        int g = std::clamp(int(colour.y * 255.f), 0, 255);
+        int b = std::clamp(int(colour.z * 255.f), 0, 255);
+        int a = std::clamp(int(colour.w * 255.f), 0, 255);
+        return (r << 16) | (g << 8) | b | (a << 24);
+    }
+
+    uint32_t rgbToHex(const vec3f &colour) 
+    {
+        int r = std::clamp(int(colour.x * 255.f), 0, 255);
+        int g = std::clamp(int(colour.y * 255.f), 0, 255);
+        int b = std::clamp(int(colour.z * 255.f), 0, 255);
+        return (r<< 16) | (g << 8) | b;
     }
 
     vec3f vec3(const vec4f &vec)
@@ -247,16 +247,16 @@ namespace echo
     {
         const mat4 multiply(const mat4 &matA, const mat4 &matB)
         {
-            uint32_t ar = matA.size();
-            uint32_t ac = matA[0].size();
-            uint32_t bc = matB[0].size();
+            size_t ar = matA.size();
+            size_t ac = matA[0].size();
+            size_t bc = matB[0].size();
 
             mat4 result = {};
-            for (uint32_t row = 0; row < ar; row++)
+            for (size_t row = 0; row < ar; row++)
             {
-                for (uint32_t col = 0; col < bc; col++)
+                for (size_t col = 0; col < bc; col++)
                 {
-                    for (uint32_t e = 0; e < ac; e++)
+                    for (size_t e = 0; e < ac; e++)
                     {
                         result[row][col] += matA[row][e] * matB[e][col];
                     }
