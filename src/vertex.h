@@ -17,4 +17,5 @@ struct AssimpVertex
     echo::vec4f position;
     echo::vec3f normal;
     echo::vec2f uv;
+    echo::vec3f fragPos;
 };

@@ -48,9 +48,13 @@ namespace echo
             resizeBuffers();
         }
 
-        std::fill(m_rendertarget.colour.data(), 
-                  m_rendertarget.colour.data() + (m_rendertarget.rect.width * m_rendertarget.rect.height), 
-                  colour);
+        if (!m_rendertarget.colour.size() < 1)
+        {
+            std::fill(m_rendertarget.colour.data(), 
+                      m_rendertarget.colour.data() + (m_rendertarget.rect.width * m_rendertarget.rect.height), 
+                      colour);
+        }
+        
                   
         std::fill(m_rendertarget.depth.data(), 
                   m_rendertarget.depth.data() + (m_rendertarget.rect.width * m_rendertarget.rect.height), 
@@ -187,10 +191,25 @@ namespace echo
                     float z = positions[0].z * point.x + positions[1].z * point.y + positions[2].z * point.z;
                     uint32_t idx = p.x + p.y * m_rendertarget.rect.width;
 
-                    vec4f fragColour;
-                    if (z < m_rendertarget.depth[idx] && m_shader->fragment(point, face, fragColour))
+                    /* Only get depth values during a shadow pass */
+                    if (m_rendertarget.colour.size() < 1)
+                    {
+                        if (z < m_rendertarget.depth[idx])
+                        {
+                            m_rendertarget.depth[idx] = z;
+                            continue;
+                        }
+                    }
+
+                    if (z < m_rendertarget.depth[idx])
                     {
                         m_rendertarget.depth[idx] = z;
+
+                        vec4f fragColour;
+                        if (!m_shader->fragment(point, face, fragColour))
+                        {
+                            continue;
+                        }
 
                         echo::vec4f src = { fragColour.x * fragColour.w, 
                                             fragColour.y * fragColour.w, 

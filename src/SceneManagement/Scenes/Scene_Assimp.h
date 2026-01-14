@@ -10,6 +10,7 @@
 #include "assimp_model.h"
 
 #include "Shaders/AssimpModelShader.h"
+#include "Shaders/DepthShader.h"
 
 class Scene_Assimp : public Scene
 {
@@ -29,12 +30,20 @@ private:
     echo::Renderer m_renderer;
     Camera m_camera;
 
+    Camera m_lightSource;
+    DepthShader m_dpthshdr;
+
     AssimpModelShader m_shader;
     AssimpModel m_model;
+    AssimpModel m_grnd;
     
+    echo::RenderTarget m_depthMap;
+    echo::RenderTarget m_default;
+
     echo::Texture m_texture;
 
     echo::mat4 m_modelMat = echo::identity();
 
     double m_dt = 0.0;
+    float angle = 0.f;
 };

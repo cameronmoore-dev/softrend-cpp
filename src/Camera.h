@@ -38,18 +38,21 @@ public:
     float farPlane()  { return m_farPlane;  }
     float nearPlane() { return m_nearPlane; }
 
+    echo::vec3f m_position  = { 0.f, 0.f, -10.f };
+    echo::vec3f m_forward   = { 0.f, 0.f, -1.f };
+    float m_yaw         = -90.f;
+    float m_pitch       = 0.f;
+
 private:
     echo::mat4 m_projection = echo::identity();
     echo::mat4 m_view       = echo::identity();
 
-    echo::vec3f m_position  = { 0.f, 0.f, -10.f };
-    echo::vec3f m_forward   = { 0.f, 0.f, -1.f };
+    
 
     float m_farPlane    = 0.f;
     float m_nearPlane   = 0.f;
     
-    float m_yaw         = -90.f;
-    float m_pitch       = 0.f;
+    
     float m_sensitivity = 0.1f;
     float m_cameraSpeed = 5.f;
 

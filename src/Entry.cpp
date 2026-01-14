@@ -37,7 +37,7 @@ int main()
     window->cursorEnableFlags(jawl::CursorFlags::Locked | jawl::CursorFlags::Hidden | jawl::CursorFlags::Clamped);
 
     SceneManager sceneManager;
-    sceneManager.addScene<Scene_Cube>(*window);
+    sceneManager.addScene<Scene_Assimp>(*window);
 
     window->cleanup();
     delete(window);
