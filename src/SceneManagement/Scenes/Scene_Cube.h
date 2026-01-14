@@ -11,7 +11,7 @@
 #include "Camera.h"
 
 #include "Shaders/Cube_Shader.h"
-// #include "Shaders/FXAA_Shader.h"
+#include "Shaders/FXAA_Shader.h"
 
 class Scene_Cube : public Scene
 {
@@ -35,10 +35,12 @@ private:
     echo::Texture m_texture;
 
     Cube_Shader m_shader;
-    // FXAA_Shader m_fxaa;    
+    FXAA_Shader m_fxaa;    
     
     echo::mat4 m_model = echo::identity();
 
     float m_angle = 0.f;
     double m_dt = 0.f;
+
+    bool doFXAA = false;
 };

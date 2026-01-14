@@ -563,7 +563,7 @@ namespace echo
                  m_rendertarget.rect.height);
     }
 
-    const RenderTarget &Renderer::rendertarget() const
+    RenderTarget &Renderer::rendertarget()
     {
         return m_rendertarget;
     }

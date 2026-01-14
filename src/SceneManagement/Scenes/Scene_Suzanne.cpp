@@ -14,7 +14,6 @@ Scene_Suzanne::Scene_Suzanne(jawl::Window &window) :
     m_renderer.setVertexAttrib(sizeof(Vertex), 3, 3); /* Tangent */
     m_renderer.setVertexAttrib(sizeof(Vertex), 4, 3); /* Bitangent */
 
-
     int scale = 2;
     m_renderer.internalDownScale(scale);
     m_window.getScreenSize(w, h);
@@ -31,9 +30,12 @@ Scene_Suzanne::Scene_Suzanne(jawl::Window &window) :
 
 void Scene_Suzanne::start()
 {
-    shader.setUniform<echo::mat4>(shader.model, m_model);
-    shader.setUniform<echo::mat4>(shader.view, m_camera.view());
-    shader.setUniform<echo::mat4>(shader.projection, m_camera.projection());
+    m_shader.setUniform<echo::mat4>(m_shader.model, m_model);
+    m_shader.setUniform<echo::mat4>(m_shader.view, m_camera.view());
+    m_shader.setUniform<echo::mat4>(m_shader.projection, m_camera.projection());
+    m_shader.setUniform<echo::Texture>(m_shader.diffuseMap, m_texture);
+    m_shader.setUniform<echo::Texture>(m_shader.normalMap, m_normalMap);
+    m_shader.setUniform<echo::Texture>(m_shader.specularMap, m_specularMap);
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -57,22 +59,7 @@ void Scene_Suzanne::start()
     stbi_image_free(n);
     stbi_image_free(s);
 
-    shader.setUniform<echo::Texture>(shader.diffuseMap, m_texture);
-    shader.setUniform<echo::Texture>(shader.normalMap, m_normalMap);
-    shader.setUniform<echo::Texture>(shader.specularMap, m_specularMap);
-
-    // uint16_t w, h;
-    // m_renderer.size(w, h);
-    // m_ssao = SSAO_Shader(m_renderer.framebuffer(), m_renderer.depthbuffer(), w, h);
-
-    // Vec3f pos{ 0.f, 0.f, -5.f };
-    // Vec3f forward{ 0.f, 0.f, -1.f };
-    // m_lightView = Matrix::lookAt(pos, pos+forward, { 0, 1, 0 });
-
-    // shader.lightProj = m_lightProj;
-    // shader.lightView = m_lightView;
-
-    m_renderer.bindShader(shader);
+    m_renderer.bindShader(m_shader);
 
     double previous = getTimeSeconds();
     while (m_window.isOpen())
@@ -116,7 +103,7 @@ void Scene_Suzanne::processInput()
 
                 else if (e.keyCode == jawl::getKey(jawl::Key::Enter))
                 {
-                    // m_ssao.doBlur = !m_ssao.doBlur;
+                    m_ssao.doBlur = !m_ssao.doBlur;
                 }
             } break;
 
@@ -185,24 +172,18 @@ void Scene_Suzanne::render()
     echo::vec3f centre{ 0, 0, 0 };
     float radius = 1.f;
     
-    if (m_camera.isSphereInsideFrustum(*shader.model, centre, radius))
+    if (m_camera.isSphereInsideFrustum(*m_shader.model, centre, radius))
     {
-        // std::fill(Renderer::depthMap.begin(), Renderer::depthMap.end(), 1.f);
-
-        // m_renderer.renderMode = Renderer::RenderMode::Shadow;
-        // shader.isShadowPass = true;
-        // m_renderer.draw(m_suzanne.vertices, shader);
-
-        // m_renderer.renderMode = Renderer::RenderMode::Final;
-        // shader.isShadowPass = false;
-
         m_renderer.drawArray(m_suzanne.vertices.data(), m_suzanne.vertices.size());
 
         if (ssao)
         {
-            // m_ssao.apply();
+            echo::RenderTarget &rt = m_renderer.rendertarget();
+            m_ssao.initAOBuffers(rt.rect.width, rt.rect.height);
+            m_ssao.apply(rt);
         }
     }
+
     m_renderer.endDraw();
     
     m_window.swapBuffers();

@@ -14,15 +14,16 @@ Scene_Cube::Scene_Cube(jawl::Window &window) :
     m_renderer.setVertexAttrib(sizeof(Vertex), 3, 3); /* Tangent */
     m_renderer.setVertexAttrib(sizeof(Vertex), 4, 3); /* Bitangent */
     
+    int scale = 1;
+    m_renderer.internalDownScale(scale);
     m_window.getScreenSize(w, h);
+    w/=scale;
+    h/=scale;
 
     echo::RenderTarget rt;
-    rt.colour.resize((w/2)*(h/2));
-    rt.depth.resize((w/2)*(h/2));
-    rt.rect.x = 0;
-    rt.rect.y = 0;
-    rt.rect.width  = w/2;
-    rt.rect.height = h/2;
+    rt.colour.resize(w*h);
+    rt.depth.resize(w*h);
+    rt.rect = { 0, 0, (uint16_t)w, (uint16_t)h };
 
     m_renderer.setRenderTarget(rt);
 
@@ -32,10 +33,6 @@ Scene_Cube::Scene_Cube(jawl::Window &window) :
 
 void Scene_Cube::start()
 {
-    // uint16_t w, h;
-    // m_renderer.size(w, h);
-    // m_fxaa = FXAA_Shader(m_renderer.framebuffer(), w*h, w);
-
     m_shader.setUniform<echo::mat4>(m_shader.model, m_model);
     m_shader.setUniform<echo::mat4>(m_shader.view, m_camera.view());
     m_shader.setUniform<echo::mat4>(m_shader.projection, m_camera.projection());
@@ -63,7 +60,7 @@ void Scene_Cube::start()
         update();
         render();
 
-        // printf("FPS: %.0f\n", 1.f/m_dt);
+        printf("FPS: %.0f\n", 1.f/m_dt);
     }
 }
 
@@ -79,6 +76,11 @@ void Scene_Cube::processInput()
                 if (e.keyCode == jawl::getKey(jawl::Key::Escape))
                 {
                     m_window.close();
+                }
+
+                else if (e.keyCode == jawl::getKey(jawl::Key::F))
+                {
+                    doFXAA = !doFXAA;
                 }
             } break;
 
@@ -109,9 +111,12 @@ void Scene_Cube::render()
 
     m_renderer.drawArray(m_cube.vertices.data(), m_cube.vertices.size());
 
-    m_renderer.endDraw();
+    if (doFXAA)
+    {
+        m_fxaa.apply(m_renderer.rendertarget());
+    }
     
-    // m_fxaa.apply();
+    m_renderer.endDraw();
 
     m_window.swapBuffers();
 }

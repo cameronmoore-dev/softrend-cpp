@@ -38,7 +38,7 @@ namespace echo
         const rect &viewport() const;
         void setRenderTarget(const RenderTarget &target);
         void updateRenderTarget();
-        const RenderTarget &rendertarget() const;
+        RenderTarget &rendertarget();
         void internalDownScale(const uint32_t factor);
         uint32_t internalDownScale();
 

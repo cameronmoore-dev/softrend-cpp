@@ -9,7 +9,7 @@
 #include "Camera.h"
 
 #include "Shaders/Suzanne_Shader.h"
-// #include "Shaders/SSAO_Shader.h"
+#include "Shaders/SSAO_Shader.h"
 
 class Scene_Suzanne : public Scene
 {
@@ -35,11 +35,8 @@ private:
 
     Camera m_camera;
 
-    Suzanne_Shader shader;
-    // SSAO_Shader m_ssao;
-
-    // Mat4 m_lightProj = Matrix::orthographic(-2.f, 2.f, -2.f, 2.f, 1.f, 10.f);
-    // Mat4 m_lightView = Matrix::identity();
+    Suzanne_Shader m_shader;
+    SSAO_Shader m_ssao;
 
     echo::mat4 m_model = echo::identity();
 

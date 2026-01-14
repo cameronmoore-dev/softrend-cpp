@@ -17,26 +17,15 @@ public:
     Uniform<echo::Texture> normalMap;
     Uniform<echo::Texture> specularMap;
 
-    // Mat4 lightProj;
-    // Mat4 lightView;
-
     echo::vec3f lightDir{ 0, 0, -1 };
     echo::vec3f colour = { 1, 1, 1 };
     echo::vec3f ambient = { 0.17f, 0.17f, 0.17f };
-
-    bool isShadowPass = false;
 
 private:
     void vertex(float *vertex) override
     {
         echo::vec3f position = getVertexAttribData<echo::vec3f>(vertex, 0);
         echo::vec3f normals  = getVertexAttribData<echo::vec3f>(vertex, 1);
-
-        // if (isShadowPass)
-        // {
-        //     copy.position = Matrix::multiply(lightProj, Matrix::multiply(lightView, Matrix::multiply(model, v.position)));
-        //     return;
-        // }
         
         echo::vec3f normal = echo::normalise(*model * normals);
         vertex[4] = normal.x;
@@ -50,39 +39,18 @@ private:
     {
         std::array<echo::vec3f, 3> normals = getFaceAttrib<echo::vec3f>(face, 1);
 
-        // echo::vec4f fragWorldPos = polygon.v0.fragPos * barycentric.x + polygon.v1.fragPos * barycentric.y + polygon.v2.fragPos * barycentric.z;
-        // echo::vec4f fragPos = Matrix::multiply(lightProj, Matrix::multiply(lightView, fragWorldPos));
-
-        // /* Perspective Division for use with perspective projection */
-        // fragPos.x /= fragPos.w;
-        // fragPos.y /= fragPos.w;
-        // fragPos.z /= fragPos.w;
-
-        // echo::vec2f shadowMapUV;
-        // shadowMapUV.x = fragPos.x * 0.5f + 0.5f;
-        // shadowMapUV.y = fragPos.y * 0.5f + 0.5f;
-        
-        // int sx = shadowMapUV.x * 1024;
-        // int sy = shadowMapUV.y * 1024;
-
-        // float shadowDepth = Renderer::depthMap[sx + sy * 1024];
-        // float currentDepth = fragPos.z;
-
-        // float bias = std::max(0.05f * (1.0f - dot(normal, lightDir)), 0.005f);
-        // float shadow = currentDepth - bias > shadowDepth ? 1.f : 0.f;
-
-        // echo::vec3f normal = getNormalMapTexel(face, barycentric);
-        echo::vec3f normal = normals[0] * barycentric.x + normals[1] * barycentric.y + normals[2] * barycentric.z;
+        echo::vec3f normal = getNormalMapTexel(face, barycentric);
+        // echo::vec3f normal = normals[0] * barycentric.x + normals[1] * barycentric.y + normals[2] * barycentric.z;
         normal = normalise(normal);
 
         float diff = std::max(0.f, echo::dot(normal, lightDir));
         echo::vec3f diffuse = colour * diff;
 
-        // echo::vec3f halfwayDir = normalise(lightDir + lightDir);
-        // float spec = std::pow(std::max(dot(normal, halfwayDir), 0.f), 128);
-        // echo::vec3f specular = vec3(texture(2, face, *specularMap, barycentric) * spec);
+        echo::vec3f halfwayDir = normalise(lightDir + lightDir);
+        float spec = std::pow(std::max(dot(normal, halfwayDir), 0.f), 128);
+        echo::vec3f specular = vec3(texture(2, face, *specularMap, barycentric) * spec);
 
-        fragColour = vec4((ambient + (diffuse ) /* * (1.0f - shadow) */), 1.f) * texture(2, face, *diffuseMap, barycentric);
+        fragColour = vec4((ambient + (diffuse )), 1.f) * texture(2, face, *diffuseMap, barycentric);
         return true;
     }
 
