@@ -3,7 +3,7 @@
 #include <stb_image/stb_image.h>
 
 #include "jawl/base_window.h"
-#include "Renderer.h"
+#include "echo-renderer/renderer.h"
 #include "../Scene.h"
 
 #include "Camera.h"

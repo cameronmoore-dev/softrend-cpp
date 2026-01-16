@@ -5,7 +5,7 @@
 #include <random>
 #include <cmath>
 
-#include "Renderer.h"
+#include "echo-renderer/renderer.h"
 
 class SSAO_Shader
 {

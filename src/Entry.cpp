@@ -12,7 +12,7 @@
 
 int main()
 {
-    srand(static_cast<UINT>(time(0)));
+    srand(static_cast<time_t>(time(0)));
 
     jawl::Window *window = jawl::init();
     if (!window)

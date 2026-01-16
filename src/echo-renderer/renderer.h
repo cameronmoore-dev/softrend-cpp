@@ -4,8 +4,8 @@
 #include <cstring>
 #include <vector>
 
-#include "IShader.h"
-#include "echomath.h"
+#include "shader.h"
+#include "echo_math.h"
 
 namespace echo
 {

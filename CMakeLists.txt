@@ -18,11 +18,11 @@ add_executable(software_renderer EXCLUDE_FROM_ALL
 	"src/jawl/win32/win32_window.cpp"
 	"src/jawl/win32/win32_input.cpp"
 	src/jawl/win32/wgl.c
-	"src/IShader.cpp"
-    "src/echomath.cpp"
+    "src/echo-renderer/renderer.cpp"
+	"src/echo-renderer/shader.cpp"
+    "src/echo-renderer/echo_math.cpp"
     "src/Model.cpp"    
     # "src/Image.cpp"
-    "src/Renderer.cpp"
     "src/Camera.cpp"
     # "src/SceneManagement/Scenes/Scene_Triangle.cpp"
     "src/SceneManagement/Scenes/Scene_Cube.cpp"
@@ -37,12 +37,6 @@ add_executable(software_renderer EXCLUDE_FROM_ALL
 	"src/gl.c"
 	"src/stb_image.cpp"
 )
-
-if (MSVC)
-	target_compile_options(software_renderer PRIVATE /W4 /permissive)
-else()
-	#target_compile_options(software_renderer PRIVATE -Wall -Wextra -Werror=vla)
-endif()
 
 target_include_directories(software_renderer PUBLIC "${SRC_PATH}" "${LIB_INCLUDE_PATH}")
 target_link_libraries(software_renderer PRIVATE ${LIB_PATH}/libassimp.dll.a)
@@ -65,6 +59,23 @@ if(WIN32)
 		endif()
 	endif()
 endif()
+
+if(MSVC)
+		string(REGEX MATCH "opengl32.lib" MATCHED_SUBSTRING "${CMAKE_CXX_STANDARD_LIBRARIES}")
+		if(NOT ${MATCHED_SUBSTRING} STREQUAL "")
+			message("opengl32 library already exists in cache!")
+		else()
+			set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} opengl32.lib" CACHE STRING "Libraries linked by default with all C++ applications." FORCE)
+		endif()
+
+	else()
+		string(REGEX MATCH "-lopengl32" MATCHED_SUBSTRING "${CMAKE_CXX_STANDARD_LIBRARIES}")
+		if(NOT ${MATCHED_SUBSTRING} STREQUAL "")
+			message("opengl32 library already exists in cache!")
+		else()
+			set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lopengl32" CACHE STRING "Libraries linked by default with all C++ applications." FORCE)
+		endif()
+	endif()
 
 # Copy the resources folder into the generated executable's folder
 add_custom_command(

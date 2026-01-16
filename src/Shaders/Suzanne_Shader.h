@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
-#include "../IShader.h"
-#include "../Renderer.h"
+#include "echo-renderer/shader.h"
+#include "echo-renderer/renderer.h"
 
 class Suzanne_Shader : public echo::IShader
 {

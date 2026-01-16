@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../IShader.h"
+#include "echo-renderer/shader.h"
 
 class Grass_Shader : public echo::IShader
 {

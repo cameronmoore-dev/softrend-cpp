@@ -1,6 +1,6 @@
 #pragma once
 
-#include "echomath.h"
+#include "echo-renderer/echo_math.h"
 
 struct Vertex
 {

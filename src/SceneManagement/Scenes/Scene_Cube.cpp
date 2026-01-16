@@ -14,7 +14,7 @@ Scene_Cube::Scene_Cube(jawl::Window &window) :
     m_renderer.setVertexAttrib(sizeof(Vertex), 3, 3); /* Tangent */
     m_renderer.setVertexAttrib(sizeof(Vertex), 4, 3); /* Bitangent */
     
-    int scale = 1;
+    int scale = 2;
     m_renderer.internalDownScale(scale);
     m_window.getScreenSize(w, h);
     w/=scale;

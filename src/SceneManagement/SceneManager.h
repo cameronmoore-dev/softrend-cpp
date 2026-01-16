@@ -5,7 +5,6 @@
 
 #include "jawl/base_window.h"
 #include "Scene.h"
-#include "Renderer.h"
 
 class SceneManager
 {

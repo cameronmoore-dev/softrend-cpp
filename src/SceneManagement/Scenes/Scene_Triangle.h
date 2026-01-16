@@ -1,9 +1,9 @@
 #pragma once
 
+#include "echo-renderer/renderer.h"
 #include "../Scene.h"
-#include "IShader.h"
-#include "Renderer.h"
 #include "Camera.h"
+#include "vertex.h"
 
 #include "Shaders/Suzanne_Shader.h"
 

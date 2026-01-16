@@ -7,6 +7,8 @@
 
 #include <glad/gl.h>
 
+#include "echo-renderer/echo_math.h"
+
 class GLShader
 {
 public:

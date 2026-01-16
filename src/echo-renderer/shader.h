@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "echomath.h"
+#include "echo_math.h"
 #include "jawl/base_window.h"
 
 namespace echo

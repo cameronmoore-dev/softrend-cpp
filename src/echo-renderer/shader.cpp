@@ -1,4 +1,4 @@
-#include "IShader.h"
+#include "shader.h"
 
 /* 0 = repeated, 1 = mirrored repeat, 2 = clamp to edge, 3 = clamp to border */
 #define WRAP_MODE 0
@@ -154,7 +154,7 @@ namespace echo
                 if (u < 0.f || u > 1.f || 
                     v < 0.f || v > 1.f)
                 {
-                    return { 0xffff00ff };
+                    return 0xffff00ff;
                 }
             } break;
 

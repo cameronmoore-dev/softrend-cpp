@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "Renderer.h"
+#include "echo-renderer/renderer.h"
 
 #define QUALITY 3
 

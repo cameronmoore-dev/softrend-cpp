@@ -1,7 +1,7 @@
 #pragma once
 
-#include "echomath.h"
 #include "jawl/jawl.hpp"
+#include "echo-renderer/echo_math.h"
 
 class Camera
 {

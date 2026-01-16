@@ -48,17 +48,20 @@ namespace echo
             resizeBuffers();
         }
 
-        if (!m_rendertarget.colour.size() < 1)
+        if (m_rendertarget.colour.size() > 0)
         {
             std::fill(m_rendertarget.colour.data(), 
                       m_rendertarget.colour.data() + (m_rendertarget.rect.width * m_rendertarget.rect.height), 
                       colour);
         }
         
-                  
-        std::fill(m_rendertarget.depth.data(), 
-                  m_rendertarget.depth.data() + (m_rendertarget.rect.width * m_rendertarget.rect.height), 
-                  std::numeric_limits<float>::infinity());
+        if (m_rendertarget.depth.size() > 0)
+        {
+            std::fill(m_rendertarget.depth.data(), 
+                      m_rendertarget.depth.data() + (m_rendertarget.rect.width * m_rendertarget.rect.height), 
+                      std::numeric_limits<float>::infinity());
+        }          
+        
     }
 
     void Renderer::drawArray(const void* vertices, const uint32_t size)

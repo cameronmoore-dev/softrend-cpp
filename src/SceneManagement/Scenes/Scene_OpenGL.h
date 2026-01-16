@@ -4,7 +4,6 @@
 
 #include "jawl/base_window.h"
 #include "../Scene.h"
-#include "Renderer.h"
 #include "GLShader.h"
 
 struct POS
