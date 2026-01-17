@@ -135,11 +135,9 @@ namespace echo
     const mat4 perspective(const float fov, const float aspect, const float zNear, const float zFar);
     const mat4 orthographic(const int32_t left, const int32_t right, const int32_t bottom, const int32_t top, const float zNear, const float zFar);
     const mat4 lookAt(const vec3f& pos, const vec3f& forward, const vec3f& up);
-
     const mat4 translate(const vec3f& vec);
     const mat4 rotate(const float angle, const vec3f &axis);
     const mat4 scale(const vec3f& vec);
-
     const mat4 identity();
 
     namespace _priv

@@ -25,6 +25,14 @@ namespace echo
         inline vertexdef_t vertexdef = {};
     }
 
+    enum class WrapMode
+    {
+        Repeat,
+        MirroredRepeat,
+        ClampToEdge,
+        ClampToBorder
+    };
+
     struct MipMap
     {
         std::vector<uint32_t> data;
@@ -38,6 +46,7 @@ namespace echo
         vec2f offset = { 0.f, 0.f };
         vec2f scale  = { 1.f, 1.f };
         uint32_t numChannels;
+        WrapMode wrapMode = WrapMode::Repeat;
     };
     
     using vertex = float*;

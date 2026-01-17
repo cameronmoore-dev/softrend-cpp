@@ -51,6 +51,7 @@ void Scene_AlphaBlending::start()
     int iw, ih, ic;
     uint8_t *g = stbi_load("./resources/texture_grass.tga", &iw, &ih, &ic, 0);
     m_grassTexture = m_renderer.createTexture(g, iw, ih, ic);
+    m_grassTexture.wrapMode = echo::WrapMode::MirroredRepeat;
 
     uint8_t *d = stbi_load("./resources/texture_dirtcube.tga", &iw, &ih, &ic, 0);
     m_dirtTexture = m_renderer.createTexture(d, iw, ih, ic);

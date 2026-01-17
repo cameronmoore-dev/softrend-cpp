@@ -1,8 +1,5 @@
 #include "shader.h"
 
-/* 0 = repeated, 1 = mirrored repeat, 2 = clamp to edge, 3 = clamp to border */
-#define WRAP_MODE 0
-
 namespace echo
 {
     void IShader::reset()
@@ -125,9 +122,9 @@ namespace echo
         uint32_t x = uint32_t(uFraction * mip.width)  % mip.width;
         uint32_t y = uint32_t(vFraction * mip.height) % mip.height;
 
-        switch (WRAP_MODE)
+        switch (texture.wrapMode)
         {
-            case 1:
+            case WrapMode::MirroredRepeat:
             {
                 if ((int)std::ceil(u) & (1 != 0))
                 {
@@ -140,7 +137,7 @@ namespace echo
                 }
             } break;
 
-            case 2:
+            case WrapMode::ClampToEdge:
             {
                 u = (uint32_t)std::clamp(u, 0.f, 1.f);
                 v = (uint32_t)std::clamp(v, 0.f, 1.f);
@@ -149,7 +146,7 @@ namespace echo
                 y = v * (mip.height - 1);
             } break;
 
-            case 3:
+            case WrapMode::ClampToBorder:
             {
                 if (u < 0.f || u > 1.f || 
                     v < 0.f || v > 1.f)

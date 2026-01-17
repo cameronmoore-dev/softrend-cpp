@@ -540,12 +540,14 @@ namespace echo
             m_computedDownscale.clear();
         }
 
+        uint16_t targetWidth  = m_scrnwidth  / m_scale;
+        uint16_t targetHeight = m_scrnheight / m_scale;
         for (uint16_t y = 0; y < m_scrnheight; y++)
         {
             for (uint16_t x = 0; x < m_scrnwidth; x++)
             {
-                uint16_t sx = std::floor(x * m_rendertarget.rect.width  / m_scrnwidth);
-                uint16_t sy = std::floor(y * m_rendertarget.rect.height / m_scrnheight);
+                uint16_t sx = std::floor(x * targetWidth  / m_scrnwidth);
+                uint16_t sy = std::floor(y * targetHeight / m_scrnheight);
                 m_computedDownscale.emplace_back(vec2i{ sx, sy });
             }
         }
@@ -555,7 +557,6 @@ namespace echo
     {
         m_rendertarget = target;
         updateRenderTarget();
-        precomputeUpscaling();
     }
 
     void Renderer::updateRenderTarget()
@@ -574,6 +575,10 @@ namespace echo
     void Renderer::internalDownScale(uint32_t factor)
     {
         m_scale = factor;
+        if (factor > 1)
+        {
+            precomputeUpscaling();
+        }
     }
 
     uint32_t Renderer::internalDownScale()
