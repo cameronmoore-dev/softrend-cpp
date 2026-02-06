@@ -3,12 +3,7 @@
 #include "jawl/jawl.hpp"
 
 #include "SceneManagement/SceneManager.h"
-#include "SceneManagement/Scenes/Scene_Cube.h"
-#include "SceneManagement/Scenes/Scene_Triangle.h"
-#include "SceneManagement/Scenes/Scene_Suzanne.h"
-#include "SceneManagement/Scenes/Scene_AlphaBlending.h"
-#include "SceneManagement/Scenes/Scene_OpenGL.h"
-#include "SceneManagement/Scenes/Scene_Assimp.h"
+#include "SceneManagement/Scenes/Scene_MainMenu.h"
 
 int main()
 {
@@ -37,7 +32,7 @@ int main()
     window->cursorEnableFlags(jawl::CursorFlags::Locked | jawl::CursorFlags::Hidden | jawl::CursorFlags::Clamped);
 
     SceneManager sceneManager;
-    sceneManager.addScene<Scene_Cube>(*window);
+    sceneManager.addScene<Scene_MainMenu>(*window);
 
     window->cleanup();
     delete(window);
