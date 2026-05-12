@@ -11,10 +11,13 @@
 #include "Shaders/Cube_Shader.h"
 #include "Shaders/FXAA_Shader.h"
 
+#include "SceneManagement/SceneManager.h"
+
 class Scene_Cube : public Scene
 {
 public:
     Scene_Cube(jawl::Window &window);
+    ~Scene_Cube() = default;
 
     void start() override;
     

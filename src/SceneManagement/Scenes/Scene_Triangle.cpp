@@ -11,13 +11,13 @@ Scene_Triangle::Scene_Triangle(jawl::Window &window) :
 
 void Scene_Triangle::start()
 {
-    m_triangle.resize(3);
-    m_triangle[0].position = { -1, 1, 0 };
-    m_triangle[0].colour = 0xff0000;
-    m_triangle[1].position = { 0, -1, 0 };
-    m_triangle[1].colour = 0x00ff00;
-    m_triangle[2].position = { 1, 1, 0 };
-    m_triangle[2].colour = 0x0000ff;
+    // m_triangle.resize(3);
+    // m_triangle[0].position = { -1, 1, 0 };
+    // m_triangle[0].colour = 0xff0000;
+    // m_triangle[1].position = { 0, -1, 0 };
+    // m_triangle[1].colour = 0x00ff00;
+    // m_triangle[2].position = { 1, 1, 0 };
+    // m_triangle[2].colour = 0x0000ff;
 
     double previous = getTimeSeconds();
     while (m_window.isOpen())
@@ -66,10 +66,12 @@ void Scene_Triangle::update()
     m_camera.updateMovement(m_dt);
     m_angle+=20.f * m_dt;
     
-    m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
-    m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
+    m_rotation = echo::rotate(m_angle, { 1, 1, 1 });
+    m_model = m_translate * m_rotation * m_scale;
+    // m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
+    // m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
 
-    m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
+    // m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
     m_camera.updateView();
 }
 

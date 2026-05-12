@@ -99,7 +99,7 @@ void Scene_AlphaBlending::processInput()
             {
                 if (e.keyCode == jawl::getKey(jawl::Key::Escape))
                 {
-                    m_window.close();
+                    shutdown();
                 }
 
                 else if (e.keyCode == jawl::getKey(jawl::Key::F5))
@@ -156,5 +156,20 @@ void Scene_AlphaBlending::render()
 
 void Scene_AlphaBlending::shutdown()
 {
-    
+    m_cubeShader.projection.release();
+    m_cubeShader.view.release();
+    m_cubeShader.model.release();
+    m_cubeShader.cubeTexture.release();
+
+    m_grassShader.projection.release();
+    m_grassShader.view.release();
+    m_grassShader.model.release();
+    m_grassShader.grassTexture.release();
+
+    m_windowShader.projection.release();
+    m_windowShader.view.release();
+    m_windowShader.model.release();
+    m_windowShader.windowTexture.release();
+
+    scene_manager::removeScene();
 }

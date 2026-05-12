@@ -9,7 +9,6 @@
 #include "Scene_Cube.h"
 #include "Scene_Suzanne.h"
 #include "Scene_AlphaBlending.h"
-#include "Scene_OpenGL.h"
 #include "Scene_Assimp.h"
 
 class Scene_MainMenu : public Scene
@@ -28,6 +27,4 @@ protected:
 private:
     jawl::Window &m_window;
     echo::Renderer m_renderer;
-
-    SceneManager m_sceneManager;
 };

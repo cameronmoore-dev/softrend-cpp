@@ -87,7 +87,7 @@ void Scene_Suzanne::processInput()
             {
                 if (e.keyCode == jawl::getKey(jawl::Key::Escape))
                 {
-                    m_window.close();
+                    shutdown();
                 }
 
                 else if (e.keyCode == jawl::getKey(jawl::Key::F5))
@@ -191,5 +191,13 @@ void Scene_Suzanne::render()
 
 void Scene_Suzanne::shutdown()
 {
+    m_shader.projection.release();
+    m_shader.view.release();
+    m_shader.model.release();
 
+    m_shader.diffuseMap.release();
+    m_shader.specularMap.release();
+    m_shader.normalMap.release();
+
+    scene_manager::removeScene();
 }

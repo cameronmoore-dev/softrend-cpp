@@ -147,15 +147,15 @@ namespace jawl
         }
     }
 
-    Win32_Window *Win32_Window::create(const std::string &title, const uint16_t width, const uint16_t height, const uint32_t style, const RendererType rtype)
+    Win32_Window *Win32_Window::create(const std::string &title, const uint16_t width, const uint16_t height, const uint32_t style)
     {
         registerWinClass();
 
-        LPCWSTR cTitle = std::wstring(title.begin(), title.end()).c_str();
+        std::wstring wtitle(title.begin(), title.end());
         m_window = ::CreateWindowEx(
             0, 
             className(), 
-            cTitle, 
+            wtitle.c_str(), 
             style,
             CW_USEDEFAULT, CW_USEDEFAULT, 
             width, height, 
@@ -170,13 +170,12 @@ namespace jawl
             return nullptr;
         }
 
+        swSetup();
+
         m_title = title;
         m_width = width;
         m_height = height;
         m_style = style;
-
-        m_rtype = rtype;
-        m_rtype == RendererType::Software ? swSetup() : glSetup();
 
         ::GetWindowRect(m_window, &m_rect);
         ::ShowWindow(m_window, SW_NORMAL);
@@ -193,64 +192,46 @@ namespace jawl
     {
         updateCursor();
 
-        if (m_rtype == RendererType::Software)
-        {
-            ::InvalidateRect(m_window, nullptr, FALSE);
+        ::InvalidateRect(m_window, nullptr, FALSE);
 
-            PAINTSTRUCT paint;
-            HDC hdc = ::BeginPaint(m_window, &paint);
+        PAINTSTRUCT paint;
+        HDC hdc = ::BeginPaint(m_window, &paint);
+    
+        std::memcpy(m_frontbuffer, m_rendertarget->buffer, m_width * m_height * sizeof(uint32_t));
+        ::BitBlt(hdc, 
+                    paint.rcPaint.left, paint.rcPaint.top, 
+                    m_width, m_height, 
+                    m_deviceContext, 
+                    paint.rcPaint.left, paint.rcPaint.top, 
+                    SRCCOPY);
         
-            std::memcpy(m_frontbuffer, m_rendertarget->buffer, m_width * m_height * sizeof(uint32_t));
-            ::BitBlt(hdc, 
-                     paint.rcPaint.left, paint.rcPaint.top, 
-                     m_width, m_height, 
-                     m_deviceContext, 
-                     paint.rcPaint.left, paint.rcPaint.top, 
-                     SRCCOPY);
-            
-            ::EndPaint(m_window, &paint);
-            pollMessages();
-            return;
-        }
-        
-        ::SwapBuffers(m_deviceContext);
+        ::EndPaint(m_window, &paint);
         pollMessages();
-    }
-
-    void Win32_Window::swapInterval(const uint8_t interval)
-    {
-        if (m_rtype == RendererType::Hardware)
-        {
-            wglSwapIntervalEXT(interval);
-        }
     }
 
     void Win32_Window::cleanup()
     {
         ::DestroyWindow(m_window);
 
-        if (m_rtype == RendererType::Software)
+        if (m_bitmapHandle)
         {
-            if (m_bitmapHandle)
-            {
-                ::DeleteObject(m_bitmapHandle);
-            }
-            if (m_deviceContext)
-            {
-                ::DeleteDC(m_deviceContext);
-            }
-            ::ClipCursor(nullptr);
-    
-            delete[] m_rendertarget->buffer;
-            delete(m_rendertarget);
-            m_rendertarget = nullptr;
+            ::DeleteObject(m_bitmapHandle);
         }
-    }
+        if (m_deviceContext)
+        {
+            ::DeleteDC(m_deviceContext);
+        }
+        ::ClipCursor(nullptr);
+
+        delete[] m_rendertarget->buffer;
+        delete(m_rendertarget);
+        m_rendertarget = nullptr;
+}
 
     void Win32_Window::setTitle(const std::string &title)
     {
-        LPCWSTR str = std::wstring(title.begin(), title.end()).c_str();
-        ::SetWindowTextW(m_window, str);
+        std::wstring str(title.begin(), title.end());
+        ::SetWindowTextW(m_window, str.c_str());
     }
 
     void Win32_Window::setFullscreen(const bool fullscreen)
@@ -354,82 +335,6 @@ namespace jawl
         m_rendertarget = new WndRndTgt{};
     }
 
-    void Win32_Window::glSetup()
-    {
-        /* Make dummy context so GLAD can load OpenGL extensions for the ability to create a modern context */
-        HDC dummyDC;
-        dummyDC = GetDC(m_window);
-
-        PIXELFORMATDESCRIPTOR pfd;
-        pfd.nSize = sizeof(pfd);
-        
-        ::SetPixelFormat(dummyDC, ChoosePixelFormat(dummyDC, &pfd), &pfd);
-
-        HGLRC dummyRC;
-        dummyRC = wglCreateContext(dummyDC);
-        ::wglMakeCurrent(dummyDC, dummyRC);
-
-        gladLoadWGL(dummyDC, (GLADloadfunc)wglGetProcAddress);
-
-        ::wglMakeCurrent(NULL, NULL);
-        ::wglDeleteContext(dummyRC);
-        ::ReleaseDC(m_window, dummyDC);
-        ::DestroyWindow(m_window);
-
-        /* Create the finished window and make the modern context */
-        LPCWSTR cTitle = std::wstring(m_title.begin(), m_title.end()).c_str();
-        m_window = ::CreateWindowEx(
-            0, 
-            className(), 
-            cTitle, 
-            m_style,
-            CW_USEDEFAULT, CW_USEDEFAULT, 
-            m_width, m_height, 
-            0, 
-            0, 
-            GetModuleHandle(nullptr), 
-            this
-        );
-        m_deviceContext = ::CreateCompatibleDC(0);
-        m_deviceContext = ::GetDC(m_window);
-
-        m_isOpen = m_window;
-
-        int formats = 0;
-        UINT numFormats = 0;
-        int formatAttribs[] =
-        {
-            WGL_DRAW_TO_WINDOW_ARB,     TRUE,
-            WGL_SUPPORT_OPENGL_ARB,     TRUE,
-            WGL_DOUBLE_BUFFER_ARB,      m_hints[DoubleBuffer],
-            WGL_SAMPLES_ARB,            m_hints[Samples],
-            WGL_ACCELERATION_ARB,       WGL_FULL_ACCELERATION_ARB,
-            WGL_PIXEL_TYPE_ARB,         WGL_TYPE_RGBA_ARB,
-            WGL_COLOR_BITS_ARB,         m_hints[ColourBits],
-            WGL_DEPTH_BITS_ARB,         m_hints[DepthBits],
-            WGL_STENCIL_BITS_ARB,       m_hints[StencilBits],
-            0
-        };
-
-        wglChoosePixelFormatARB(m_deviceContext, formatAttribs, 0, 1, &formats, &numFormats);
-
-        PIXELFORMATDESCRIPTOR desc;
-        desc.nSize = sizeof(desc);
-        
-        ::SetPixelFormat(m_deviceContext, formats, &desc);
-
-        int attribList[] =
-        { 
-            WGL_CONTEXT_MAJOR_VERSION_ARB, m_hints[ContextVerMajor],
-            WGL_CONTEXT_MINOR_VERSION_ARB, m_hints[ContextVerMinor],
-            WGL_CONTEXT_PROFILE_MASK_ARB,  m_hints[ContextProfile],
-            0
-        };
-        HGLRC hRenderContext = wglCreateContextAttribsARB(m_deviceContext, 0, attribList);
-        
-        ::wglMakeCurrent(m_deviceContext, hRenderContext);
-    }
-
     void Win32_Window::registerInputDevices()
     {
         RAWINPUTDEVICE rid[3];
@@ -474,11 +379,6 @@ namespace jawl
     {
         m_width  = LOWORD(lParam);
         m_height = HIWORD(lParam);
-
-        if (m_rtype == RendererType::Hardware)
-        {
-            return;
-        }
 
         if (m_bitmapHandle)
         {

@@ -13,6 +13,8 @@
 #include "Shaders/Cube_Shader.h"
 #include "Shaders/Window_Shader.h"
 
+#include "SceneManagement/SceneManager.h"
+
 class Scene_AlphaBlending : public Scene
 {
 public:

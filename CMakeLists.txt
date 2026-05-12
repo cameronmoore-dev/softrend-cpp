@@ -17,7 +17,6 @@ add_executable(software_renderer EXCLUDE_FROM_ALL
 	"src/jawl/input.cpp"
 	"src/jawl/win32/win32_window.cpp"
 	"src/jawl/win32/win32_input.cpp"
-	"src/jawl/win32/wgl.c"
     "src/echo-renderer/renderer.cpp"
 	"src/echo-renderer/shader.cpp"
     "src/echo-renderer/echo_math.cpp"
@@ -29,13 +28,11 @@ add_executable(software_renderer EXCLUDE_FROM_ALL
     "src/SceneManagement/Scenes/Scene_Cube.cpp"
     "src/SceneManagement/Scenes/Scene_Suzanne.cpp"
     "src/SceneManagement/Scenes/Scene_AlphaBlending.cpp"
-	"src/SceneManagement/Scenes/Scene_OpenGL.cpp"
 	"src/SceneManagement/Scenes/Scene_Assimp.cpp"
 	
 	"src/assimp_model.cpp"
 	"src/assimp_mesh.cpp"
 	
-	"src/gl.c"
 	"src/stb_image.cpp"
 )
 

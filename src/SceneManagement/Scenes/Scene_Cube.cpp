@@ -75,7 +75,7 @@ void Scene_Cube::processInput()
             {
                 if (e.keyCode == jawl::getKey(jawl::Key::Escape))
                 {
-                    m_window.close();
+                    shutdown();
                 }
 
                 else if (e.keyCode == jawl::getKey(jawl::Key::F))
@@ -123,5 +123,10 @@ void Scene_Cube::render()
 
 void Scene_Cube::shutdown()
 {
+    m_shader.projection.release();
+    m_shader.view.release();
+    m_shader.model.release();
+    m_shader.cubeTexture.release();
 
+    scene_manager::removeScene();
 }

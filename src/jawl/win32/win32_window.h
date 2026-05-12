@@ -11,8 +11,6 @@
     #define NOMINMAX
 #endif
 
-#include <glad/wgl.h>
-
 #include "../base_window.h"
 #include "win32_input.h"
 
@@ -24,10 +22,9 @@ namespace jawl
         Win32_Window() = default;
         ~Win32_Window() override {}
 
-        Win32_Window *create(const std::string &title, uint16_t width, uint16_t height, uint32_t style, RendererType rtype) override;
+        Win32_Window *create(const std::string &title, uint16_t width, uint16_t height, uint32_t style) override;
         void cleanup() override;
         void swapBuffers() override;
-        void swapInterval(uint8_t interval) override;
     
         void setTitle(const std::string &title) override;
         void setFullscreen(bool fullscreen) override;
@@ -82,7 +79,6 @@ namespace jawl
         void pollMessages();
 
         void swSetup() override;
-        void glSetup() override;
         void registerInputDevices() override;
         void updateCursor() override;
     

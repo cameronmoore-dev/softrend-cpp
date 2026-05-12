@@ -107,7 +107,7 @@ void Scene_Assimp::processInput()
             {
                 if (event.keyCode == jawl::getKey(jawl::Key::Escape))
                 {
-                    m_window.close();
+                    shutdown();
                 }
 
                 else if (event.keyCode == jawl::getKey(jawl::Key::R))
@@ -177,5 +177,10 @@ void Scene_Assimp::render()
 
 void Scene_Assimp::shutdown()
 {
+    m_shader.projection.release();
+    m_shader.view.release();
+    m_shader.model.release();
+    m_shader.diffuse.release();
 
+    scene_manager::removeScene();
 }

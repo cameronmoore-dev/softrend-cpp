@@ -146,7 +146,7 @@ namespace echo
         const vec4f multiply(const mat4 &mat, const vec4f &vec);
         const vec3f multiplyVec3(const mat4 &mat, const vec3f &vec);
         const vec3f multiplyVec3(const mat3 &mat, const vec3f &vec);
-    }
+    } // namespace _priv
 } // namespace echo
 
 inline echo::mat4 operator*(const echo::mat4 &a, const echo::mat4 &b)

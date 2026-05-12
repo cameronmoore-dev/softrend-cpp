@@ -12,6 +12,8 @@
 #include "Shaders/AssimpModelShader.h"
 #include "Shaders/DepthShader.h"
 
+#include "SceneManagement/SceneManager.h"
+
 class Scene_Assimp : public Scene
 {
 public:

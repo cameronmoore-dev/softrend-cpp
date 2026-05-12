@@ -10,14 +10,6 @@
 
 namespace jawl
 {
-    enum GLContextProfile
-    {
-        #ifdef _WIN32
-            Core            = 0x1,
-            Compatibility   = 0x2
-        #endif
-    };
-
     enum Style
     {
         #ifdef _WIN32
@@ -30,12 +22,6 @@ namespace jawl
         #endif
     };
 
-    enum class RendererType
-    {
-        Software = 0,
-        Hardware
-    };
-
     enum CursorFlags
     {
         Hidden  = 0x1,
@@ -43,29 +29,14 @@ namespace jawl
         Clamped = 0x4
     };
 
-    enum Hints
-    {
-        ColourBits = 0,
-        DepthBits,
-        StencilBits,
-        Samples,
-        sRGBCapable,
-        DoubleBuffer,
-        ContextVerMajor,
-        ContextVerMinor,
-        ContextProfile,
-        HintsCount
-    };
-
     struct WndRndTgt;
 
     class Window
     {
     public:
-        Window();
+        Window() = default;
         virtual ~Window() {}
 
-        void setHint(Hints index, uint8_t value);
         void close();
         bool pollEvents(Event &event);
         void cursorEnableFlags(const uint8_t flags);
@@ -73,10 +44,9 @@ namespace jawl
     
         WndRndTgt *renderTarget() { return m_rendertarget; }
         
-        virtual Window *create(const std::string &title, const uint16_t width, const uint16_t height, const uint32_t style, const RendererType rtype) = 0;
+        virtual Window *create(const std::string &title, const uint16_t width, const uint16_t height, const uint32_t style) = 0;
         virtual void cleanup() = 0;
         virtual void swapBuffers() = 0;
-        virtual void swapInterval(const uint8_t interval) = 0;
         virtual void setTitle(const std::string &title) = 0;
         virtual void setFullscreen(const bool fullscreen) = 0;
         virtual void getPos(int &outX, int &outY) = 0;
@@ -93,9 +63,6 @@ namespace jawl
         WndRndTgt *m_rendertarget = nullptr;
 
         std::queue<Event> m_events;
-        std::array<Hints, HintsCount> m_hints;
-        
-        RendererType m_rtype = RendererType::Software;
         std::string m_title;
         uint32_t m_style = 0;
         uint16_t m_width = 0;
@@ -105,7 +72,6 @@ namespace jawl
     
     protected:
         virtual void swSetup() = 0;
-        virtual void glSetup() = 0;
         virtual void registerInputDevices() = 0;
         virtual void updateCursor() = 0;
     };

@@ -11,6 +11,8 @@
 #include "Shaders/Suzanne_Shader.h"
 #include "Shaders/SSAO_Shader.h"
 
+#include "SceneManagement/SceneManager.h"
+
 class Scene_Suzanne : public Scene
 {
 public:

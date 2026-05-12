@@ -8,7 +8,7 @@ Scene_MainMenu::Scene_MainMenu(jawl::Window &window) :
 
 void Scene_MainMenu::start()
 {
-    m_window.setTitle("1: Tri, 2: Cube, 3: Suzanne, 4: AlphaBlending, 5: OpenGL, 6: Assimp");
+    m_window.setTitle("1: Tri, 2: Cube, 3: Suzanne, 4: AlphaBlending, 5: ShadowMapping");
     while (m_window.isOpen())
     {
         processInput();
@@ -33,27 +33,23 @@ void Scene_MainMenu::processInput()
 
                 else if (e.keyCode == jawl::getKey(jawl::Key::Num1))
                 {
-                    // m_sceneManager.addScene<Scene_Triangle>(m_window);
+                    // scene_manager::addScene<Scene_Triangle>(m_window);
                 }
                 else if (e.keyCode == jawl::getKey(jawl::Key::Num2))
                 {
-                    m_sceneManager.addScene<Scene_Cube>(m_window);
+                    scene_manager::addScene<Scene_Cube>(m_window);
                 }
                 else if (e.keyCode == jawl::getKey(jawl::Key::Num3))
                 {
-                    m_sceneManager.addScene<Scene_Suzanne>(m_window);
+                    scene_manager::addScene<Scene_Suzanne>(m_window);
                 }
                 else if (e.keyCode == jawl::getKey(jawl::Key::Num4))
                 {
-                    m_sceneManager.addScene<Scene_AlphaBlending>(m_window);
+                    scene_manager::addScene<Scene_AlphaBlending>(m_window);
                 }
                 else if (e.keyCode == jawl::getKey(jawl::Key::Num5))
                 {
-                    m_sceneManager.addScene<Scene_OpenGL>(m_window);
-                }
-                else if (e.keyCode == jawl::getKey(jawl::Key::Num6))
-                {
-                    m_sceneManager.addScene<Scene_Assimp>(m_window);
+                    scene_manager::addScene<Scene_Assimp>(m_window);
                 }
             } break;
         }
