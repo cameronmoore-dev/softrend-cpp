@@ -3,7 +3,7 @@
 #include <memory>
 #include <stack>
 
-#include "jawl/base_window.h"
+#include "AppContext.h"
 #include "Scene.h"
 
 namespace scene_manager
@@ -11,9 +11,9 @@ namespace scene_manager
 	inline std::stack<std::unique_ptr<Scene>> m_scenes;
 
 	template<typename T>
-	inline void addScene(jawl::Window& window)
+	inline void addScene(AppContext &app)
 	{
-		m_scenes.push(std::make_unique<T>(window));
+		m_scenes.push(std::make_unique<T>(app));
 		m_scenes.top()->start();
 	}
 

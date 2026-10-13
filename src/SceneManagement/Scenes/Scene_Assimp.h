@@ -2,8 +2,7 @@
 
 #include <stb_image/stb_image.h>
 
-#include "jawl/base_window.h"
-#include "echo-renderer/renderer.h"
+#include "AppContext.h"
 #include "../Scene.h"
 
 #include "Camera.h"
@@ -17,7 +16,7 @@
 class Scene_Assimp : public Scene
 {
 public:
-    Scene_Assimp(jawl::Window &window);
+    Scene_Assimp(AppContext &app);
 
     void start() override;
     
@@ -28,8 +27,7 @@ protected:
     void shutdown() override;
 
 private:
-    jawl::Window &m_window;
-    echo::Renderer m_renderer;
+    AppContext &m_app;
     Camera m_camera;
 
     Camera m_lightSource;
@@ -39,12 +37,12 @@ private:
     AssimpModel m_model;
     AssimpModel m_grnd;
     
-    echo::RenderTarget m_depthMap;
-    echo::RenderTarget m_default;
+    RenderTarget m_depthMap;
+    RenderTarget m_default;
 
-    echo::Texture m_texture;
+    Texture m_texture;
 
-    echo::mat4 m_modelMat = echo::identity();
+    mat4 m_modelMat = identity();
 
     double m_dt = 0.0;
     float angle = 0.f;

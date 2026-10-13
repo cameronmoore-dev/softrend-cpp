@@ -1,20 +1,13 @@
 #pragma once
 
-#include "jawl/jawl.hpp"
-#include "echo-renderer/renderer.h"
+#include "AppContext.h"
 
 #include "../Scene.h"
-#include "../SceneManager.h"
-#include "Scene_Triangle.h"
-#include "Scene_Cube.h"
-#include "Scene_Suzanne.h"
-#include "Scene_AlphaBlending.h"
-#include "Scene_Assimp.h"
 
 class Scene_MainMenu : public Scene
 {
 public:
-    Scene_MainMenu(jawl::Window &window);
+    Scene_MainMenu(AppContext &app);
 
     void start() override;
     
@@ -25,6 +18,5 @@ protected:
     void shutdown() override;
 
 private:
-    jawl::Window &m_window;
-    echo::Renderer m_renderer;
+    AppContext &m_app;
 };

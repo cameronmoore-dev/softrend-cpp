@@ -1,21 +1,21 @@
 #pragma once
 
-#include "echo-renderer/echo_math.h"
+#include "Renderer/math.hpp"
 
 struct Vertex
 {
-    echo::vec4f position;
-    echo::vec3f normal;
-    echo::vec2f uv;
-    echo::vec3f tangent;
-    echo::vec3f bitangent;
-    // uint32_t colour;
+    vec4f position;
+    vec3f normal;
+    vec2f uv;
+    vec3f tangent;
+    vec3f bitangent;
+    vec3f colour;
 };
 
 struct AssimpVertex
 {
-    echo::vec4f position;
-    echo::vec3f normal;
-    echo::vec2f uv;
-    echo::vec3f fragPos;
+    vec4f position;
+    vec3f normal;
+    vec2f uv;
+    vec3f fragPos;
 };

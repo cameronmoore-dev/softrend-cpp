@@ -2,8 +2,7 @@
 
 #include <stb_image/stb_image.h>
 
-#include "jawl/base_window.h"
-#include "echo-renderer/renderer.h"
+#include "AppContext.h"
 #include "../Scene.h"
 #include "Model.h"
 #include "Camera.h"
@@ -16,7 +15,7 @@
 class Scene_Cube : public Scene
 {
 public:
-    Scene_Cube(jawl::Window &window);
+    Scene_Cube(AppContext &app);
     ~Scene_Cube() = default;
 
     void start() override;
@@ -28,20 +27,18 @@ protected:
     void shutdown() override;
 
 private:
-    jawl::Window &m_window;
-    echo::Renderer m_renderer;
+    AppContext &m_app;
     Model m_cube = Model("./resources/model_cube.obj");
     Camera m_camera;
 
-    echo::Texture m_texture;
+    Texture m_texture;
 
     Cube_Shader m_shader;
     FXAA_Shader m_fxaa;    
     
-    echo::mat4 m_model = echo::identity();
+    mat4 m_model = identity();
 
     float m_angle = 0.f;
     double m_dt = 0.f;
-
     bool doFXAA = false;
 };

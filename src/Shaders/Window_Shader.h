@@ -1,33 +1,33 @@
 #pragma once
 
-#include "echo-renderer/shader.h"
+#include "Renderer/shader.h"
 
-class Window_Shader : public echo::IShader
+class Window_Shader : public IShader
 {
 public:
-    Uniform<echo::mat4> model;
-    Uniform<echo::mat4> view;
-    Uniform<echo::mat4> projection;
+    Uniform<mat4> model;
+    Uniform<mat4> view;
+    Uniform<mat4> projection;
 
-    Uniform<echo::Texture> windowTexture;
+    Uniform<Texture> windowTexture;
 
     float offset = 0.f;
 
     void vertex(float *vertex) override
     {
-        echo::vec3f position = getVertexAttribData<echo::vec3f>(vertex, 0);
+        vec3f position = getVertexAttribData<vec3f>(vertex, 0);
 
-        echo::vec4f clip = *projection * (*view * (*model * vec4(position, 1.f)));
+        vec4f clip = *projection * (*view * (*model * vec4(position, 1.f)));
         glPosition(0, vertex, clip);
     }
 
-    bool fragment(const echo::vec3f& barycentric, const echo::Face &face, echo::vec4f& fragColour) override
+    bool fragment(const vec3f& barycentric, const Face &face, vec4f& fragColour) override
     {
-        double current = getTimeSeconds();
-        double dt = current - _previous;
+        timepoint_ current = get_time();
+        duration_ dt = timepoint_diff(&current, &_previous);
         _previous = current;
 
-        _offset += dt;
+        offset += (f32)dt.us / 1000000L;
 
         windowTexture->offset.x = -_offset;
         windowTexture->offset.y = -_offset;

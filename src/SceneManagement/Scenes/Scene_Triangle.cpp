@@ -1,90 +1,76 @@
 #include "Scene_Triangle.h"
 
-Scene_Triangle::Scene_Triangle(jawl::Window &window) :
-    m_window(window)
+#include "vertex.h"
+#include "SceneManagement/SceneManager.h"
+
+#include <cstdio>
+
+Scene_Triangle::Scene_Triangle(AppContext &app) :
+    m_app(app)
 {
-    int x = 0;
-    int y = 0;
-    m_window.getSize(x, y);
-    m_camera = Camera(45.f, (float)x / (float)y, 0.5f, 20.f);
 }
 
 void Scene_Triangle::start()
 {
-    // m_triangle.resize(3);
-    // m_triangle[0].position = { -1, 1, 0 };
-    // m_triangle[0].colour = 0xff0000;
-    // m_triangle[1].position = { 0, -1, 0 };
-    // m_triangle[1].colour = 0x00ff00;
-    // m_triangle[2].position = { 1, 1, 0 };
-    // m_triangle[2].colour = 0x0000ff;
+    m_app.getRenderer().setVertexAttrib(sizeof(Vertex), 0, 4); /* Position */
+    m_app.getRenderer().setVertexAttrib(sizeof(Vertex), 1, 3); /* Normal */
+    m_app.getRenderer().setVertexAttrib(sizeof(Vertex), 2, 2); /* TexCoord */
+    m_app.getRenderer().setVertexAttrib(sizeof(Vertex), 3, 3); /* Tangent */
+    m_app.getRenderer().setVertexAttrib(sizeof(Vertex), 4, 3); /* Bitangent */
+    m_app.getRenderer().setVertexAttrib(sizeof(Vertex), 5, 3); /* Colour */
 
-    double previous = getTimeSeconds();
-    while (m_window.isOpen())
+    m_triangle.resize(3);
+    m_triangle[0].position = { -0.5f, -0.5, 0 };
+    m_triangle[0].colour = hexToRGB(0xFF0000);
+    m_triangle[1].position = { 0.5f, -0.5f, 0 };
+    m_triangle[1].colour = hexToRGB(0x0000FF);
+    m_triangle[2].position = { 0, 0.5f, 0 };
+    m_triangle[2].colour = hexToRGB(0x00FF00);
+
+    m_app.getRenderer().bindShader(m_shader);
+
+    timepoint_ previous = get_time();
+    while (window_is_open(&m_app.getWindow()))
     {
-        double current = getTimeSeconds();
-        m_dt = current-previous;
+        timepoint_ current = get_time();
+        duration_ diff = timepoint_diff(&current, &previous);
+        f32 dt = (f32)diff.us / 1000000L;
         previous = current;
 
         processInput();
         update();
         render();
 
-        //printf("FPS: %.0f\n", 1.f/m_dt);
+        window_sleep(&m_app.getWindow());
+
+        printf("FPS: %.1f\n", 1.f/dt);
     }
 }
 
 void Scene_Triangle::processInput()
 {
-    jawl::Event e;
-    while (m_window.pollEvents(e))
+    window_pump_messages(&m_app.getWindow());
+
+    if (is_key_pressed(&m_app.getWindow().input, ESC))
     {
-        switch(e.type)
-        {
-            case jawl::Event::KeyPressed:
-            {
-                if (e.keyCode == jawl::getKey(jawl::Key::Escape))
-                {
-                    m_window.close();
-                }
-            } break;
-
-            case jawl::Event::KeyReleased:
-            {
-            } break;
-
-            case jawl::Event::MouseMove:
-            {
-                m_camera.updateRotation(e.mousePos.x, e.mousePos.y, m_dt);
-            } break;
-        }
+        shutdown();
     }
 }
 
 void Scene_Triangle::update()
 {
-    m_camera.updateMovement(m_dt);
-    m_angle+=20.f * m_dt;
-    
-    m_rotation = echo::rotate(m_angle, { 1, 1, 1 });
-    m_model = m_translate * m_rotation * m_scale;
-    // m_rotation = Matrix::multiply(Matrix::rotate(m_angle, 0), Matrix::rotate(m_angle, 1));
-    // m_rotation = Matrix::multiply(m_rotation, Matrix::rotate(m_angle, 2));
-
-    // m_model = Matrix::multiply(Matrix::multiply(m_translate, m_rotation), m_scale);
-    m_camera.updateView();
 }
 
 void Scene_Triangle::render()
 {
-    m_renderer.clear(0x111111);
+    m_app.getRenderer().clear(0x111111);
+    m_app.getRenderer().drawArray(m_triangle.data(), m_triangle.size());
+    m_app.getRenderer().endDraw();
 
-    // m_renderer.draw(m_triangle, m_shader);
-
-    m_window.swapBuffers();
+    window_swap_buffers(&m_app.getWindow());
 }
 
 void Scene_Triangle::shutdown()
 {
-
+    scene_manager::removeScene();
 }

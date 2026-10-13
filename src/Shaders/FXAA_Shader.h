@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "echo-renderer/renderer.h"
+#include "Renderer/renderer.h"
 
 #define QUALITY 3
 
@@ -70,18 +70,18 @@ class FXAA_Shader
 public:
     FXAA_Shader() = default;
 
-    void apply(echo::RenderTarget &rendertarget)
+    void apply(RenderTarget &rendertarget)
     {
         size  = rendertarget.rect.width * rendertarget.rect.height;
         width = rendertarget.rect.width;
         for (uint32_t i = 0; i < size; i++)
         {
             /* Find contrast between pixel neighbours / Local Contrast Check */
-            echo::vec3f rgbN = fxaaTextureOffset(rendertarget, i, -width);
-            echo::vec3f rgbW = fxaaTextureOffset(rendertarget, i, -1);
-            echo::vec3f rgbM = fxaaTextureOffset(rendertarget, i, 0);
-            echo::vec3f rgbE = fxaaTextureOffset(rendertarget, i, 1);
-            echo::vec3f rgbS = fxaaTextureOffset(rendertarget, i, width);
+            vec3f rgbN = fxaaTextureOffset(rendertarget, i, -width);
+            vec3f rgbW = fxaaTextureOffset(rendertarget, i, -1);
+            vec3f rgbM = fxaaTextureOffset(rendertarget, i, 0);
+            vec3f rgbE = fxaaTextureOffset(rendertarget, i, 1);
+            vec3f rgbS = fxaaTextureOffset(rendertarget, i, width);
 
             float lumaN = fxaaLuma(rgbN);
             float lumaW = fxaaLuma(rgbW);
@@ -96,7 +96,7 @@ public:
 
             if (range < std::max(EDGE_THRESHOLD_MIN, rangeMax * EDGE_THRESHOLD))
             {
-                rendertarget.colour[i] = echo::rgbToHex(fxaaTextureOffset(rendertarget, i, 0));
+                rendertarget.colour[i] = rgbToHex(fxaaTextureOffset(rendertarget, i, 0));
                 continue;
             }
 
@@ -108,14 +108,14 @@ public:
             blendL = std::min(SUBPIXEL_CAP, blendL);
 
             /* Box filter around current pixel */
-            echo::vec3f rgbL = rgbN + rgbW + rgbM + rgbE + rgbS;
-            echo::vec3f rgbNW = fxaaTextureOffset(rendertarget, i, -width - 1);
-            echo::vec3f rgbNE = fxaaTextureOffset(rendertarget, i, -width + 1);
-            echo::vec3f rgbSW = fxaaTextureOffset(rendertarget, i, width - 1);
-            echo::vec3f rgbSE = fxaaTextureOffset(rendertarget, i, width + 1);
+            vec3f rgbL = rgbN + rgbW + rgbM + rgbE + rgbS;
+            vec3f rgbNW = fxaaTextureOffset(rendertarget, i, -width - 1);
+            vec3f rgbNE = fxaaTextureOffset(rendertarget, i, -width + 1);
+            vec3f rgbSW = fxaaTextureOffset(rendertarget, i, width - 1);
+            vec3f rgbSE = fxaaTextureOffset(rendertarget, i, width + 1);
 
             rgbL += rgbNW + rgbNE + rgbSW + rgbSE;
-            rgbL *= echo::vec3f{ 1.f / 9.f, 0, 0 };
+            rgbL *= vec3f{ 1.f / 9.f, 0, 0 };
 
             float lumaNW = fxaaLuma(rgbNW);
             float lumaNE = fxaaLuma(rgbNE);
@@ -167,28 +167,28 @@ public:
                 
             }
 
-            echo::vec3f rgbMVec = rgbM;
-            echo::vec3f rgbLVec = fxaaTextureOffset(rendertarget, i, horzSpan ? (int)width : 1);
-            echo::vec3f rgbRVec = fxaaTextureOffset(rendertarget, i, horzSpan ? -(int)width : -1);
+            vec3f rgbMVec = rgbM;
+            vec3f rgbLVec = fxaaTextureOffset(rendertarget, i, horzSpan ? (int)width : 1);
+            vec3f rgbRVec = fxaaTextureOffset(rendertarget, i, horzSpan ? -(int)width : -1);
 
             float dirLumaDiff = lumaNeg - lumaPos;
-            echo::vec3f targetColour = dirLumaDiff > 0 ? rgbRVec : rgbLVec;
-            echo::vec3f blended = rgbMVec * (1.f - blendL) + targetColour * blendL;
+            vec3f targetColour = dirLumaDiff > 0 ? rgbRVec : rgbLVec;
+            vec3f blended = rgbMVec * (1.f - blendL) + targetColour * blendL;
             
-            rendertarget.colour[i] = echo::rgbToHex(blended);
+            rendertarget.colour[i] = rgbToHex(blended);
         }
     }
 
 private:
-    float fxaaLuma(const echo::vec3f& colour)
+    float fxaaLuma(const vec3f& colour)
     {
         return colour.y * (0.587f/0.299f) * colour.x;
         // return 0.299f * rgb.x + 0.587f * rgb.y + 0.114f * rgb.z;
     }
 
-    echo::vec3f fxaaTextureOffset(echo::RenderTarget &rendertarget, int current, int offset)
+    vec3f fxaaTextureOffset(RenderTarget &rendertarget, int current, int offset)
     {
-        int index = current + offset;
+        u32 index = current + offset;
         if (index < 0) 
         {
             index = 0;

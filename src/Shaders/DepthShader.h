@@ -1,20 +1,20 @@
 #pragma once
 
-#include "echo-renderer/shader.h"
+#include "Renderer/shader.h"
 
-class DepthShader : public echo::IShader
+class DepthShader : public IShader
 {
 public:
-    echo::mat4 model;
-    echo::mat4 lightSpaceMatrix;
+    mat4 model;
+    mat4 lightSpaceMatrix;
 
     void vertex(float *vertex) override
     {
-        echo::vec3f position = getVertexAttribData<echo::vec3f>(vertex, 0);
+        vec3f position = getVertexAttribData<vec3f>(vertex, 0);
         glPosition(0, vertex, lightSpaceMatrix * (model * vec4(position, 1.f)));
     }
 
-    bool fragment(const echo::vec3f& barycentric, const echo::Face &face, echo::vec4f& fragColour) override
+    bool fragment(const vec3f& barycentric, const Face &face, vec4f& fragColour) override
     {
         return true;
     }

@@ -17,9 +17,9 @@ void Model::loadModel(const std::string& dir)
         return;
     }
     
-    std::vector<echo::vec4f> positions;
-    std::vector<echo::vec3f> normals;
-    std::vector<echo::vec2f> texCoords;
+    std::vector<vec4f> positions;
+    std::vector<vec3f> normals;
+    std::vector<vec2f> texCoords;
 
     std::string line;
     while (!file.eof())
@@ -35,7 +35,7 @@ void Model::loadModel(const std::string& dir)
         /* Vertex */
         if (prefix == "v")
         {
-            echo::vec4f v;
+            vec4f v;
             s_stream >> v.x >> v.y >> v.z >> v.w;
             positions.emplace_back(v);
         }
@@ -43,7 +43,7 @@ void Model::loadModel(const std::string& dir)
         /* Texture Coord */
         else if (prefix == "vt")
         {
-            echo::vec2f vt;
+            vec2f vt;
             s_stream >> vt.x >> vt.y;
             texCoords.emplace_back(vt);
         }
@@ -51,7 +51,7 @@ void Model::loadModel(const std::string& dir)
         /* Normals */
         else if (prefix == "vn")
         {
-            echo::vec3f vn;
+            vec3f vn;
             s_stream >> vn.x >> vn.y >> vn.z;
             normals.emplace_back(vn);
         }
@@ -102,23 +102,23 @@ void Model::computeTangents()
 {
     for (uint32_t i = 0; i < vertices.size(); i+=3)
     {
-        echo::vec4f pos0 = vertices[i].position;
-        echo::vec4f pos1 = vertices[i+1].position;
-        echo::vec4f pos2 = vertices[i+2].position;
+        vec4f pos0 = vertices[i].position;
+        vec4f pos1 = vertices[i+1].position;
+        vec4f pos2 = vertices[i+2].position;
 
-        echo::vec2f uv0 = vertices[i].uv;
-        echo::vec2f uv1 = vertices[i+1].uv;
-        echo::vec2f uv2 = vertices[i+2].uv;
+        vec2f uv0 = vertices[i].uv;
+        vec2f uv1 = vertices[i+1].uv;
+        vec2f uv2 = vertices[i+2].uv;
 
-        echo::vec4f edge1 = pos1 - pos0;
-        echo::vec4f edge2 = pos2 - pos0;
+        vec4f edge1 = pos1 - pos0;
+        vec4f edge2 = pos2 - pos0;
 
-        echo::vec2f delta1 = uv1 - uv0;
-        echo::vec2f delta2 = uv2 - uv0;
+        vec2f delta1 = uv1 - uv0;
+        vec2f delta2 = uv2 - uv0;
 
         float f = 1.f / (delta1.x * delta2.y - delta2.x * delta1.y);
 
-        echo::vec3f t, b;
+        vec3f t, b;
 
         t.x = (delta2.y * edge1.x - delta1.y * edge2.x) * f;
         t.y = (delta2.y * edge1.y - delta1.y * edge2.y) * f;
@@ -139,7 +139,7 @@ void Model::computeTangents()
 
     for (Vertex& vertex : vertices)
     {
-        vertex.tangent = echo::normalise(vertex.tangent);
-        vertex.bitangent = echo::normalise(vertex.bitangent);
+        vertex.tangent = normalise(vertex.tangent);
+        vertex.bitangent = normalise(vertex.bitangent);
     }
 }

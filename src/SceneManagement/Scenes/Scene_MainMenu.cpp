@@ -1,75 +1,79 @@
 #include "Scene_MainMenu.h"
 
-Scene_MainMenu::Scene_MainMenu(jawl::Window &window) :
-    m_window(window)
+#include "../SceneManager.h"
+#include "Scene_Triangle.h"
+#include "Scene_Cube.h"
+#include "Scene_Suzanne.h"
+#include "Scene_AlphaBlending.h"
+#include "Scene_Assimp.h"
+
+Scene_MainMenu::Scene_MainMenu(AppContext &app) :
+    m_app(app)
 {
-    m_renderer = echo::Renderer(m_window.renderTarget());
 }
 
 void Scene_MainMenu::start()
 {
-    m_window.setTitle("1: Tri, 2: Cube, 3: Suzanne, 4: AlphaBlending, 5: ShadowMapping");
-    while (m_window.isOpen())
+    m_app.getRenderer().cleanup();
+
+    while (window_is_open(&m_app.getWindow()))
     {
         processInput();
         update();
         render();
+
+        window_sleep(&m_app.getWindow());
     }
 }
 
 void Scene_MainMenu::processInput()
 {
-    jawl::Event e;
-    while (m_window.pollEvents(e))
-    {
-        switch (e.type)
-        {
-            case jawl::Event::KeyPressed:
-            {
-                if (e.keyCode == jawl::getKey(jawl::Key::Escape))
-                {
-                    m_window.close();
-                }
+    window_pump_messages(&m_app.getWindow());
 
-                else if (e.keyCode == jawl::getKey(jawl::Key::Num1))
-                {
-                    // scene_manager::addScene<Scene_Triangle>(m_window);
-                }
-                else if (e.keyCode == jawl::getKey(jawl::Key::Num2))
-                {
-                    scene_manager::addScene<Scene_Cube>(m_window);
-                }
-                else if (e.keyCode == jawl::getKey(jawl::Key::Num3))
-                {
-                    scene_manager::addScene<Scene_Suzanne>(m_window);
-                }
-                else if (e.keyCode == jawl::getKey(jawl::Key::Num4))
-                {
-                    scene_manager::addScene<Scene_AlphaBlending>(m_window);
-                }
-                else if (e.keyCode == jawl::getKey(jawl::Key::Num5))
-                {
-                    scene_manager::addScene<Scene_Assimp>(m_window);
-                }
-            } break;
-        }
+    if (is_key_pressed(&m_app.getWindow().input, ESC))
+    {
+        shutdown();
+    }
+
+    else if (is_key_pressed(&m_app.getWindow().input, NUM1))
+    {
+        scene_manager::addScene<Scene_Triangle>(m_app);
+    }
+
+    else if (is_key_pressed(&m_app.getWindow().input, NUM2))
+    {
+        scene_manager::addScene<Scene_Cube>(m_app);
+    }
+
+    else if (is_key_pressed(&m_app.getWindow().input, NUM3))
+    {
+        scene_manager::addScene<Scene_Suzanne>(m_app);
+    }
+
+    else if (is_key_pressed(&m_app.getWindow().input, NUM4))
+    {
+        scene_manager::addScene<Scene_AlphaBlending>(m_app);
+    }
+
+    else if (is_key_pressed(&m_app.getWindow().input, NUM5))
+    {
+        scene_manager::addScene<Scene_Assimp>(m_app);
     }
 }
 
 void Scene_MainMenu::update()
 {
-
 }
 
 void Scene_MainMenu::render()
 {
-    m_renderer.clear(0x412E59);
-    m_renderer.endDraw();
+    m_app.getRenderer().clear(0x412E59);
+    m_app.getRenderer().endDraw();
 
-    m_window.swapBuffers();
+    window_swap_buffers(&m_app.getWindow());
 }
 
 void Scene_MainMenu::shutdown()
 {
-
+    window_close(&m_app.getWindow());
 }

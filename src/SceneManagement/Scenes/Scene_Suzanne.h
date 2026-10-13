@@ -2,8 +2,7 @@
 
 #include <stb_image/stb_image.h>
 
-#include "jawl/base_window.h"
-#include "echo-renderer/renderer.h"
+#include "AppContext.h"
 #include "../Scene.h"
 #include "Model.h"
 #include "Camera.h"
@@ -16,7 +15,7 @@
 class Scene_Suzanne : public Scene
 {
 public:
-    Scene_Suzanne(jawl::Window &window);
+    Scene_Suzanne(AppContext &app);
 
     void start() override;
     
@@ -27,26 +26,22 @@ protected:
     void shutdown() override;
 
 private:
-    jawl::Window &m_window;
-    echo::Renderer m_renderer;
+    AppContext &m_app;
+
     Model m_suzanne = Model("./resources/model_suzanne.obj");
 
-    echo::Texture m_texture;
-    echo::Texture m_normalMap;
-    echo::Texture m_specularMap;
+    Texture m_texture;
+    Texture m_normalMap;
+    Texture m_specularMap;
 
     Camera m_camera;
 
     Suzanne_Shader m_shader;
     SSAO_Shader m_ssao;
 
-    echo::mat4 m_model = echo::identity();
+    mat4 m_model = identity();
 
     float m_angle = 0.f;
     double m_dt = 0;
-
-    bool a = true;
     bool ssao = false;
-
-    bool fs = false;
 };

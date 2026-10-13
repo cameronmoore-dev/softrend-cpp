@@ -2,9 +2,7 @@
 
 #include <stb_image/stb_image.h>
 
-#include "jawl/win32/win32_window.h"
-#include "echo-renderer/renderer.h"
-
+#include "AppContext.h"
 #include "../Scene.h"
 #include "Model.h"
 #include "Camera.h"
@@ -18,7 +16,7 @@
 class Scene_AlphaBlending : public Scene
 {
 public:
-    Scene_AlphaBlending(jawl::Window &window);
+    Scene_AlphaBlending(AppContext &app);
 
     void start() override;
     
@@ -29,11 +27,10 @@ protected:
     void shutdown() override;
 
 private:
-    jawl::Window &m_window;
-    echo::Renderer m_renderer;
+    AppContext &m_app;
     Camera m_camera;
 
-    echo::RenderTarget m_rt;
+    RenderTarget m_rt;
 
     Grass_Shader    m_grassShader;
     Cube_Shader     m_cubeShader;
@@ -42,16 +39,14 @@ private:
     Model m_cube  = Model("./resources/model_cube.obj");
     Model m_plane = Model("./resources/model_plane.obj");
     
-    echo::Texture m_grassTexture;
-    echo::Texture m_dirtTexture;
-    echo::Texture m_windowTexture;
+    Texture m_grassTexture;
+    Texture m_dirtTexture;
+    Texture m_windowTexture;
 
-    echo::mat4 m_grassModel = echo::identity();
-    echo::mat4 m_cubeModel = echo::identity();
-    echo::mat4 m_windowModel = echo::identity();
+    mat4 m_grassModel  = identity();
+    mat4 m_cubeModel   = identity();
+    mat4 m_windowModel = identity();
 
     float m_angle = 0.f;
     double m_dt = 0.f;
-
-    bool fs = false;
 };

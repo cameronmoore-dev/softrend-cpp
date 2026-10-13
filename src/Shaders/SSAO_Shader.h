@@ -5,7 +5,7 @@
 #include <random>
 #include <cmath>
 
-#include "echo-renderer/renderer.h"
+#include "Renderer/renderer.h"
 
 class SSAO_Shader
 {
@@ -35,7 +35,7 @@ public:
         blurBuffer.resize(width*height, 0.f);
     }
     
-    void apply(echo::RenderTarget &rendertarget)
+    void apply(RenderTarget &rendertarget)
     {
         std::fill(aoBuffer.begin(), aoBuffer.end(), 0.f);
         std::fill(blurBuffer.begin(), blurBuffer.end(), 0.f);
@@ -98,7 +98,7 @@ public:
             bilateralBlur(rendertarget);
         }
         
-        for (int i = 0; i < aoBuffer.size(); ++i)
+        for (u32 i = 0; i < aoBuffer.size(); ++i)
         {
             float ao = aoBuffer[i];
             if (ao == 0.f)
@@ -106,15 +106,15 @@ public:
                 continue;
             }
 
-            echo::vec3f fragColour = echo::hexToRGB(rendertarget.colour[i]);
+            vec3f fragColour = hexToRGB(rendertarget.colour[i]);
             fragColour.x *= ao;
             fragColour.y *= ao;
             fragColour.z *= ao;
-            rendertarget.colour[i] = echo::rgbToHex(fragColour);
+            rendertarget.colour[i] = rgbToHex(fragColour);
         }
     }
 
-    void bilateralBlur(const echo::RenderTarget &rendertarget)
+    void bilateralBlur(const RenderTarget &rendertarget)
     {
         int radius = 4;          // Blur radius
         float sigmaSpace = 2.0f; // Spatial falloff
@@ -218,7 +218,7 @@ private:
     {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_real_distribution<float> angleDist { 0.f, 2.f * echo::pi };
+        std::uniform_real_distribution<float> angleDist { 0.f, 2.f * pi };
         std::uniform_real_distribution<float> radiusDist{ 0.f, 1.f };
 
         for (int i = 0; i < samples; i++)

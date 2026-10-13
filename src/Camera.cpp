@@ -2,26 +2,26 @@
 
 Camera::Camera(float fov, float aspect, float zNear, float zFar)
 {
-    m_projection = echo::perspective(fov, aspect, zNear, zFar);
+    m_projection = perspective(fov, aspect, zNear, zFar);
     m_farPlane = zFar;
     m_nearPlane = zNear;
 }
 
 Camera::Camera(int32_t left, int32_t top, int32_t right, int32_t bottom, float zNear, float zFar)
 {
-    m_projection = echo::orthographic(left, top, right, bottom, zNear, zFar);
+    m_projection = orthographic(left, top, right, bottom, zNear, zFar);
     m_farPlane = zFar;
     m_nearPlane = zNear;
 }
 
 void Camera::updateView()
 {
-    m_view = echo::lookAt(m_position, m_position + m_forward, { 0, 1, 0 });  
+    m_view = lookAt(m_position, m_position + m_forward, { 0, 1, 0 });  
 }
 
-Camera::Frustum Camera::extractFrustumPlanes(const echo::mat4 &modelView)
+Camera::Frustum Camera::extractFrustumPlanes(const mat4 &modelView)
 {
-    echo::mat4 vp = m_projection * modelView;
+    mat4 vp = m_projection * modelView;
     Frustum planes = {};
 
     /* Gribb & Hartmann method. */
@@ -64,17 +64,17 @@ Camera::Frustum Camera::extractFrustumPlanes(const echo::mat4 &modelView)
 
     for (Plane &p : planes)
     {
-        float length = echo::length(p.normal);
-        p.normal /= length;
-        p.distance /= length;
+        float l = length(p.normal);
+        p.normal /= l;
+        p.distance /= l;
     }
 
     return planes;
 }
 
-bool Camera::isSphereInsideFrustum(const echo::mat4& model, const echo::vec3f& centre, float radius)
+bool Camera::isSphereInsideFrustum(const mat4& model, const vec3f& centre, float radius)
 {
-    echo::mat4 modelView = m_view * model;
+    mat4 modelView = m_view * model;
     Frustum planes = extractFrustumPlanes(modelView);
 
     for (const Plane &p : planes)
@@ -88,61 +88,34 @@ bool Camera::isSphereInsideFrustum(const echo::mat4& model, const echo::vec3f& c
     return true;
 }
 
-void Camera::updateRotation(int xOffset, int yOffset)
+void Camera::updateRotation(input_ &input)
 {
-    m_yaw   += xOffset * m_sensitivity;
-    m_pitch += yOffset * m_sensitivity;
-
+    m_yaw   += input.mouse_dx * m_sensitivity;
+    m_pitch -= input.mouse_dy * m_sensitivity;
     m_pitch = std::clamp(m_pitch, -89.f, 89.f);
 
-    float rad_yaw = echo::degToRad(m_yaw);
-    float rad_pitch = echo::degToRad(m_pitch);
+    input.mouse_dx = 0;
+    input.mouse_dy = 0;
 
-    echo::vec3f dir;
+    float rad_yaw = degToRad(m_yaw);
+    float rad_pitch = degToRad(m_pitch);
+
+    vec3f dir;
     dir.x = std::cos(rad_yaw) * std::cos(rad_pitch);
     dir.y = std::sin(rad_pitch);
     dir.z = std::sin(rad_yaw) * std::cos(rad_pitch);
 
-    m_forward = echo::normalise(dir);
+    m_forward = normalise(dir);
 }
 
-void Camera::updateRotation(float xOffset, float yOffset, double dt)
+void Camera::updateMovement(input_ &input, double dt)
 {
-    m_yaw   += xOffset * 100.f * dt;
-    m_pitch += yOffset * 100.f * dt;
-    m_pitch = std::clamp(m_pitch, -89.f, 89.f);
+    vec3f worldUp = { 0, 1, 0 };
+    vec3f right = normalise(cross(m_forward, worldUp));
 
-    float rad_yaw = echo::degToRad(m_yaw);
-    float rad_pitch = echo::degToRad(m_pitch);
-
-    echo::vec3f dir;
-    dir.x = std::cos(rad_yaw) * std::cos(rad_pitch);
-    dir.y = std::sin(rad_pitch);
-    dir.z = std::sin(rad_yaw) * std::cos(rad_pitch);
-
-    m_forward = echo::normalise(dir);
-}
-
-void Camera::updateMovement(double dt)
-{
-    echo::vec3f worldUp = { 0, 1, 0 };
-    echo::vec3f right = echo::normalise(echo::cross(m_forward, worldUp));
-
-    if (jawl::isGamepadConnected(0))
-    {
-        echo::vec3f f = (m_forward * jawl::controllerAxisValue(0, jawl::GamepadAxis::LY));
-        echo::vec3f r = (right     * jawl::controllerAxisValue(0, jawl::GamepadAxis::LX));
-        m_position -= f * m_cameraSpeed * (float)dt;
-        m_position -= r * m_cameraSpeed * (float)dt;
-        m_position.y += jawl::isGamepadButtonPressed(0, jawl::GamepadButtons::LeftShoulder)  * m_cameraSpeed * dt;
-        m_position.y -= jawl::isGamepadButtonPressed(0, jawl::GamepadButtons::RightShoulder) * m_cameraSpeed * dt;
-
-        return;
-    }
-
-    echo::vec3f f = m_forward * (float)((int)jawl::isKeyPressed(jawl::Key::W) - (int)jawl::isKeyPressed(jawl::Key::S));
-    echo::vec3f r = right     * (float)((int)jawl::isKeyPressed(jawl::Key::D) - (int)jawl::isKeyPressed(jawl::Key::A));
-    echo::vec3f u = worldUp   * (float)((int)jawl::isKeyPressed(jawl::Key::Q) - (int)jawl::isKeyPressed(jawl::Key::E));
+    vec3f f = m_forward * (float)((int)is_key_held(&input, KEY_W) - (int)is_key_held(&input, KEY_S));
+    vec3f r = right     * (float)((int)is_key_held(&input, KEY_D) - (int)is_key_held(&input, KEY_A));
+    vec3f u = worldUp   * (float)((int)is_key_held(&input, KEY_Q) - (int)is_key_held(&input, KEY_E));
 
     m_position -= f * m_cameraSpeed * (float)dt;
     m_position -= r * m_cameraSpeed * (float)dt;

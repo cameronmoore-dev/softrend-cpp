@@ -1,16 +1,16 @@
 #pragma once
 
-#include "echo-renderer/renderer.h"
+#include "AppContext.h"
 #include "../Scene.h"
 #include "Camera.h"
 #include "vertex.h"
 
-#include "Shaders/Suzanne_Shader.h"
+#include "Shaders/TriangleShader.h"
 
 class Scene_Triangle : public Scene
 {
 public:
-    Scene_Triangle(jawl::Window &window);
+    Scene_Triangle(AppContext &app);
 
     void start() override;
     
@@ -21,21 +21,9 @@ protected:
     void shutdown() override;
 
 private:
-    jawl::Window &m_window;
-    echo::Renderer m_renderer;
+    AppContext &m_app;
     Camera m_camera;
 
-    // Suzanne_Shader m_shader;
-
-    echo::mat4 m_model = echo::identity();
-
-    echo::mat4 m_translate = echo::identity();
-    echo::mat4 m_rotation = echo::identity();
-    echo::mat4 m_scale = echo::identity();
-
+    TriangleShader m_shader;
     std::vector<Vertex> m_triangle;
-
-    float m_angle = 0.f;
-
-    double m_dt = 0.0;
 };

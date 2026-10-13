@@ -34,9 +34,9 @@ AssimpMesh AssimpModel::processMesh(aiMesh *mesh)
     for (uint32_t i = 0; i < mesh->mNumVertices; i++)
     {
         AssimpVertex vertex{};
-        vertex.position = echo::vec4f{ mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
-        vertex.normal   = echo::vec3f{ mesh->mNormals[i].x,  mesh->mNormals[i].y,  mesh->mNormals[i].z};
-        vertex.uv       = echo::vec2f{ mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
+        vertex.position = vec4f{ mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
+        vertex.normal   = vec3f{ mesh->mNormals[i].x,  mesh->mNormals[i].y,  mesh->mNormals[i].z};
+        vertex.uv       = vec2f{ mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
 
         vertices.emplace_back(vertex);
     }
